@@ -20,14 +20,14 @@ tasks including:
 - management of multiple simulations.
 
 Since this process is prone to erros, and a good documentation of experiments is vital
-for scientific work, we created WRFtamer. WRFtamer most tasks listed above. In addtion, 
+for scientific work, we created WRFtamer. WRFtamer performs most tasks listed above with a few command lines. In addtion, 
 the work is organized and documented for later reference and documentation. Key Features
 of WRFtamer include:
 
 - Organize projects and experiments with a defined directory tree.
 - Link files as required.
 - Run WPS on demand.
-- Automatically document your work to be able to reproduce a run with minimal effort.
+- Automatically document your work to be able to reproduce an experiment with minimal effort.
 - Postprocess output.
 - Archive completed runs.
 - Get an overview of used computing ressources of a project (runtime, disk usage etc).
