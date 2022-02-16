@@ -1,0 +1,25 @@
+site_name: WRFtamer
+site_url: https://example.com/
+nav:
+    - Home: index.md
+    - Getting Started: getting_started.md
+    - Customizing WRFtamer: customizing.md
+    - Command Line tools: command_line_tools.md
+    - GUI: GUI.md
+    - FAQ: faq.md
+    - About: about.md
+
+markdown_extensions:
+  - attr_list
+  - md_in_html
+  - admonition
+  - def_list
+  - footnotes
+
+
+theme:
+    name: readthedocs
+    highlightjs: true
+    logo: logo.png
+
+repo_url: https://github.com/dleuk/test

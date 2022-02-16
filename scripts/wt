@@ -1,0 +1,549 @@
+#!/usr/bin/env python3
+import ast
+import os
+from pathlib import Path
+import click
+
+from wrftamer.experiment_management import experiment
+from wrftamer.project_management import project, list_projects
+from wrftamer.wrftamer_paths import wrftamer_paths
+import wrftamer.wrftamer_functions as wtfun
+import shutil
+
+home_path, db_path, run_path, archive_path = wrftamer_paths()
+
+
+class PythonLiteralOption(click.Option):
+    """
+    Helper class to use list as input option (instead of string)
+    """
+
+    def type_cast_value(self, ctx, value):
+        value = str(value)
+        try:
+            return ast.literal_eval(value)
+        except Exception as e:
+            raise click.BadParameter(value)
+
+
+@click.group(name='wrftamer')
+def cli():
+    pass
+
+
+@cli.command(name='first_steps', short_help='create default dir structure', help='Creates a directory structure, copies'
+                                                                                 'executables from WRF and WPS '
+                                                                                 'directories, '
+                                                                                 'copies essential data.')
+@click.argument('wrf_and_wsp_parent_dir', type=click.Path(exists=True))
+@click.option('--exe_dir', help='the name of the executables directory [default: $HOME/wrftamer/bin/wrf_executables]')
+@click.option('--essentials_dir',
+              help='the name of the essentials directory [default: $HOME/wrftamer/src/wrf_nonessentials]')
+@click.option('--non_essentials_dir',
+              help='the name of the non_essentials directory [default: $HOME/wrftamer/src/wrf_nonessentials]')
+@click.option('--vtable', help='The name of the Vtable to be copied [default: Vtable.ECMWF]')
+def cli_first_steps(wrf_and_wsp_parent_dir, exe_dir=None, essentials_dir=None, non_essentials_dir=None, vtable=None):
+    """
+    Creates a floder structure for the executables, essentials and non-essential files. Copies executalbes
+    Using this script should help a user to get started. An advanced user may use different scripts later on.
+    Do not use options to use defaults paths (modified by environmental variables)
+
+    Args:
+        wrf_and_wsp_parent_dir: WRF and WPS parent folder.
+        exe_dir: directiory of executables (will be created)
+        essentials_dir: directiory of wrf_essentials (will be created)
+        non_essentials_dir: directiory of wrf_nonessentials (will be created)
+        vtable: the name of the Vtable to be copied.
+
+    Returns: None
+
+    """
+
+    if exe_dir is None:
+        exe_dir = home_path / 'bin/wrf_executables'
+
+    if essentials_dir is None:
+        essentials_dir = home_path / 'src/wrf_essentials'
+
+    if non_essentials_dir is None:
+        non_essentials_dir = home_path / 'src/wrf_nonessentials'
+
+    if vtable is None:
+        vtable = 'Vtable.ECMWF'
+
+    click.echo("Creating directory %s" % exe_dir)
+    click.echo("Copying relevant .exe files to %s" % exe_dir)
+    click.echo("The executables were copied from subdirectories of %s" % wrf_and_wsp_parent_dir)
+    click.echo("")
+    click.echo("Creating directory %s" % essentials_dir)
+    click.echo("Copying relevant files to %s" % essentials_dir)
+    click.echo("The files were copied from subdirectories of %s" % wrf_and_wsp_parent_dir)
+    click.echo("Vtable: %s", vtable)
+    click.echo("")
+    click.echo("Creating directory %s" % non_essentials_dir)
+    click.echo("")
+
+    wtfun.make_executable_dir(exe_dir, wrf_and_wsp_parent_dir)
+    wtfun.make_essential_data_dir(wrf_and_wsp_parent_dir, essentials_dir, vtable)
+    wtfun.make_non_essential_data_dir(non_essentials_dir)
+
+
+@cli.command(name='make_executable_dir', short_help='copy executables', help='Copy wrf and wsp executables from'
+                                                                             ' <WRF_and_WPS_parent_dir> to a targetdir')
+@click.argument('wrf_and_wsp_parent_dir', type=click.Path(exists=True))
+@click.argument('exe_dir', type=click.Path())
+def cli_make_executable_dir(wrf_and_wsp_parent_dir, exe_dir):
+    click.echo("Creating directory %s" % exe_dir)
+    click.echo("Copying relevant .exe files to %s" % exe_dir)
+    click.echo("The executables were copied from subdirectories of %s" % wrf_and_wsp_parent_dir)
+
+    wtfun.make_executable_dir(exe_dir, wrf_and_wsp_parent_dir)
+
+
+@cli.command(name='make_essential_data_dir', short_help='copy constant data',
+             help='Copy constant WRF-data and tables after compilation to a targetdir. Provide Vtable name.')
+@click.argument('wrf_and_wsp_parent_dir', type=click.Path(exists=True))
+@click.argument('essentials_dir', type=click.Path())
+@click.argument('vtable', nargs=1)
+def cli_make_essential_data_dir(wrf_and_wsp_parent_dir, essentials_dir, vtable):
+    click.echo("Creating directory %s" % essentials_dir)
+    click.echo("Copying relevant files to %s" % essentials_dir)
+    click.echo("The files were copied from subdirectories of %s" % wrf_and_wsp_parent_dir)
+    click.echo("Vtable: %s", vtable)
+
+    wtfun.make_essential_data_dir(wrf_and_wsp_parent_dir, essentials_dir, vtable)
+
+
+@cli.command(name='create', short_help='Create the wrf run directory',
+             help='Create the wrf run directory from a config-file. Default is configure.yaml')
+@click.argument('configfile', default='configure.yaml', type=click.Path(exists=True))
+@click.option('--namelisttemplate', help='Namelist template file [default: None (== built-in)]')
+@click.option('--run_wps', help='Set to True if you want wps to be executed as well')
+@click.option('--proj_name', help='Name of the project this experiment is associated with [default: None]')
+@click.option('--comment', help='(string) A short description of what the experiment should do.')
+def cli_create(configfile, namelisttemplate=None, run_wps=False, proj_name=None, comment=''):
+    """
+
+    Create an experiment and, optinally, a project as well. A configure file is required. The namelist template
+    can be selected. If left blank, the built-in default is used.
+
+    Args:
+        configfile: configure file of the experiment to create
+        namelisttemplate: the template of the namelist.
+        proj_name: the name of the project. The project feature is not used if this variable is not used.
+        run_wps: set to True if you want to run wps (geogrid, ungrib, metgrid) as part of experiment creation.
+        comment: A short description of the experiment. Only used with project management feature
+
+    Returns: None
+
+    """
+
+    if not isinstance(run_wps, bool):
+        run_wps = run_wps == 'True'
+
+    exp_name = Path(configfile).stem  # The file name of the conf file is ALWAYS the experiment name
+
+    # Create Project on demand
+    if proj_name is not None:
+        proj = project(proj_name)
+        if not os.path.isdir(proj.proj_path):
+            print('This project does not yet exist.')
+            val = input("Do you want to create it? Yes/[No]")
+            if val in ['y', 'Y', 'yes', 'Yes']:
+                proj.create()
+            else:
+                return
+
+    click.echo("Your configure file: %s" % configfile)
+    click.echo("Name of the experiment: %s" % exp_name)
+    if proj_name is not None:
+        click.echo("Name of the project: %s" % proj_name)
+    else:
+        click.echo("This experiment is not associated with any project.")
+
+    proj = project(proj_name)  # works even for proj_name=None > unassociated.
+    exp = experiment(proj_name, exp_name)
+    try:
+        start, end = exp.start_end(verbose=False)
+        proj.add_exp(exp_name, comment, start, end)
+        exp.create(configfile, namelisttemplate)
+    except FileExistsError:
+        print('An experiment with this name already exists. Use a different name or remove the directory first.')
+
+    if run_wps:
+        exp.run_wps()
+
+
+@cli.command(name='run_wps', short_help='run wps for an experiment that already has been created',
+             help='run wps for an experiment that already has been created using "wt create".')
+@click.argument('exp_name', type=str)
+@click.option('--proj_name', help='Name of the project this experiment is associated with [default: None]')
+def cli_run_wps(exp_name, proj_name=None):
+    """
+
+    Args:
+        exp_name: the name of the experiment for which wps is run
+        proj_name: the name of the project. The project feature is not used if this variable is not used.
+
+    """
+
+    exp = experiment(proj_name, exp_name)
+    exp.run_wps()
+
+
+@cli.command(name='remove', short_help='remove experiment <exp_name> in a clean way',
+             help='Remove an experiment. If a project name is used, delete the entry from the database as well.')
+@click.argument('exp_name', type=str)
+@click.option('--proj_name', help='Name of the project this experiment is associated with [default: None]')
+def cli_remove(exp_name, proj_name=None):
+    proj = project(proj_name)
+    exp = experiment(proj_name, exp_name)
+
+    try:
+        # this is to avoid double questions
+        print('=============================================================')
+        print('                       DANGER ZONE                           ')
+        print(f'Warning, all data of experiment {exp_name} will be lost!   ')
+        print('=============================================================')
+        val = input("Proceed? Yes/[No]")
+
+        if val in ['Yes']:
+            proj.remove_exp(exp_name, force=True)
+            exp.remove(force=True)
+
+    except FileNotFoundError:
+        print('This experiment does not exist and cannot be removed')
+
+
+@cli.command(name='copy', short_help='Use old wrf run directory',
+             help='Create a new run by copying/linking old files up to real.exe. '
+                  'This is needed e.g. when changes in the namelist, that do not affect the domain, should be made.'
+                  ' Specify an experiment to be copied and the name of a new experiment.')
+@click.argument('exp_name', type=str)
+@click.argument('new_exp_name', type=str)
+@click.option('--proj_name', help='Name of the project this experiment is associated with [default: None]')
+@click.option('--comment', help='(string) A short description of what the experiemnt should do.')
+def cli_copy(exp_name, new_exp_name, proj_name=None, comment=''):
+    """
+
+    Args:
+
+        This methods copies an entire experiment, but large files as the met_em files are just linked.
+        That way, one does not have to re-run wps if a run with very minor changes is desired.
+        Be aware that any changes in the namelist file should also be done in the .conf file for consistency.
+
+        exp_name: the name of the experiment that is copied
+        new_exp_name: the name of the new experiment
+        proj_name: the name of the project. The project feature is not used if this variable is not used.
+        comment: (string) a short destcription of the new experiment
+
+    Returns: None
+
+    """
+    click.echo("You chose this experiment: %s and the new experiment: %s" % (exp_name, new_exp_name))
+    proj = project(proj_name)
+    exp = experiment(proj_name, exp_name)
+
+    try:
+        start, end = exp.start_end(verbose=False)
+        proj.add_exp(new_exp_name, comment, start, end)
+        exp.copy(new_exp_name)
+    except FileExistsError:
+        print('An experiment with the new name alreay exists.')
+    except FileNotFoundError:
+        print('This experiment does not exist.')
+
+
+@cli.command(name='rename', short_help='Rename a wrf-folder',
+             help='Rename a WRF-Folder an update the config and submit-files. Specify old and new path.')
+@click.argument('exp_name', type=str)
+@click.argument('new_exp_name', type=str)
+@click.option('--proj_name', help='Name of the project this experiment is associated with [default: None]')
+def cli_rename(exp_name, new_exp_name, proj_name=None):
+    """
+    Renaming of an experiment. Wherever the name is used, it is changed as well.
+
+    Args:
+        exp_name: the old name
+        new_exp_name: the new name
+        proj_name: the name of the project. The project feature is not used if this variable is not used.
+
+    Returns:
+
+    """
+    click.echo("Rename %s to %s" % (exp_name, new_exp_name))
+
+    proj = project(proj_name)
+    exp = experiment(proj_name, exp_name)
+
+    try:
+        proj.rename_exp(exp_name, new_exp_name)
+        exp.rename(new_exp_name)
+    except FileExistsError:
+        print('An experiment with the new name already exists.')
+    except FileNotFoundError:
+        print('This experiment does not exist.')
+
+
+@cli.command(name='restart', short_help='Restart the WRF Run', help='Restart the WRF Run from a given restart-file. '
+                                                                    'It is assumed that the restart-file is located '
+                                                                    'in exp_path/out or exp_path/wrf. If not please '
+                                                                    'specify templatefile. '
+                                                                    'If applicable: move tsfiles before.')
+@click.argument('restartfile', type=click.Path(exists=True))
+@click.option('--proj_name', help='Name of the project this experiment is associated with [default: None]')
+def cli_restart(restartfile, proj_name=None):
+    """
+    Restart an experiment using the <restartfile>
+    Args:
+        restartfile: a wrfrst file. Must still contain the correct timestamp.
+        proj_name: the name of the project. The project feature is not used if this variable is not used.
+
+    Returns: None
+
+    """
+
+    click.echo("Move WRF-Output")
+    click.echo("Create the Restart-Run")
+
+    exp_name = Path(restartfile).parents[0].stem
+
+    exp = experiment(proj_name, exp_name)
+    exp.restart(restartfile)
+
+
+@cli.command(name='move', short_help='Move the WRF Output', help='Move the WRF Output. '
+                                                                 'Please specify an experiment name')
+@click.argument('exp_name', type=str)
+@click.option('--proj_name', help='Name of the project this experiment is associated with [default: None]')
+def cli_move(exp_name, proj_name=None):
+    """
+    Moving mode output into the /out directory after a run is finished. Do the same for the log files.
+    Args:
+        exp_name: the name of the experiment
+        proj_name: the name of the project. The project feature is not used if this variable is not used.
+
+    Returns: None
+
+    """
+    click.echo("Move WRF-Output")
+
+    exp = experiment(proj_name, exp_name)
+    exp.move()  # does not raise any errors.
+
+
+@cli.command(name='process_tslists', short_help='Merge ts-lists to ncdf (raw) and average.',
+             help='Specify directory(s) where to find ts-files')
+@click.argument('exp_name', type=str)
+@click.option('--location', help='ts-lists for this location are processed, i.e. --location=Myplace')
+@click.option('--domain', help='name of domain, i.e. --domain=d01')
+@click.option('--timeavg',
+              help='time in minutes to compute averages. '
+                   'Specify a list and do not use space between numbers, i.e. --timeavg=[10,20]',
+              cls=PythonLiteralOption, default='[ ]')
+@click.option('--proj_name', help='Name of the project this experiment is associated with [default: None]')
+def cli_tslist(exp_name, location, domain, timeavg, proj_name=None):
+    """
+    Postprocessing of a run (if tslists are generated). tslists are read and merged into a single file.
+    Averaging is done if desired.
+    Args:
+        exp_name: the name of the experiment
+        location: the location (name) of the tslist files to be processed. May be None to process all.
+        domain: the domain of the tslist files to be processed. May be None to process all.
+        timeavg: a list of averaging intervals i.e. [5,10,20].
+        proj_name: the name of the project. The project feature is not used if this variable is not used.
+
+    Returns: None
+
+    """
+    click.echo("process ts-files")
+
+    exp = experiment(proj_name, exp_name)
+
+    try:
+        exp.process_tslist(location, domain, timeavg)
+    except FileNotFoundError as e:
+        print('The directory that contains the tsfiles does not exist.')
+        print(e)
+
+
+@cli.command(name='archive', short_help='Archive a wrf run.',
+             help='Archive an experiment. The destination path is set in the environment variables')
+@click.argument('exp_name', type=str)
+@click.option('--proj_name', help='Name of the project this experiment is associated with [default: None]')
+@click.option('--keep_log', help='Keep log files as well [True/False]? [default: True]')
+def cli_archive(exp_name, proj_name=None, keep_log='True'):
+    """
+    Archives an experiment.
+    Archiving includes: removing all files except output, namlists, tslist, aux_file.txt, OBS_DOMAIN* and log files.
+    log files may be removed as well.
+
+    Args:
+        exp_name: the name of the experiment
+        proj_name: the name of the project. The project feature is not used if this variable is not used.
+        keep_log: if False, logs will be removed. default: true
+
+    Returns: None
+
+    """
+
+    click.echo(f"archiving {exp_name}")
+
+    # proj = project(proj_name)
+    exp = experiment(proj_name, exp_name)
+
+    try:
+        exp.archive(keep_log=bool(keep_log))
+    except FileNotFoundError:
+        print('This experiment does not exist')
+
+
+@cli.command(name='wrf_timing', short_help='Show time for WRF simulations', help='Specify WRF directory')
+@click.argument('exp_name', type=click.Path(exists=True))
+@click.option('--proj_name', help='Name of the project this experiment is associated with [default: None]')
+def cli_timing(exp_name, proj_name=None):
+    click.echo("show timing")
+
+    exp = experiment(proj_name, exp_name)
+    exp.runtime(verbose=True)
+
+
+# These are the project commands
+@cli.command(name='create_project', short_help='Create a new Project',
+             help='specify name of the project (single String, no special characters). Project is created in '
+                  'WRFTAMER_RUN_PATH.')
+@click.argument('proj_name', type=str)
+def cli_create_project(proj_name):
+    """
+    Create a new project
+    Args:
+        proj_name: the name of the project.
+
+    Returns: None
+
+    """
+    proj = project(proj_name)
+
+    try:
+        proj.create()
+    except FileExistsError:
+        print(
+            'A project with this name already exists. Remove project by using wt remove_project  or choose a '
+            'different name')
+        return
+
+
+@cli.command(name='remove_project', short_help='Remove a Project',
+             help='specify name of the project (single String, no special characters')
+@click.argument('proj_name', type=str)
+def cli_remove_project(proj_name):
+    """
+    remove a project
+
+    Args:
+        proj_name: name of the project
+
+    Returns: None
+
+    """
+    proj = project(proj_name)
+    try:
+        proj.remove()
+    except FileNotFoundError:
+        print('The project or at least one of the directories does not exist.')
+        return
+
+
+@cli.command(name='rename_project', short_help='Rename a Project',
+             help='specify name of the project (single String, no special characters')
+@click.argument('proj_name', type=str)
+@click.argument('new_name', type=str)
+def cli_rename_project(proj_name, new_name):
+    """
+    Rename a project
+    Args:
+        proj_name: old name
+        new_name: new name
+
+    Returns: None
+
+    """
+    proj = project(proj_name)
+
+    try:
+        proj.rename(new_name)
+    except FileNotFoundError:
+        print('Project does not exists. Cannot rename')
+        return
+    except FileExistsError:
+        print('New Project Name already exists. Cannot rename')
+        return
+
+
+@cli.command(name='list_projects', short_help='list Projects',
+             help='specify name of the project (single String, no special characters')
+def cli_list_projects():
+    """
+    List all project names
+    Returns: None
+
+    """
+    list_projects()
+
+
+@cli.command(name='du_project', short_help='list disk use of a Project',
+             help='specify name of the project (single String, no special characters')
+@click.argument('proj_name', type=str)
+def cli_du_project(proj_name):
+    """
+    Display the memory required by the project
+    Args:
+        proj_name: the name of the project
+
+    Returns:
+
+    """
+    proj = project(proj_name)
+    try:
+        proj.disk_use()
+    except FileNotFoundError:
+        print('Project', proj_name, 'does not exist.')
+
+
+@cli.command(name='runtimes_project', short_help='show runtimes of Experiments in a project',
+             help='specify name of the project (single String, no special characters')
+@click.argument('proj_name', type=str)
+def cli_runtimes_project(proj_name):
+    """
+    Display the runtimes of all experiment of a project
+    Args:
+        proj_name: the name of the project
+
+    Returns: None
+
+    """
+    proj = project(proj_name)
+
+    try:
+        proj.runtimes()
+    except NotImplementedError:
+        print('This method has not yet been implemented')
+
+
+@cli.command(name='cleanup_db', short_help='removes entries from database to nonexistend experiments',
+             help='specify name of the project (single String, no special characters')
+@click.option('--proj_name', help='Name of the project this experiment is associated with [default: None]')
+def cli_cleanup_db(proj_name=None):
+    proj = project(proj_name)
+
+    # first, check if the project exists in the db, if not, remove it
+    if proj.tamer_path.is_dir() and not proj.proj_path.is_dir():
+        print('Project', proj.name, 'does not exist, but a database entry remains. Cleaning...')
+        shutil.rmtree(proj.tamer_path)
+    elif proj.tamer_path.is_dir() and proj.proj_path.is_dir():
+        # there may be missing experiments.
+        proj.cleanup_db()
+
+
+if __name__ == '__main__':
+    cli()

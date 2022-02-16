@@ -1,0 +1,19 @@
+The python packages this program depends on, and the licences they are published under are listed here.
+
++--------------------------------+----------------------------------------+
+|            Package             |                License                 |
++--------------------------------+----------------------------------------+
+|         Cartopy 0.20.1         |                 LGPLv3                 |
+|          click 7.1.2           |              BSD-3-Clause              |
+|      click-plugins 1.1.1       |                New BSD                 |
+|        geopandas 0.10.2        |                  BSD                   |
+|         netCDF4 1.5.8          |              MIT License               |
+|          numpy 1.19.2          |                  BSD                   |
+|          pandas 1.2.1          |                  BSD                   |
+|          panel 0.12.6          |                  BSD                   |
+|          pytest 6.2.4          |                  MIT                   |
+|          PyYAML 5.4.1          |                  MIT                   |
+| setuptools 52.0.0.post20210125 |                  MIT                   |
+|         Shapely 1.8.0          |                  BSD                   |
+|         xarray 0.16.2          |                 Apache                 |
++--------------------------------+----------------------------------------+
