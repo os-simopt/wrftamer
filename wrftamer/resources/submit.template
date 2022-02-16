@@ -1,0 +1,30 @@
+#!/bin/bash
+#SBATCH --job-name={name}
+# Define where command line output is sent
+#SBATCH --output={slurm_log}
+# Request N nodes exclusively - each node has 64 cores
+#SBATCH -N {nodes}
+#SBATCH --exclusive
+# We want to run OpenMP on one NUMA unit (the cores that share a memory channel)
+# On morgana this is 8 cores. Change -c accordingly.
+#SBATCH --cpus-per-task=8
+# Slurm will then figure out the correct number of MPI tasks available
+# Try to estimate the time limit, to make scheduling easier
+#SBATCH --time={time}
+
+# Set up runtime environment
+module purge
+module load pgi-nollvm
+module load pgi
+module load openmpi/3.1.4
+export NETCDF=/opt/pgi
+
+# go to location of executables (in a robust way)
+cd {exp_path}/wrf
+
+# Set OMP_NUM_THREADS to the same value as --cpus-per-task
+export OMP_NUM_THREADS={SLURM_CPUS_PER_TASK}
+
+# --cpu_bind=rank_ldom is only possible if --exclusive was used above and allocates one MPI task
+# with its 8 OpenMP cores per NUMA unit.
+srun --cpu_bind=rank_ldom ./{program}
