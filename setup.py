@@ -13,11 +13,11 @@ with open('README.md') as f:
 
 setup(
     name='wrftamer',
-    version='0.7.0',
+    version='1.0.0',
     license="MIT",
     description='Management of WRF Projects and Experiments',
     long_description=long_description,
-    url='http://quasar/ZSW/wrftamer',
+    url='https://github.com/os-simopt/WRFtamer.git',
     maintainer='Daniel Leukauf',
     maintainer_email='daniel.leukauf@zsw-bw.de',
     scripts=scripts,
