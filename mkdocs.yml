@@ -1,5 +1,5 @@
 site_name: WRFtamer
-site_url: https://example.com/
+site_url: https://wrftamer.readthedocs.io/en/latest/
 nav:
     - Home: index.md
     - Getting Started: getting_started.md
@@ -22,4 +22,4 @@ theme:
     highlightjs: true
     logo: logo.png
 
-repo_url: https://github.com/dleuk/test
+repo_url: https://github.com/os-simopt/WRFtamer.git
