@@ -32,3 +32,4 @@ WRFtamer is licenced under the MIT Licence. You find the full legal text in the 
 This work has been supported by
 - German Federal Ministry for Economic Affairs and Energy (BMWI)
 - Zentrum für Sonnenenergie- und Wasserstoff-Forschung Baden-Württemberg (ZSW)
+- 
