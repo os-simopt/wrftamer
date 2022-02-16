@@ -53,6 +53,6 @@ Links will be put here as soon as the webpage is online.
 ## Conventions
 Python programs should fulfill pep8 standard.
 ## Owners
-Martin Felder, Daniel Leukauf, Linda Menger 
+Linda Menger, Daniel Leukauf
 ## Licence
-MIT
+TBA
