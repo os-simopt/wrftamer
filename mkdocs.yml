@@ -8,18 +8,4 @@ nav:
     - GUI: GUI.md
     - FAQ: faq.md
     - About: about.md
-
-markdown_extensions:
-  - attr_list
-  - md_in_html
-  - admonition
-  - def_list
-  - footnotes
-
-
-theme:
-    name: readthedocs
-    highlightjs: true
-    logo: logo.png
-
-repo_url: https://github.com/os-simopt/WRFtamer.git
+theme: readthedocs
