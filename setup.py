@@ -3,7 +3,8 @@ from setuptools import setup
 
 pyscripts = [
     'wt',
-    'wt_gui'
+    'wt_gui',
+    'run_ppp'
 ]
 
 scripts = (['scripts/' + s for s in pyscripts])
@@ -13,7 +14,7 @@ with open('README.md') as f:
 
 setup(
     name='wrftamer',
-    version='1.0.0',
+    version='1.1.0',
     license="MIT",
     description='Management of WRF Projects and Experiments',
     long_description=long_description,

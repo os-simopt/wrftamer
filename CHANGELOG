@@ -1,4 +1,16 @@
 
+[V1.1] - 2022-02-21
+
+Added
+- New functionality: a "watchdog", i.e. an option to set a cronjob that checks if a run is complete and starts
+ postprocessing if this is the case.
+- A post processing protocol can now be set in the configure.yaml file (used by the watchdog)
+
+Changed:
+- In the xlsx files, the column "archived" is now called "status" and the entry is no longer a boolean, but
+ a string describing the status. All places, where this column was used or set have been changed accordingly.
+
+
 Guiding principles
 
 - Changelogs are for humans, not machines.
@@ -18,7 +30,7 @@ Types of changes
 - Fixed for any bug fixes.
 - Security in case of vulnerabilities.
 
-An unrelased section at the to keeps track of upcoming changes.
+An unrelased section at the top keeps track of upcoming changes.
 
 Example for the Changelog
 

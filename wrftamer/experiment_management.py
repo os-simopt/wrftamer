@@ -11,6 +11,7 @@ from wrftamer.utility import printProgressBar
 from wrftamer.process_tslist_files import merge_tslist_files, average_ts_files
 from wrftamer.wrftamer_paths import wrftamer_paths
 import wrftamer.wrftamer_functions as wtfun
+import yaml
 
 # from wrftamer.wrf_timing import wrf_timing
 """
@@ -65,21 +66,22 @@ class experiment:
 
         # Check if file is archived. If the experiment has not yet been created, this will fail.
         try:
-            df = pd.read_excel(self.filename, index_col='index', usecols=['index', 'Name', 'archived'])
-            series = df[df.Name == exp_name].archived
-            if len(series) > 0:
-                self.is_archived = bool(int(series))
-            else:
-                self.is_archived = False
+            df = pd.read_excel(self.filename, index_col='index', usecols=['index', 'Name', 'status'])
+
+            try:
+                self.status = df[df.Name == exp_name].status.values[0]
+                # TODO: this may cause trouble with the POSTPROC_TEST...
+            except IndexError:
+                self.status = 'uncreated'
 
         except FileNotFoundError:
-            self.is_archived = False
+            self.status = 'project uncreated'
 
         # TODO This causes trouble with split runs.
         #  I need a way to deal with splitruns, special snowflake or not!
         #  DLeuk, 17.01.2022
 
-        if self.is_archived:
+        if self.status == 'archived':
             self.workdir = self.archive_path
         else:
             self.workdir = self.exp_path
@@ -113,6 +115,9 @@ class experiment:
         if make_submit:
             wtfun.make_submitfiles(self.exp_path, configfile)
 
+        self.status = 'created'
+        self._update_db_entry({'status': 'created'})
+
     def run_wps(self, verbose=True):
 
         # may require a check that all files needed are really there.
@@ -128,7 +133,7 @@ class experiment:
 
         new_exp_path = self.exp_path.parent / new_exp_name
 
-        if self.is_archived:
+        if self.status == 'archived':
             if verbose:
                 print('This run has already been archived and may not be copied.')
             return
@@ -151,7 +156,7 @@ class experiment:
         """
 
         This method is a clean way to remove a project. The project may already be archived.
-        Initialize this class with is_archived = True in this case
+        Initialize this class with status = archived in this case
 
         Args:
             verbose: Speak with user
@@ -176,7 +181,7 @@ class experiment:
             val = input("Proceed? Yes/[No]")
 
         if val in ['Yes']:
-            if self.is_archived:
+            if self.status == 'archived':
                 shutil.rmtree(self.archive_path)  # raises FileNotFoundError on failure
             else:
                 shutil.rmtree(self.exp_path)  # raises FileNotFoundError on failure
@@ -188,7 +193,7 @@ class experiment:
             print(f'Renaming Experiment {self.name} to {new_exp_name}')
             print("---------------------------------------")
 
-        if self.is_archived:
+        if self.status == 'archived':
             new_workdir = self.archive_path.parent / new_exp_name
         else:
             new_workdir = self.exp_path.parent / new_exp_name
@@ -196,7 +201,7 @@ class experiment:
         if os.path.isdir(new_workdir):
             raise FileExistsError
 
-        wtfun.rename_dirs(self.workdir, new_workdir, make_submit)  # make submit should be bool.
+        wtfun.rename_dirs(self.workdir, new_workdir, make_submit)
 
         self.name = new_exp_name
         self.exp_path = self.exp_path.parent / new_exp_name
@@ -226,6 +231,9 @@ class experiment:
 
         wtfun.update_namelist_for_rst(restartfile, namelistfile, outfile)
 
+        self.status = 'restarted'
+        self._update_db_entry({'status': 'restarted'})
+
     def move(self, verbose=True):
 
         if verbose:
@@ -241,6 +249,9 @@ class experiment:
                 len(list((self.workdir / 'wrf').glob('*.UU'))) > 0]):
 
             wtfun.move_output(self.workdir)
+
+            self.status = 'moved'
+            self._update_db_entry({'status': 'moved'})
 
         else:
             if verbose:
@@ -263,9 +274,11 @@ class experiment:
         total = len(rawlist)
         printProgressBar(0, total, prefix='Progress:', suffix='Complete', length=50)
         for i, rawfile in enumerate(rawlist):
-
             average_ts_files(str(rawfile), timeavg)
             printProgressBar(i + 1, total, prefix='Progress:', suffix='Complete', length=50)
+
+        self.status = 'post processed'
+        self._update_db_entry({'status': 'post processed'})
 
     def archive(self, keep_log=False, verbose=True):
 
@@ -314,15 +327,8 @@ class experiment:
             print("---------------------------------------")
 
         self.exp_path.rename(self.archive_path)
-        self.is_archived = True
-
-        # update xls sheet.
-        df = pd.read_excel(self.filename, index_col='index', usecols=['index', 'Name', 'start', 'end', 'disk use',
-                                                                      'runtime', 'archived'])
-        line = df[df.Name == self.name]
-        new_line = [line.Name[0], line.start[0], line.end[0], line['disk use'][0], line.runtime[0], True]
-        df[df.Name == self.name] = new_line
-        df.to_excel(self.filename)
+        self.status = 'archived'
+        self._update_db_entry({'status': 'archived'})
 
     def du(self, verbose=True):
 
@@ -434,3 +440,113 @@ class experiment:
             print(loc_list)
 
         return loc_list
+
+    def run_postprocessing_protocol(self, verbose=True):
+
+        configure_file = self.workdir / 'configure.yaml'
+
+        with open(configure_file) as f:
+            cfg = yaml.safe_load(f)
+
+        try:
+            ppp = cfg['pp_protocol']
+        except KeyError:
+            print('Cannot perform post processing protocol. No valid enty found in configure.yaml')
+            return
+
+        for item in ppp:
+            if item == 'move':
+                if ppp[item] == 1:
+                    self.move(verbose)
+
+            elif item == 'tslist_processing':
+                if ppp[item] == 1:
+                    # no options found. perform Raw processing of all files without any averaging.
+                    location = None
+                    domain = None
+                    timeavg = None
+                else:
+                    # found some options
+                    try:
+                        location = ppp[item]['location']
+                    except KeyError:
+                        location = None
+                    try:
+                        domain = ppp[item]['domain']
+                    except KeyError:
+                        domain = None
+                    try:
+                        timeavg = ppp[item]['timeavg']
+                    except KeyError:
+                        timeavg = None
+
+                self.process_tslist(location, domain, timeavg, verbose)
+
+        self.status = 'post processed'
+        self._update_db_entry({'status': 'post processed'})
+
+    def _update_db_entry(self, updates: dict):
+        """
+        A small helper function to update the data base entries. may go to another file at some point.
+        """
+
+        df = pd.read_excel(self.filename, index_col='index', usecols=['index', 'Name', 'time', 'comment',
+                                                                      'start', 'end', 'disk use', 'runtime',
+                                                                      'status'])
+
+        line = df[df.Name == self.name]
+
+        new_line = []
+        for item in ['Name', 'time', 'comment', 'start', 'end', 'disk use', 'runtime', 'status']:
+
+            if item in updates:
+                new_line.append(updates[item])
+            else:
+                new_line.append(line[item].values[0])
+
+        df[df.Name == self.name] = new_line
+        df.to_excel(self.filename)
+
+    def _determine_status(self):
+
+        self.status = 'unknown'
+
+        if self.exp_path.exists():
+            self.status = 'created'
+
+            list1 = np.sort(list((self.workdir / 'wrf/').glob('rsl.error*')))
+            list2 = np.sort(list((self.workdir / 'log/').glob('rsl.error*')))
+
+            if len(list1) > 0 and len(list2) == 0:
+                rsl_file = list1[0]
+                with open(rsl_file, 'r') as f:
+                    lines = f.readlines()
+                    if 'SUCCESS COMPLETE WRF' in lines[-1]:
+                        self.status = 'run complete'
+                    else:
+                        self.status = 'running or failed'
+
+            elif len(list1) == 0 and len(list2) > 0:
+                rsl_file = list2[0]
+                with open(rsl_file, 'r') as f:
+                    lines = f.readlines()
+                    if 'SUCCESS COMPLETE WRF' in lines[-1]:
+                        self.status = 'moved'
+                    else:
+                        self.status = 'moved prematurely?'
+            elif len(list1) > 0 and len(list2) > 0:
+                self.status = 'rerunning?'
+
+        if not (self.workdir / 'out').exists():
+            self.status = 'damaged'
+        else:
+            if len(list((self.workdir / 'out').iterdir())) > 0:
+                self.status = 'moved'
+
+            if len(list((self.workdir / 'out').glob('*.nc'))) > 0:
+                self.status = 'postprocessed'
+
+        if self.archive_path.exists():
+            self.status = 'archived'
+
+        self._update_db_entry({'status': self.status})

@@ -2,7 +2,7 @@
 
 ## Release Notes
 
-**Version 1.0 - 16.02.2022**
+**Version 1.0.0 - 16.02.2022**
 
 - WRFtamer is publicly available now.
 
@@ -20,16 +20,15 @@
 
 ## Contributing
 
-Please refer to these [guidelines](https://github.com/user/repo/blob/branch/other_file.md)
+Please refer to these [guidelines](https://github.com/os-simopt/WRFtamer/blob/main/CONTRIBUTING.md).
 
 ## Licence
 
 WRFtamer is licenced under the MIT Licence. You find the full legal text in the file 
-[LICENCE](https://github.com/user/repo/blob/branch/LICENCE).
+[LICENCE](https://github.com/os-simopt/WRFtamer/blob/main/LICENCE).
 
 ## Acknowledgements
 
 This work has been supported by
 - German Federal Ministry for Economic Affairs and Energy (BMWI)
 - Zentrum für Sonnenenergie- und Wasserstoff-Forschung Baden-Württemberg (ZSW)
-- 
