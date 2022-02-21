@@ -7,7 +7,7 @@ The following commands can be run from the command line.
 The help of these commands may be displayed using 
 
 ```bash
-wt [option] --help
+wt <command> --help
 ```
 
 ### create project
@@ -15,7 +15,7 @@ wt [option] --help
 Create a new project. Project names must be unique. The project name may only contain alphabetic characters, numbers, dashes and underscores.
 
 ```bash
-create_project [PROJ_NAME]
+wt create_project [PROJ_NAME]
 ```
 
 - Creates a directory *PROJ_NAME* in the WRFTAMER_RUN_PATH
@@ -25,7 +25,7 @@ create_project [PROJ_NAME]
 ### rename project
 
 ```bash
-rename_project [OLD_NAME] [NEW_NAME]
+wt rename_project [OLD_NAME] [NEW_NAME]
 ```
 
 Renames an existing project. All directories are renamed accordingly. All paths are updated.
@@ -33,7 +33,7 @@ Renames an existing project. All directories are renamed accordingly. All paths 
 ### remove project
 
 ```bash
-remove_project [PROJ_NAME]
+wt remove_project [PROJ_NAME]
 ```
 
 Deletes the entire directory tree in WRFTAMER_RUN_PATH/*PROJ_NAME* and WRFTAMER_HOME_PATH/.wrftamer/*PROJ_NAME*.
@@ -43,7 +43,7 @@ Deletes the entire directory tree in WRFTAMER_RUN_PATH/*PROJ_NAME* and WRFTAMER_
 ### list projects
 
 ```bash
-list_projects
+wt list_projects
 ```
 
 Displays a list of projects managed with WRFtamer
@@ -51,7 +51,7 @@ Displays a list of projects managed with WRFtamer
 ### display disk use of a project
 
 ```bash
-du_project [PROJ_NAME]
+wt du_project [PROJ_NAME]
 ```
 
 Displays the disk usage of a project. This includes all files, both in the WRFTAMER_RUN_PATH as well as in the WRFTAMER_ARCHIVE_PATH.
@@ -59,7 +59,7 @@ Displays the disk usage of a project. This includes all files, both in the WRFTA
 ### display runtimes
 
 ```bash
-runtimes_project [PROJ_NAME]
+wt runtimes_project [PROJ_NAME]
 ```
 
 Display the runtimes of all experiments in *PROJ_NAME*.
@@ -69,7 +69,7 @@ TODO: how to update these numbers?
 ### update database
 
 ```bash
-update_db [PROJ_NAME]
+wt update_db [PROJ_NAME]
 ```
 
 Not yet implemented. TODO: implement.
@@ -86,7 +86,7 @@ All commands below have the option --proj_name [PROJ_NAME].
 ### create
 
 ```bash
-create [EXP_NAME.yaml] --namelisttemplate [namelist.template] --run_wps [BOOL] --comment [STRING] --proj_name [PROJ_NAME]
+wt create [EXP_NAME.yaml] --namelisttemplate [namelist.template] --run_wps [BOOL] --comment [STRING] --proj_name [PROJ_NAME]
 ```
 
 Create a new experiment. Each experiment name may only be used once per project. The creation of 
@@ -131,7 +131,7 @@ Run WPS for an existing experiment. The configure file used to create the experi
 ### rename
 
 ```bash
-rename [EXP_NAME] [NEW_EXP_NAME] --proj_name [PROJ_NAME]
+wt rename [EXP_NAME] [NEW_EXP_NAME] --proj_name [PROJ_NAME]
 ```
 
 Changes the name of an experiment.
@@ -141,7 +141,7 @@ Changes the name of an experiment.
 Removes all data and all references to *EXP_NAME*. To avoid loss of data, this must be confirmed by typing 'Yes' (capitalized).
 
 ```bash
-remove [EXP_NAME] --proj_name [PROJ_NAME]
+wt remove [EXP_NAME] --proj_name [PROJ_NAME]
 ```
 
 ### copy
@@ -149,13 +149,13 @@ remove [EXP_NAME] --proj_name [PROJ_NAME]
 An experiment is copied to a new experiment directory. Large data, i.e. wrfinput_d0X and wrfbdy_d0X files are only linked to the new directory. This option is intended for the creation of experiments that use the same input data, for example comparing the impact of different boundary layer schemes. Apply changes in the *NEW_EXP*, and run the experiment.
 
 ```bash
-copy [EXP_NAME] [NEW_EXP] --proj_name [PROJ_NAME] 
+wt copy [EXP_NAME] [NEW_EXP] --proj_name [PROJ_NAME] 
 ```
 
 ### restart
 
 ```bash
-restart [restart_file] --proj_name [PROJ_NAME]
+wt restart [restart_file] --proj_name [PROJ_NAME]
 ```
 
 restartfile: /path/to/a/wrfrst-file
@@ -167,13 +167,13 @@ The timestamp used in the filename of the wrfrst file is used to determine start
 Move wrfout, wrfaux and tslist files from the wrf to the out-directory. logfiles are moved to the log-directory. wrfrst files remain in the wrf directory.
 
 ```bash
-move [EXP_NAME] --proj_name [PROJ_NAME]
+wt move [EXP_NAME] --proj_name [PROJ_NAME]
 ```
 
 Process tslist files that have been moved to the out-directory.  
 
 ```bash
-process_tslists [EXP_NAME] --location [LOC] --domain [DOM] --timeavg [avg] --proj_name [PROJ_NAME]
+wt process_tslists [EXP_NAME] --location [LOC] --domain [DOM] --timeavg [avg] --proj_name [PROJ_NAME]
 ```
 
 Options:
@@ -188,7 +188,7 @@ Options:
 Move an experiment directory to the WRFTAMER_ARCHIVE_PATH. Deletes all files in the wrf-directory expect exept the namelist.input file and auxillary files.
 
 ```bash
-archive [EXP_NAME] --proj_name [PROJ_NAME] --keep_log [BOOL]
+wt archive [EXP_NAME] --proj_name [PROJ_NAME] --keep_log [BOOL]
 ```
 
 *BOOL*: if false, log directory is deleted as well. Default: *True*.
@@ -197,7 +197,7 @@ archive [EXP_NAME] --proj_name [PROJ_NAME] --keep_log [BOOL]
 ### display runtime
 
 ```bash
-wrf_timing [EXP_NAME] --proj_name [PROJ_NAME]
+wt wrf_timing [EXP_NAME] --proj_name [PROJ_NAME]
 ```
 
 Display the time an experiment took. Data is extracted from the xlsx file for speed. Run [update_db] to update this data.
@@ -208,7 +208,7 @@ Display the time an experiment took. Data is extracted from the xlsx file for sp
 ### first steps
 
 ```bash
-first_steps [wrf_and_wps_parent_dir] --exe_dir [exe_dir] --essential_data_dir [ess_dir] --non_essential_data_dir [ness_dir] --vtable [Vtable]
+wt first_steps [wrf_and_wps_parent_dir] --exe_dir [exe_dir] --essential_data_dir [ess_dir] --non_essential_data_dir [ness_dir] --vtable [Vtable]
 ```
 
 This command combines the make_essential_data_dir and make_executable_dir and provides default values to the options. The function creates the directories listed and copies files to the right directories.
@@ -223,7 +223,7 @@ vtable = 'Vtable.ECMWF'
 
 ### make executalbes dir
 ```bash
-make_executable_dir [wrf_and_wps_parent_dir] [exe_dir]
+wt make_executable_dir [wrf_and_wps_parent_dir] [exe_dir]
 ```
 
 Creates directory *exe_dir* and copies executables from wrf and wps to this directory.
@@ -231,7 +231,7 @@ Creates directory *exe_dir* and copies executables from wrf and wps to this dire
 ### make essentials dir
 
 ```bash
-make_essential_data_dir [wrf_and_wps_parent_dir] --essential_data_dir [ess_dir] --vtable [Vtable]
+wt make_essential_data_dir [wrf_and_wps_parent_dir] --essential_data_dir [ess_dir] --vtable [Vtable]
 ```
 
 Creates directory *ess_dir* and copies all files that need to be present in the run directory to *ess_dir*
@@ -239,7 +239,7 @@ Creates directory *ess_dir* and copies all files that need to be present in the 
 ### cleanup database
 
 ```bash
-cleanup_db --proj_name [PROJ_NAME]
+wt cleanup_db --proj_name [PROJ_NAME]
 ```
 
 If you delete an experiment or a project using `rm -r` instead of `wt remove` and `wt remove_project`, 
