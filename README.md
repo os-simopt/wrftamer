@@ -34,11 +34,11 @@ pip install -e .
 
 ## First Steps and documentation
 
-For first steps to use WRFtamer go to <link1>.
+To get started with WRFtamer, got to
+[first steps](https://wrftamer.readthedocs.io/en/latest/getting_started/#first-steps-to-use-wrftamer)
 
-The full documentation is available at <link2>. 
-
-Links will be put here as soon as the webpage is online.  
+The full documentation is available [here](https://wrftamer.readthedocs.io/en/latest/)
+ 
 
 ## Repo Structure
 ```bash

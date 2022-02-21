@@ -20,12 +20,13 @@
 
 ## Contributing
 
-Please refer to these [guidelines](https://github.com/user/repo/blob/branch/other_file.md)
+Please refer to these 
+[guidelines](https://github.com/os-simopt/WRFtamer/blob/main/CONTRIBUTING.md).
 
 ## Licence
 
 WRFtamer is licenced under the MIT Licence. You find the full legal text in the file 
-[LICENCE](https://github.com/user/repo/blob/branch/LICENCE).
+[LICENCE](https://github.com/os-simopt/WRFtamer/blob/main/LICENCE).
 
 ## Acknowledgements
 
