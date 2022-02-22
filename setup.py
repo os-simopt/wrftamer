@@ -12,9 +12,11 @@ scripts = (['scripts/' + s for s in pyscripts])
 with open('README.md') as f:
     long_description = f.read()
 
+exec(open('wrftamer/version.py').read())
+
 setup(
     name='wrftamer',
-    version='1.1.0',
+    version=__version__,
     license="MIT",
     description='Management of WRF Projects and Experiments',
     long_description=long_description,

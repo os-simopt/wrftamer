@@ -2,6 +2,10 @@
 
 ## Release Notes
 
+**Version 1.1.0 - **
+Added functionallity
+- A watchdog to automatically perform postprocessing once a run is finished.
+
 **Version 1.0.0 - 16.02.2022**
 
 - WRFtamer is publicly available now.
