@@ -1,8 +1,8 @@
 paths:
-  wrf_executables : 'path/to/executables'
-  wrf_essentials : 'path/to/essentials'
-  wrf_nonessentials : 'path/to/nonessentials'
-  driving_data : "path/to/driving/data"
+  wrf_executables: 'path/to/executables'
+  wrf_essentials: 'path/to/essentials'
+  wrf_nonessentials: 'path/to/nonessentials'
+  driving_data: "path/to/driving/data"
 
 # change these values can be changed if you desire a different test domain.
 # tests other than the "long" tests ignore this information anyway.

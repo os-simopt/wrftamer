@@ -1,0 +1,5 @@
+#!/usr/bin/bash
+
+source {miniconda_path}/bin/activate "{HOME}/.conda/envs/{condaenv_name}"
+date
+run_ppp

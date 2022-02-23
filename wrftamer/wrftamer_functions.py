@@ -6,6 +6,7 @@ import pandas as pd
 from pathlib import Path
 from wrftamer.initialize_wrf_namelist import initialize_wrf_namelist
 from wrftamer.link_grib import link_grib
+from wrftamer.wrftamer_paths import wrftamer_paths
 import re
 import subprocess
 from pathlib import PosixPath
@@ -17,6 +18,8 @@ These functions are the "meat" of the WRFtamer. These commands create directorie
 a logfile.
 
 """
+
+home_path, db_path, run_path, archive_path = wrftamer_paths()
 
 
 def writeLogFile(logfile: str, program: str, log_level: int, message: str):
@@ -209,13 +212,13 @@ def copy_dirs(old_run_path: PosixPath, new_run_path: PosixPath, ignore_submit=Fa
 
     for item in list1:
         filename = item.name
-        os.symlink(item, new_run_path/'wrf'/filename)
+        os.symlink(item, new_run_path / 'wrf' / filename)
 
     # copy namelist.input
     shutil.copyfile(f'{old_run_path}/wrf/namelist.input', f'{new_run_path}/wrf/namelist.input')
 
     # link namelist.wps
-    os.symlink(new_run_path/'wrf/namelist.input', new_run_path/'wrf/namelist.wps')
+    os.symlink(new_run_path / 'wrf/namelist.input', new_run_path / 'wrf/namelist.wps')
 
     # copy submit files and change paths as is appropriate
     if not ignore_submit:
@@ -277,6 +280,32 @@ def _update_submitfile(submitfile: str, replace: dict):
         file.write(filedata)
 
 
+def make_call_wd_file_from_template(miniconda_path, condaenv_name, templatefile=None):
+    wd_vars = dict()
+    wd_vars['miniconda_path'] = str(miniconda_path)
+    wd_vars['condaenv_name'] = condaenv_name
+    wd_vars['HOME'] = os.environ['HOME']
+
+    if templatefile is None:
+        myfile = os.path.split(os.path.realpath(__file__))[0] + '/resources/call_watchdog.template'
+    else:
+        myfile = templatefile
+
+    with open(myfile, 'r') as f:
+        tpl = f.read()
+        filedata = tpl.format(**wd_vars)
+
+    outfile = home_path / 'call_watchdog.bash'
+
+    print('writing file:', outfile)
+
+    # Write the file out again
+    with open(outfile, 'w') as file:
+        file.write(filedata)
+
+
+
+
 def _make_submitfile_from_template(submit_vars: dict, templatefile=None):
     # read template and configuration
     if templatefile is None:
@@ -336,7 +365,7 @@ def run_wps_command(exp_path: PosixPath, program: str):
 
     """
 
-    wrfpath = exp_path/'wrf'
+    wrfpath = exp_path / 'wrf'
     wt_log = f'{exp_path}/log/wrftamer.log'
     prog_log = f"{exp_path}/log/{program}.log"
 
@@ -347,7 +376,7 @@ def run_wps_command(exp_path: PosixPath, program: str):
     p = subprocess.Popen(cmd, cwd=wrfpath)
     p.wait()
 
-    (wrfpath/f'{program}.log').rename(prog_log)
+    (wrfpath / f'{program}.log').rename(prog_log)
 
     # write to wrftamer.log file
     with open(prog_log, 'r') as f:  # This may be slow is logfile is huge.

@@ -2,9 +2,11 @@
 
 ## Release Notes
 
-**Version 1.1.0 - **
+**Version 1.1.0 - 23.02.2022**
 Added functionallity
 - A watchdog to automatically perform postprocessing once a run is finished.
+- The column "archived" of the xlsx files is renamed to "status". It contains now a string describing the status
+of an experiment instead of a boolean.
 
 **Version 1.0.0 - 16.02.2022**
 

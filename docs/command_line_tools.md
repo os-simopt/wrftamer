@@ -245,3 +245,41 @@ wt cleanup_db --proj_name [PROJ_NAME]
 If you delete an experiment or a project using `rm -r` instead of `wt remove` and `wt remove_project`, 
 entries remain in the database, causing problems with other commands. This command removes these entries.
 
+### start watchdog 
+
+```bash
+wt start_watchdog [wd_script] [PERIOD]
+```
+
+Add a cronjob to the crontab that will be executed every [PERIOD] hours. The command to be executed is defined
+in the [wd_script]. Refer to [create watchdog script](command_line_tools#create-watchdog-script) for more information.
+
+Be aware that [wd_script] must contain the absolute path to the script.
+
+### stop watchdog
+
+```bash
+wt start_watchdog [wd_script]
+```
+
+Removes the cronjob defined by [wd_script] from the crontab.
+
+
+### create watchdog script
+The watchdog, a simple crontab checks every [PERIOD] hours for runs that are complete. For those that are, 
+the postprocessing protocol, as defined in the configure.yaml file is performed. However, cron must know a 
+few parameters in order to be able to call the script. Therefore, the command
+
+```bash
+wt create_wd_script [MINICONDA_PATH] [CONDAENV_NAME] --template [template_file]
+```
+
+Creates an appropriate bash script to be executed by cron.
+
+**MINICONDA_PATH:** the path to your miniconda installation. Check that MINICONDA_PATH/bin/activate exists.
+
+**CONDAENV_NAME:** the name of your conda environment.
+
+Options:
+**template_file:** a template file to create the bash script. You may create your own with variables "miniconda_path",
+"HOME" and "condaenv_name".

@@ -12,7 +12,6 @@ import shutil
 from crontab import CronTab
 
 home_path, db_path, run_path, archive_path = wrftamer_paths()
-croncommand = 'run_ppp'  # this is for the watchdog
 
 
 class PythonLiteralOption(click.Option):
@@ -562,34 +561,47 @@ def cli_cleanup_db(proj_name=None):
 
 @cli.command(name='start_watchdog', short_help='starts a cronjob that looks for the status of your jobs',
              help='starts a cronjob that checks the status of your jobs once per day and performs a defined'
-                  ' post processing protocol. Argument: [period in hours]')
+                  ' post processing protocol. Arguments: [wd_script, period in hours]')
+@click.argument('wd_script', type=click.Path(exists=True))
 @click.argument('period', type=int)
-def cli_start_watchdog(period=24):
+def cli_start_watchdog(wd_script, period=24):
+    croncommand = f'bash {wd_script} >> $HOME/watchdog.log'
 
     cron = CronTab(user=True)
     job = cron.new(command=croncommand)
-    # job.hour.every(period)
-    job.minute.every(period)
+    job.hour.every(period)
     cron.write()
 
     # I now need a piece of code that:
     # 1) Loops over all project names
     # 2a) For all that exist, check status
     # 2b) For all that are marked running, check if finished.
-    # 2c) For all that are finished, check if pp is done?
-    # 3) Perform ppp
+    # 2c) For all that are finished, check if pp is done.
+    # 3) Perform ppp if required
 
 
 @cli.command(name='stop_watchdog', short_help='stops a cronjob started with start_watchdog',
              help='stops the cronjob started with start_watchdog')
-def cli_stop_watchdog():
-    cron = CronTab(user=True)
+@click.argument('wd_script', type=click.Path(exists=True))
+def cli_stop_watchdog(wd_script):
 
+    croncommand = f'bash {wd_script} >> $HOME/watchdog.log'
+
+    cron = CronTab(user=True)
     for job in cron:
         if job.command == croncommand:
             cron.remove(job)
 
     cron.write()
+
+
+@cli.command(name='create_wd_script', short_help='creates a scipt for the watchdog',
+             help='creates a bash script for the cron job. Required information: environment name, path to miniconda')
+@click.argument('miniconda_path', type=click.Path(exists=True))
+@click.argument('condaenv_name', type=str)
+@click.option('--template', help='template file [default: None (== built-in)]')
+def cli_create_wd_script(miniconda_path, condaenv_name, template=None):
+    wtfun.make_call_wd_file_from_template(miniconda_path, condaenv_name, template)
 
 
 if __name__ == '__main__':

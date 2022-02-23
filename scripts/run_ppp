@@ -5,7 +5,6 @@ This script is called by the wt watchdog. It searches for experiments with the s
 the postprocessing protocol defined in the configure.yaml file.
 """
 
-from wrftamer.wrftamer_paths import wrftamer_paths
 from wrftamer.project_management import project, list_projects
 from wrftamer.experiment_management import experiment
 import datetime as dt
@@ -21,23 +20,17 @@ def run_ppp_for_completed_exp(silent=False, verbose=False):
 
     """
 
-    home_path, db_path, run_path, archive_path = wrftamer_paths()
-    #logfile = run_path / 'watchdog.log'
-    logfile = '/home/daniel/watchdog.log'
-
-    log = open(logfile, 'a')
-
     list_of_proj = list_projects(False)
     list_of_proj.append(None)
 
     for proj_name in list_of_proj:
 
         if not silent:
-            log.write('----------------\n')
+            print('----------------')
             if proj_name is not None:
-                log.write('Project: ' + proj_name+'\n')
+                print('Project: ' + proj_name)
             else:
-                log.write('Not associated with any project: \n')
+                print('Not associated with any project:')
 
         proj = project(proj_name)
 
@@ -48,14 +41,14 @@ def run_ppp_for_completed_exp(silent=False, verbose=False):
 
             if exp.status == 'run complete':
                 if not silent:
-                    log.write('    '+str(dt.datetime.now()) +
-                              ': Performing ppp for experiment ' + exp.name+'\n')
-                # exp.run_postprocessing_protocol(verbose)
+                    print('    ' + str(dt.datetime.now()) +
+                          ': Performing ppp for experiment ' + exp.name)
+                exp.run_postprocessing_protocol(verbose)
             else:
                 if not silent and verbose:
-                    log.write('    '+str(dt.datetime.now()) +
-                              ': Nothing to do for experiment' + exp.name+'\n')
+                    print('    ' + str(dt.datetime.now()) +
+                          ': Nothing to do for experiment' + exp.name)
 
 
-#if __name__ == '__main__':
+# if __name__ == '__main__':
 run_ppp_for_completed_exp()
