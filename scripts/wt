@@ -316,7 +316,7 @@ def cli_restart(restartfile, proj_name=None):
     click.echo("Move WRF-Output")
     click.echo("Create the Restart-Run")
 
-    exp_name = Path(restartfile).parents[0].stem
+    exp_name = Path(restartfile).parents[1].stem
 
     exp = experiment(proj_name, exp_name)
     exp.restart(restartfile)
