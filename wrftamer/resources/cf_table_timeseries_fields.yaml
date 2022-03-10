@@ -1,0 +1,63 @@
+# Table of fields and their metadata to extract as timeseries from the WRF output
+# For time, we are using datetime64[ns] as a standard.
+station_name:
+    long_name: "station name"
+    cf_role: "timeseries_id"
+station_elevation:
+    standard_name: surface_altitude
+    long_name: height above sea level
+    units: m
+lat:
+    standard_name: latitude
+    long_name: station latitude
+    units: degrees_north
+lon:
+    standard_name: longitude
+    long_name: station longitude
+    units: degrees_east
+time:
+    standard_name: time
+    long_name: time
+    #units: 'nanoseconds since 1970-01-01 00:00:00.000000000' # do not set this item when writing datetime64
+    #calendar: 'proleptic_gregorian' # do not set this item when writing datetime64
+t:
+    standard_name: air_temperature
+    long_name: temperature
+    units: K
+wsp:
+    standard_name: wind_speed
+    long_name: horizontal wind speed
+    units: 'm s-1'
+wspd:
+    standard_name: wind_speed
+    long_name: horizontal wind speed
+    units: 'm s-1'
+dir:
+    standard_name: wind_from_direction
+    long_name: wind direction
+    units: 'degree'
+wdir:
+    standard_name: wind_from_direction
+    long_name: wind direction
+    units: 'degree'
+p:
+    standard_name: air_pressure
+    long_name: air pressure
+    units: Pa
+pres:
+    standard_name: air_pressure
+    long_name: air pressure
+    units: Pa
+tke:
+    standard_name: specific_turbulent_kinetic_energy_of_air
+    long_name: turbulent kinetic energy per unit mass
+    units: 'm2 s-2'
+pow:
+    standard_name: active_power
+    long_name: active power
+    units: kW
+gen_spd:
+    standard_name: generator_speed
+    long_name: generator speed
+    units: rpm
+

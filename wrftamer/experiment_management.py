@@ -11,6 +11,7 @@ from wrftamer.utility import printProgressBar
 from wrftamer.process_tslist_files import merge_tslist_files, average_ts_files
 from wrftamer.wrftamer_paths import wrftamer_paths
 import wrftamer.wrftamer_functions as wtfun
+from wrftamer.wrfplotter_classes import Map
 import yaml
 
 # from wrftamer.wrf_timing import wrf_timing
@@ -229,6 +230,9 @@ class experiment:
         namelistfile = self.exp_path / 'wrf' / 'namelist.input'
         outfile = namelistfile
 
+        print(namelistfile)
+        print(restartfile)
+
         wtfun.update_namelist_for_rst(restartfile, namelistfile, outfile)
 
         self.status = 'restarted'
@@ -261,12 +265,13 @@ class experiment:
 
         outdir = self.workdir / 'out'
         idir = (self.workdir / 'out').glob('tsfiles*')
+
         if not idir:
             if verbose:
                 print(f"the directory {self.workdir}/out/tsfiles*' does not exist")
             raise FileNotFoundError
 
-        merge_tslist_files(idir, outdir, location, domain)
+        merge_tslist_files(idir, outdir, location, domain, self.proj_name, self.name)
 
         # if tslists exists
         rawlist = list(outdir.glob('raw*'))
@@ -455,32 +460,132 @@ class experiment:
             return
 
         for item in ppp:
+            print(item)
             if item == 'move':
                 if ppp[item] == 1:
                     self.move(verbose)
 
             elif item == 'tslist_processing':
-                if ppp[item] == 1:
-                    # no options found. perform Raw processing of all files without any averaging.
-                    location = None
-                    domain = None
-                    timeavg = None
+                if ppp[item] == 0:
+                    pass
                 else:
-                    # found some options
-                    try:
-                        location = ppp[item]['location']
-                    except KeyError:
+                    if ppp[item] == 1:
+                        # no options found. perform Raw processing of all files without any averaging.
                         location = None
-                    try:
-                        domain = ppp[item]['domain']
-                    except KeyError:
                         domain = None
-                    try:
-                        timeavg = ppp[item]['timeavg']
-                    except KeyError:
                         timeavg = None
+                    else:
+                        # found some options
+                        try:
+                            location = ppp[item]['location']
+                        except KeyError:
+                            location = None
+                        try:
+                            domain = ppp[item]['domain']
+                        except KeyError:
+                            domain = None
+                        try:
+                            timeavg = ppp[item]['timeavg']
+                        except KeyError:
+                            timeavg = None
 
-                self.process_tslist(location, domain, timeavg, verbose)
+                    self.process_tslist(location, domain, timeavg, verbose)
+
+            elif item == 'create_maps':
+
+                """
+                Warning: potentially, these are a LOT of maps, which may require a lot of space! 
+                Specifically: ntime * nvars * nlevs * ndomains
+                If I can speedup the read and plot process, I might be able to plot the data with
+                WRFplotter after all.
+                I want to be able ot click through my maps. 
+                """
+
+                # Insead of plotting everything, I may want to creat a smaller subset of my wrfoutput
+                # I.e. some map-data,
+                # And during post processing, all wrfout-data is read and only a small fraction
+                # (as specified) is cut out to reduce the time it takes to load the data.
+                # Right now, I have two bottlenecks:
+                # 1) Loading the data. With wrf-python, since it does not use dask but netCDF4, it is very slow.
+                # However, I need the nice features of WRF.
+
+                # 2) cartopy/basemap. Here, specifically highres coastline data with basemap is very slow (15 s!)
+                # Time check: Loading a single timeframe: ~2 s
+                # Time check: Loading 18 timeframes at a time: 18.8 s
+                # Cartopy plot: 7.27 s
+                # Basemap plot: 4.02 s (res='h')
+                # Basemap plot: 980 ms/4.02 s (res='c','h') (but c is really ugly.)
+
+                # Loading data of a whole (2day run/16 GB), single VAR and ml: ~6min
+                # Loading all data with xarray and concating: Kernel dies
+                # Using open_mfdataset (dask): 6.83 s
+                # Now, the problem is that my nice wrf-python routines do not work anymore and I am left
+                # with raw WRF output. This is a hard stop, since both cartopy and basemap are using attributes
+                # provided by wrf-python
+                # wrf-python is not able to run with dask, and I cannot change that.
+                #
+                # Options:
+                # Write own code that interpolates and calculates diagnostics (like wrf-python)
+                # - this will take forever and is prone to errors! I may be able to do it with
+                # limited functionality.
+                # - Subsample data, i.e, extract required variables and levels, put into single file and store
+                # as netcdf. Then, load should be MUCH faster.
+                # Plotting MAY be much fast as well, if I have to calculate the basemape only once and just replace
+                # the field(s) plotted.
+
+                if ppp[item] == 0:
+                    pass
+                else:
+                    if ppp[item] == 1:
+                        # Only perform standard map plotting (i.e., ml=5, var=WSP, poi=None
+                        list_of_mls = [5]
+                        list_of_vars = ['WSP']
+                        list_of_doms = ['d01']
+                        poi = pd.DataFrame()
+                        store = True
+
+                    else:
+                        # found some options
+                        try:
+                            list_of_doms = ppp[item]['list_of_domains']
+                        except KeyError:
+                            list_of_doms = ['d01']
+                        try:
+                            list_of_mls = ppp[item]['list_of_model_levels']
+                        except KeyError:
+                            list_of_mls = [5]
+                        try:
+                            list_of_vars = ppp[item]['list_of_variables']
+                        except KeyError:
+                            list_of_vars = ['WSP']
+                        try:
+                            poi_file = ppp[item]['poi_file']
+                            poi = pd.read_csv(poi_file, delimiter=';')  # points of interest
+                        except KeyError:
+                            poi = pd.DataFrame()
+                        try:
+                            store = bool(ppp[item]['store'])
+                        except:
+                            store = True
+
+                    plot_path = self.exp_path / 'plot'
+                    intermediate_path = self.exp_path / 'out'
+                    fmt = 'png'
+
+                    cls = Map(poi=poi, plot_path=plot_path, intermediate_path=intermediate_path, fmt=fmt)
+
+                    for dom in list_of_doms:
+                        inpath = self.exp_path / 'out'
+                        filenames = list(sorted(inpath.glob(f'wrfout_{dom}*')))
+                        for filename in filenames:
+                            for ml in list_of_mls:
+                                for var in list_of_vars:
+                                    cls.extract_data_from_wrfout(filename, dom, var, ml, select_time=-1)
+
+                                    if store:
+                                        cls.store_intermediate()
+                                    else:
+                                        cls.plot()
 
         self.status = 'post processed'
         self._update_db_entry({'status': 'post processed'})

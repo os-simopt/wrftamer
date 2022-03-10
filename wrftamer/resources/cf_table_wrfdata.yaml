@@ -1,0 +1,142 @@
+station_name:
+    long_name: "name of location for extracted timeseries"
+    cf_role: "timeseries_id"
+station_elevation:
+    standard_name: "surface_altitude"
+    long_name: "height above sea level"
+    units: "m"
+lat:
+    standard_name: "latitude"
+    long_name: "station latitude"
+    units: "degrees_north"
+lon:
+    standard_name: "longitude"
+    long_name: "station longitude"
+    units: "degrees_east"
+
+"time":
+    "standard_name": "time"
+    long_name: "time"
+    #"units": "seconds since 1970-01-01 00:00:00 UTC"
+    #"calendar": "gregorian"
+
+"model_level":
+    "standard_name": "model level number"
+    "positive": "up"
+
+"alt":
+    "standard_name": "height"
+    "long_name": "vertical distance above the surface"
+    'wrf_name': 'model height - [MSL] (mass grid)'
+    "units": "m"
+    "positive": "up"
+    "axis": "Z"
+
+"u":
+    "standard_name": "grid_eastward_wind"
+    "long_name": 'U component of wind'
+    'wrf_name': 'x-wind component'
+    "units": "m s-1"
+
+"v":
+    "standard_name": "grid_northward_wind"
+    "long_name": 'V component of wind'
+    'wrf_name': 'y-wind component'
+    "units": "m s-1"
+
+"w":
+    "standard_name": "vertical_wind"
+    "long_name": 'W component of wind'
+    'wrf_name': 'z-wind component'
+    "units": "m s-1"
+
+"pres":
+    "standard_name": "air_pressure"
+    "long_name": "air pressure"
+    "wrf_name": "pressure"
+    "units": "Pa"
+
+"qv":
+    "standard_name": "humidity_mixing_ratio"
+    "long_name": "mixing ratio"
+    "wrf_name": "mixing ratio"
+    "units": "kg kg-1"
+
+"u10":
+    "standard_name": "grid_eastward_wind_at_10m"
+    "long_name": "u-wind at 10 m above ground"
+    "wrf_name": "U at 10 m"
+    "units": "m s-1"
+
+"v10":
+    "standard_name": "grid_northward_wind_at_10m"
+    "long_name": "y-wind at 10 m above ground"
+    "wrf_name": "V at 10 m"
+    "units": "m s-1"
+
+"wsp10":
+    "standard_name": "wind_speed_at_10m"
+    "long_name": "wind speed at 10 m"
+    "wrf_name": "WSP at 10 m"
+    "units": "m s-1"
+
+"t2":
+    "standard_name": "air_temperature_at_2m"
+    "long_name": "temperature at 2 m"
+    "wrf_name": "T at 2 m"
+    "units": "K"
+
+"q2":
+    "standard_name": "humidity_mixing_ratio_at_2m"
+    "long_name": "mixing ratio at 2 m"
+    "wrf_name": "QV at 2 m"
+    "units": "kg kg-1"
+
+"pt":
+    "standard_name": "air_potential_temperature"
+    "long_name": "potential temperature"
+    "wrf_name": "potential temperature"
+    "units": "K"
+
+"wsp":
+    "standard_name": "wind_speed"
+    "long_name": "wind speed"
+    "wrf_name": "wind speed"
+    "units": "m s-1"
+
+"psfc":
+    "standard_name": "surface_air_pressure"
+    "long_name": "air pressure at surface"
+    "wrf_name": "sfc pressure"
+    "units": "Pa"
+
+"glw":
+    "standard_name": "downward_longwave_at_surface"
+    "long_name": "downward long wave flux"
+    "wrf_name": "downward long wave flux at ground surface"
+    "units": "W m-2"
+
+"gsw":
+    "standard_name": "net_shortwave_flux_at_surface"
+    "long_name": "net short wave flux"
+    "wrf_name": "net short wave flux at ground surface"
+    "units": "W m-2"
+
+"hfx":
+    "standard_name": "surface_upward_sensible_heat_flux"
+    "long_name": "sensible heat flux"
+    "wrf_name": "upward heat flux at the surface"
+    "units": "W m-2"
+
+"lh":
+    "standard_name": "surface_upward_latent_heat_flux"
+    "long_name": "latent heat flux"
+    "wrf_name": "latent heat flux at the surface"
+    "units": "W m-2"
+
+"tsk":
+    "standard_name": "skin_temperature"
+    "long_name": "skin temperature"
+    "wrf_name": "surface skin temperature"
+    "units": "K"
+

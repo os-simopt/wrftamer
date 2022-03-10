@@ -304,8 +304,6 @@ def make_call_wd_file_from_template(miniconda_path, condaenv_name, templatefile=
         file.write(filedata)
 
 
-
-
 def _make_submitfile_from_template(submit_vars: dict, templatefile=None):
     # read template and configuration
     if templatefile is None:
