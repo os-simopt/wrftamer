@@ -185,7 +185,7 @@ def average_ts_files(infile, timeavg):
 
     if len(timeavg) > 0:
         for time in timeavg:
-            xxa = xr.open_dataset('test.nc')  # lazy load. might be faster
+            xxa = xr.open_dataset(infile)  # lazy load. might be faster
             xxatme = xxa.resample(time=f'{time}Min', label='left', closed='right').mean(keep_attrs=True)
             xxatme.attrs = xxa.attrs
             xxatme.attrs['comment'] = f'{time}-minute averaged data'

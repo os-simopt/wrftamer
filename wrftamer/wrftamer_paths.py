@@ -28,6 +28,12 @@ def wrftamer_paths():
     except KeyError:
         archive_path = Path(os.environ['HOME']) / 'wrftamer/archive'
 
+    try:
+        plot_path = Path(os.environ['WRFTAMER_PLOT_PATH'])
+    except KeyError:
+        plot_path = Path(os.environ['HOME']) / 'wrftamer/plots'
+
+
     # I may add more paths later on. These include:
     # $HOME/wrftamer/src/wrf_essentials
     # $HOME/wrftamer/src/wrf_nonessentials
@@ -39,5 +45,6 @@ def wrftamer_paths():
     os.makedirs(db_path, exist_ok=True)
     os.makedirs(run_path, exist_ok=True)
     os.makedirs(archive_path, exist_ok=True)
+    os.makedirs(plot_path, exist_ok=True)
 
-    return home_path, db_path, run_path, archive_path
+    return home_path, db_path, run_path, archive_path, plot_path

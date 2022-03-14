@@ -9,7 +9,7 @@ import datetime as dt
 from pathlib import PosixPath, Path
 from wrftamer.wrfplotter_functions import Map_Basemap, Map_Cartopy, Map_hvplots
 import os
-from wrfplotter.plotting.mpl_plots import Availability  # TODO: to be porterd
+from wrftamer.plotting.mpl_plots import Availability
 import yaml
 import typing
 
@@ -368,10 +368,16 @@ def get_list_of_filenames(name_of_dataset: str, search_str: str, dtstart: dt.dat
     starts = np.asarray([dt.datetime.strptime(item, '%Y%m%d') for item in list_of_starts])
     ends = np.asarray([dt.datetime.strptime(item, '%Y%m%d') for item in list_of_ends])
 
-    idx1 = np.argmax(starts[starts <= dtstart])
-    idx2 = np.argmax(ends[ends <= dtend])
+    try:
+        idx1 = np.argmax(starts[starts <= dtstart])
+    except ValueError:
+        idx1 = 0
+    try:
+        idx2 = np.argmax(ends[ends <= dtend])
+    except ValueError:
+        idx2= 0
 
-    filenames = list_of_files[idx1:idx2 + 1]
+    filenames = list_of_files[idx1:idx2+1]
 
     return filenames
 
@@ -456,22 +462,34 @@ def calc_PT(data):
     This may not be general enough!
     """
 
+    # TODO: I need to generalize this code to work for a dataset with multiple stations.
+    # For now, this works fine, since P_ and T_ do not exist for AV datasets.
+
     tmp1 = [i for i in list(data.variables) if i.startswith('P_')]
     tmp2 = [i for i in list(data.variables) if i.startswith('T_')]
+
+    hgt = data['station_elevation'].values
 
     if len(tmp1) > 1 and len(tmp2) > 0:
         zp = [int(item.split('_')[1]) for item in tmp1]
         zlow, zhigh = min(zp), max(zp)
 
-        plow = data['P_' + str(zlow)].values.T * 100  # convert to unit: Pa
-        phigh = data['P_' + str(zhigh)].values.T * 100  # convert to unit: Pa
+        if data['P_' + str(zlow)].units == 'hPa':
+            factor = 100
+        elif data['P_' + str(zlow)].units == 'Pa':
+            factor = 100  # TODO: in Future: 1 right now, I got an error in the data.
+        else:
+            raise ValueError
+
+        plow  = data['P_' + str(zlow) ].values.T * factor
+        phigh = data['P_' + str(zhigh)].values.T * factor
 
         ztarget = np.asarray([int(item.split('_')[1]) for item in tmp2])
 
         # z amsl
-        zhigh += data.hgt
-        zhigh += data.hgt
-        ztarget += data.hgt
+        zlow    = float(zlow) + hgt
+        zhigh   = float(zhigh) + hgt
+        ztarget = ztarget.astype(float) + hgt
 
         # Transform T in PT
         # Calculate pressure at each Height.
@@ -483,21 +501,20 @@ def calc_PT(data):
         p0 = phigh / np.exp(-zhigh / H)
 
         for zlev in ztarget:
-            pt = data['T_' + str(int(zlev))].copy()
-            pt = pt.assign_attrs(units='K')
-            pt = pt.assign_attrs(standard_name='potential_temperature')
-            pt.name = 'PT'
 
             ptarget = p0 * np.exp(-zlev / H)
-            #######################
+            ##############################################
             kappa = 2. / 7.  # R/cp
-            p00 = 10 ** 5  # Pa
-            #######################
+            p00 = 10 ** 5    # Pa
+            ##############################################
 
             pt = (data['T_' + str(int(zlev))][:] + 273.15) * (p00 / ptarget) ** kappa
-
+            pt = pt.assign_attrs(units='K')
+            pt = pt.assign_attrs(standard_name='potential_temperature')
+            pt = pt.assign_attrs(long_name='potential temperature')
             data = data.assign({'PT_' + str(int(zlev)): pt})
         ####################################################################################
+
     return data
 
 
@@ -572,7 +589,10 @@ class Timeseries:
 
         if calc_pt:
             # This will only do something if T_X and P_Y exists.
-            data = calc_PT(data)
+            try:
+                data = calc_PT(data)
+            except:
+                pass
 
         # CF Conform data already has attributes
         # Add more medadata. If these already exist, they are overwritten.

@@ -19,7 +19,7 @@ a logfile.
 
 """
 
-home_path, db_path, run_path, archive_path = wrftamer_paths()
+home_path, db_path, run_path, archive_path, disc = wrftamer_paths()
 
 
 def writeLogFile(logfile: str, program: str, log_level: int, message: str):

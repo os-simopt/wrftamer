@@ -31,7 +31,7 @@ Date: 22.11.2021
 # ---------------------------------------------------------------------
 # These paths will be used by the tamer and can be changed in the cond environment
 
-home_path, db_path, run_path, archive_path = wrftamer_paths()
+home_path, db_path, run_path, archive_path, disc = wrftamer_paths()
 
 try:
     make_submit = bool(os.environ['WRFTAMER_make_submit'])

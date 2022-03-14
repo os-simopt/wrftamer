@@ -35,7 +35,7 @@ experiments
 # The defaults are $HOME/.wrtfaner and $HOME/run
 
 
-home_path, db_path, run_path, archive_path = wrftamer_paths()
+home_path, db_path, run_path, archive_path, disc = wrftamer_paths()
 
 
 def reassociate(proj_old, proj_new, exp_name: str):
