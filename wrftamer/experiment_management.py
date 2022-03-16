@@ -1,7 +1,7 @@
 import os
 import shutil
 import datetime as dt
-from pathlib import Path
+from pathlib import Path, PosixPath
 import glob
 import pandas as pd
 import numpy as np
@@ -41,7 +41,6 @@ try:
     make_submit = bool(os.environ['WRFTAMER_make_submit'])
 except KeyError:
     make_submit = False
-
 
 class experiment:
 
@@ -91,6 +90,9 @@ class experiment:
         else:
             self.workdir = self.exp_path
 
+        self.max_dom = self._get_maxdom_from_config()
+
+    #-------------------------------------------------------------------------------------------------------------------
     def create(self, configfile: str, namelisttemplate=None, verbose=True):
 
         """
@@ -598,6 +600,7 @@ class experiment:
         self.status = 'post processed'
         self._update_db_entry({'status': 'post processed'})
 
+    #-------------------------------------------------------------------------------------------------------------------
     def _update_db_entry(self, updates: dict):
         """
         A small helper function to update the data base entries. may go to another file at some point.
@@ -663,3 +666,20 @@ class experiment:
             self.status = 'archived'
 
         self._update_db_entry({'status': self.status})
+
+    def _get_maxdom_from_config(self):
+
+        configure_file = self.workdir / 'configure.yaml'
+
+        with open(configure_file) as f:
+            try:
+                cfg = yaml.safe_load(f)
+            except FileNotFoundError:
+                return None
+
+        try:
+            max_dom = cfg['namelist_vars']['max_dom']
+        except KeyError:
+            max_dom = 1
+
+        return max_dom

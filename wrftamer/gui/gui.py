@@ -270,8 +270,8 @@ class GUI:
 
         list_of_experiments = list_unassociated_exp(verbose=False)
 
-        global mc_exp
-        mc_exp = pn.widgets.MultiChoice(name='Choose Experiment', value=[''], options=list_of_experiments, height=75)
+        global wt_mc_exp
+        wt_mc_exp = pn.widgets.MultiChoice(name='Choose Experiment', value=[''], options=list_of_experiments, height=75)
 
         exp_name_box = pn.widgets.TextInput(name='New Experiment Name', value='')
 
@@ -321,7 +321,7 @@ class GUI:
 
             exp_name = exp_name_box.value
 
-            old_options = mc_exp.options.copy()
+            old_options = wt_mc_exp.options.copy()
 
             if file_input.value is None:
                 print('Please select a .conf file first')
@@ -347,7 +347,7 @@ class GUI:
                 return
             else:
                 old_options.append(exp_name)
-                mc_exp.options = old_options
+                wt_mc_exp.options = old_options
 
                 ########################################
                 # Do the actual Experiment creation.
@@ -373,7 +373,7 @@ class GUI:
             except IndexError:
                 proj_name = None
 
-            choice = mc_exp.value
+            choice = wt_mc_exp.value
             new_name = exp_name_box.value
 
             if len(choice) != 1 or new_name == '':
@@ -381,7 +381,7 @@ class GUI:
             else:
                 exp_name = choice[0]
 
-                old_options = mc_exp.options.copy()
+                old_options = wt_mc_exp.options.copy()
 
                 if new_name in old_options:
                     print('A project with this name already exists')
@@ -389,8 +389,8 @@ class GUI:
                     old_options.remove(exp_name)
                     old_options.append(new_name)
 
-                    mc_exp.options = old_options
-                    mc_exp.value = [new_name]
+                    wt_mc_exp.options = old_options
+                    wt_mc_exp.value = [new_name]
 
                     ########################################
                     # Do the actual Experiment renaming
@@ -413,7 +413,7 @@ class GUI:
             except IndexError:
                 proj_name = None
 
-            choice = mc_exp.value
+            choice = wt_mc_exp.value
 
             if len(choice) == 1:
 
@@ -424,11 +424,11 @@ class GUI:
                     del_warn.visible = True
                     b_cancel.visible = True
                 else:
-                    old_options = mc_exp.options.copy()
+                    old_options = wt_mc_exp.options.copy()
                     old_options.remove(exp_name)
 
-                    mc_exp.value = []
-                    mc_exp.options = old_options
+                    wt_mc_exp.value = []
+                    wt_mc_exp.options = old_options
 
                     ########################################
                     # Do the actual Experiment removal.
@@ -454,9 +454,9 @@ class GUI:
             except IndexError:
                 proj_name = None
 
-            choice = mc_exp.value
+            choice = wt_mc_exp.value
             if len(choice) == 1:
-                old_options = mc_exp.options.copy()
+                old_options = wt_mc_exp.options.copy()
 
                 exp_name = choice[0]
                 new_exp_name = exp_name_box.value
@@ -468,7 +468,7 @@ class GUI:
                     print('An experiment with this name already exists!')
                 else:
                     old_options.append(exp_name_box.value)
-                    mc_exp.options = old_options
+                    wt_mc_exp.options = old_options
                     ########################################
                     # Copy the actual Experiment.
                     ########################################
@@ -492,7 +492,7 @@ class GUI:
             except IndexError:
                 proj_name = None
 
-            choices = mc_exp.value
+            choices = wt_mc_exp.value
             if len(choices) > 0:
                 ########################################
                 # Do the actual Experiment postprocessing constisting of:
@@ -525,7 +525,7 @@ class GUI:
             except IndexError:
                 proj_name = None
 
-            choices = mc_exp.value
+            choices = wt_mc_exp.value
             if len(choices) > 0:
                 ########################################
                 # Do the actual Experiment archiving:
@@ -562,10 +562,10 @@ class GUI:
 
                 new_options = proj.list_exp(verbose=False)
 
-                mc_exp.options = new_options
+                wt_mc_exp.options = new_options
 
             else:
-                mc_exp.options = list_unassociated_exp(verbose=False)
+                wt_mc_exp.options = list_unassociated_exp(verbose=False)
 
         b_create.on_click(create_exp)
         b_rename.on_click(rename_exp)
@@ -579,7 +579,7 @@ class GUI:
 
         ################################################################################################
 
-        menu = pn.Column(mc_exp, exp_name_box, b_create, b_rename, b_delete, del_warn, b_cancel, b_copy, b_post,
+        menu = pn.Column(wt_mc_exp, exp_name_box, b_create, b_rename, b_delete, del_warn, b_cancel, b_copy, b_post,
                          b_archive, name='Experiment')
         main = pn.Column(header, file_input, comment_box, textfield)
 

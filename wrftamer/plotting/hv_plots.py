@@ -42,7 +42,7 @@ def prep_profile_data2(obs_data, mod_data, infos: dict, verbose=False) -> list:
         zvec, data = [], []
         myobs = obs_data[obs]
         ttp = np.datetime64(time_to_plot)
-        myobs = myobs.where(myobs.Time == ttp, drop=True)
+        myobs = myobs.where(myobs.time == ttp, drop=True)
 
         for key in myobs.keys():
             if var in key and 'std' not in key:
@@ -57,15 +57,15 @@ def prep_profile_data2(obs_data, mod_data, infos: dict, verbose=False) -> list:
                     units = myobs[key].units
                     description = var #  (standard_name contains height)
 
-        df = pd.DataFrame({'Z': zvec, loc: data})
+        df = pd.DataFrame({'ALT': zvec, loc: data})
         data2plot.append(df)
 
     for exp in expvec:
         try:
             mymod = mod_data[exp][loc]
-            mymod = mymod.where(mymod.Time == ttp, drop=True)
+            mymod = mymod.where(mymod.time == ttp, drop=True)
             mymod = mymod.to_dataframe()
-            mymod = mymod.set_index('Z')
+            mymod = mymod.set_index('ALT')
             mymod = pd.DataFrame(mymod[var])
             mymod = mymod.rename(columns={var: exp})
             mymod = mymod.reset_index()
@@ -90,15 +90,15 @@ def prep_zt_data2(mod_data, infos: dict) -> xr.Dataset:
 
     key = list(mod_data.keys())[0]
     data2plot = mod_data[key][loc]
-    new_z = np.mean(mod_data[key][loc]['Z'], axis=0)
+    new_z = np.mean(mod_data[key][loc]['ALT'], axis=0)
 
     # new_z
-    data2plot = data2plot.drop_vars('Z')
-    data2plot = data2plot.rename_vars({'zdim': 'Z'})
+    data2plot = data2plot.drop_vars('ALT')
+    data2plot = data2plot.rename_vars({'model_level': 'ALT'})
 
-    data2plot['Z'] = new_z
-    data2plot = data2plot.swap_dims({'zdim': 'Z'})
-    data2plot = data2plot.drop('zdim')
+    data2plot['ALT'] = new_z
+    data2plot = data2plot.swap_dims({'model_level': 'ALT'})
+    data2plot = data2plot.drop('model_level')
 
     return data2plot[var]
 
@@ -180,10 +180,10 @@ def _prep_ts_data2(obs_data, mod_data, expvec: list, obsvec: list, loc: str, var
 
             # interpolate data to desired level
             #  TODO: this may fail for DIR- write a proper function somewhere and call!
-            zvec = mymod.Z[0, :].values
+            zvec = mymod.ALT[0, :].values
             idx = (np.abs(zvec - float(lev))).argmin()
-            xa1 = mymod.isel(zdim=idx)
-            xa2 = mymod.isel(zdim=idx + 1)
+            xa1 = mymod.isel(model_level=idx)
+            xa2 = mymod.isel(model_level=idx + 1)
             w1 = abs(zvec[idx] - float(lev)) / abs(zvec[idx + 1] - zvec[idx])
             w2 = abs(zvec[idx + 1] - float(lev)) / abs(zvec[idx + 1] - zvec[idx])
             mymod = (xa1 * w2 + xa2 * w1)
@@ -200,8 +200,8 @@ def _prep_ts_data2(obs_data, mod_data, expvec: list, obsvec: list, loc: str, var
     if len(all_df) > 0:
         data2plot = pd.concat(all_df, axis=1)
     else:
-        data2plot = pd.DataFrame({'Time': [dt.datetime(1970, 1, 1), dt.datetime(2020, 1, 1)], 'data': [np.nan, np.nan]})
-        data2plot = data2plot.set_index('Time')
+        data2plot = pd.DataFrame({'time': [dt.datetime(1970, 1, 1), dt.datetime(2020, 1, 1)], 'data': [np.nan, np.nan]})
+        data2plot = data2plot.set_index('time')
 
     data2plot.variable = var
     data2plot.level = lev
@@ -239,50 +239,6 @@ def create_hv_plot(infos: dict, obs_data=None, mod_data=None, map_data=None):
         figure.opts(legend_position='bottom_right')
         figure = pn.Column(figure, stats)
 
-    elif plottype == 'Timeseries 2':
-
-        # TODO: when figure1 and figure 2 are combined in the last line, the y-limits change.
-        #  I do not know how to fix that...
-        #  Shared_axes=False does not help.
-
-        var1, var2 = var.split(' and ')
-
-        data1, data2 = prep_ts_data2(obs_data, mod_data, infos)
-        stats1 = Statistics(data1, infos)
-        stats2 = Statistics(data2, infos)
-        stats = pd.concat([stats1, stats2])
-
-        xlim = [data1.index[0], data1.index[-1]]
-        ylim1 = [data1.min().min(), data1.max().max()]
-        ylim2 = [data2.min().min(), data2.max().max()]
-
-        size = 5
-        if var1 == 'DIR':
-            figure1 = data1[infos['Obsvec']].dropna().hvplot.scatter(xlim=xlim, ylim=ylim1, size=size,
-                                                                     shared_axes=False, ylabel=var1,
-                                                                     label=infos['Obsvec'][0]) * \
-                      data1[infos['Expvec']].dropna().hvplot.scatter(xlim=xlim, ylim=ylim1, size=size,
-                                                                     shared_axes=False, ylabel=var1)
-        else:
-            figure1 = data1[infos['Obsvec']].dropna().hvplot(xlim=xlim, ylim=ylim1, shared_axes=False, ylabel=var1,
-                                                             label=infos['Obsvec'][0]) * \
-                      data1[infos['Expvec']].dropna().hvplot(xlim=xlim, ylim=ylim1, shared_axes=False, ylabel=var1)
-
-        if var2 == 'DIR':
-            figure2 = data2[infos['Obsvec']].dropna().hvplot.scatter(xlim=xlim, ylim=ylim2, size=size,
-                                                                     shared_axes=False, ylabel=var2,
-                                                                     label=infos['Obsvec'][0]) * \
-                      data2[infos['Expvec']].dropna().hvplot.scatter(xlim=xlim, ylim=ylim2, size=size,
-                                                                     shared_axes=False, ylabel=var2)
-        else:
-            figure2 = data2[infos['Obsvec']].dropna().hvplot(xlim=xlim, ylim=ylim2, shared_axes=False, ylabel=var2,
-                                                             label=infos['Obsvec'][0]) * \
-                      data2[infos['Expvec']].dropna().hvplot(xlim=xlim, ylim=ylim2, shared_axes=False, ylabel=var2)
-
-        figure1.opts(legend_position='bottom_right')
-        figure2.opts(legend_position='bottom_right')
-        figure = pn.Column(figure1, figure2, stats)
-
     elif plottype == 'Profiles':
 
         size = 10
@@ -293,17 +249,17 @@ def create_hv_plot(infos: dict, obs_data=None, mod_data=None, map_data=None):
         for num, item in enumerate(data):
             if num == 0:
                 if var == 'DIR':
-                    figure = item.hvplot.scatter(y='Z', x=item.columns[1], size=size, xlabel=var,
+                    figure = item.hvplot.scatter(y='ALT', x=item.columns[1], size=size, xlabel=var,
                                                  width=width, height=height, label=item.columns[1])
                 else:
-                    figure = item.hvplot(y='Z', x=item.columns[1], xlabel=var,
+                    figure = item.hvplot(y='ALT', x=item.columns[1], xlabel=var,
                                          width=width, height=height, label=item.columns[1])
             else:
                 if var == 'DIR':
-                    figure = figure * item.hvplot.scatter(y='Z', x=item.columns[1], size=size, xlabel=var,
+                    figure = figure * item.hvplot.scatter(y='ALT', x=item.columns[1], size=size, xlabel=var,
                                                           width=width, height=height, label=item.columns[1])
                 else:
-                    figure = figure * item.hvplot(y='Z', x=item.columns[1], xlabel=var,
+                    figure = figure * item.hvplot(y='ALT', x=item.columns[1], xlabel=var,
                                                   width=width, height=height, label=item.columns[1])
 
         figure.opts(legend_position='bottom_right')
@@ -346,7 +302,7 @@ def create_hv_plot(infos: dict, obs_data=None, mod_data=None, map_data=None):
 
     elif plottype == 'zt-Plot':
         data = prep_zt_data2(mod_data, infos)
-        figure = data.hvplot.quadmesh(x='Time', y='Z', ylabel='z (m)',
+        figure = data.hvplot.quadmesh(x='time', y='ALT', ylabel='z (m)',
                                       title=data.standard_name + ' (' + data.units + ')')
         stats = None
 

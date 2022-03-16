@@ -76,8 +76,8 @@ def load_mod_data(mod_data: dict, exp_name: str, **kwargs):
         # Solve this issue and simplifiy this piece.
         try:
             loc = tmp.station_name.values[0]
-        except KeyError:
-            loc = tmp.station_name.values
+        except IndexError:
+            loc = str(tmp.station_name.values)
 
         if loc in list_of_locs:
             tslist_data[loc] = tmp
@@ -121,7 +121,7 @@ def prep_profile_data(obs_data, mod_data, infos: dict, verbose=False) -> list:
         zvec, data = [], []
         myobs = obs_data[obs]
         ttp = np.datetime64(time_to_plot)
-        myobs = myobs.where(myobs.Time == ttp, drop=True)
+        myobs = myobs.where(myobs.time == ttp, drop=True)
 
         for key in myobs.keys():
             if var in key and 'std' not in key:
@@ -136,15 +136,15 @@ def prep_profile_data(obs_data, mod_data, infos: dict, verbose=False) -> list:
                     units = myobs[key].units
                     description = var #  (standard_name contains height)
 
-        df = pd.DataFrame({'Z': zvec, loc: data})
+        df = pd.DataFrame({'ALT': zvec, loc: data})
         data2plot.append(df)
 
     for exp in expvec:
         try:
             mymod = mod_data[exp][loc]
-            mymod = mymod.where(mymod.Time == ttp, drop=True)
+            mymod = mymod.where(mymod.time == ttp, drop=True)
             mymod = mymod.to_dataframe()
-            mymod = mymod.set_index('Z')
+            mymod = mymod.set_index('ALT')
             mymod = pd.DataFrame(mymod[var])
             mymod = mymod.rename(columns={var: exp})
             mymod = mymod.reset_index()
@@ -171,12 +171,12 @@ def prep_zt_data(mod_data, infos: dict) -> xr.Dataset:
     data2plot = mod_data[key][loc]
 
     # new_z
-    new_z = mod_data[key][loc]['Z'].mean(axis=0, keep_attrs=True)
-    data2plot = data2plot.drop_vars('Z')
-    data2plot = data2plot.rename_vars({'zdim': 'Z'})
+    new_z = mod_data[key][loc]['ALT'].mean(axis=0, keep_attrs=True)
+    data2plot = data2plot.drop_vars('ALT')
+    data2plot = data2plot.rename_vars({'zdim': 'ALT'})
 
-    data2plot['Z'] = new_z
-    data2plot = data2plot.swap_dims({'zdim': 'Z'})
+    data2plot['ALT'] = new_z
+    data2plot = data2plot.swap_dims({'zdim': 'ALT'})
     data2plot = data2plot.drop('zdim')
 
     return data2plot[var]
@@ -269,7 +269,7 @@ def _prep_ts_data(obs_data, mod_data, expvec: list, obsvec: list, loc: str, var:
             units = mymod[var].units
             description = mymod[var].standard_name
 
-            zvec = mymod.Z[0, :].values
+            zvec = mymod.ALT[0, :].values
             idx = (np.abs(zvec - float(lev))).argmin()
             xa1 = mymod.isel(zdim=idx)
             xa2 = mymod.isel(zdim=idx + 1)
@@ -289,8 +289,8 @@ def _prep_ts_data(obs_data, mod_data, expvec: list, obsvec: list, loc: str, var:
     if len(all_df) > 0:
         data2plot = pd.concat(all_df, axis=1)
     else:
-        data2plot = pd.DataFrame({'Time': [dt.datetime(1970, 1, 1), dt.datetime(2020, 1, 1)], 'data': [np.nan, np.nan]})
-        data2plot = data2plot.set_index('Time')
+        data2plot = pd.DataFrame({'time': [dt.datetime(1970, 1, 1), dt.datetime(2020, 1, 1)], 'data': [np.nan, np.nan]})
+        data2plot = data2plot.set_index('time')
 
     data2plot.variable = var
     data2plot.level = lev

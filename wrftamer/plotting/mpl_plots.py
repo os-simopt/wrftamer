@@ -54,7 +54,7 @@ def create_mpl_plot(obs_data, mod_data, infos: dict, vmin=0, vmax=30):
     elif plttype == 'zt-Plot':
 
         data = prep_zt_data(mod_data, infos)
-        zmin, zmax = data.Z.values.min(), data.Z.values.max()
+        zmin, zmax = data.ALT.values.min(), data.ALT.values.max()
         figure = zt(data, vmin, vmax, zmin, zmax)
 
     else:
@@ -314,14 +314,14 @@ def zt(data, vmin, vmax, zmin, zmax, figure=None):
     else:
         ax = figure.gca()  # there is only one axis.
 
-    zlabel = 'z (' + data.Z.units + ')'
+    zlabel = 'z (' + data.ALT.units + ')'
 
-    plt.contourf(data.Time, data.Z, data.T, 20, vmin=vmin, vmax=vmax)
+    plt.contourf(data.time, data.ALT, data.T, 20, vmin=vmin, vmax=vmax)
 
     cbar = plt.colorbar()
     cbar.set_label('(' + data.units + ')')
 
-    ax.set_xlim([data.Time[0], data.Time[-1]])
+    ax.set_xlim([data.time[0], data.time[-1]])
     ax.set_ylim([zmin, zmax])
 
     plt.setp(ax.xaxis.get_majorticklabels(), rotation=40)
