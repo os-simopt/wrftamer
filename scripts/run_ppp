@@ -8,9 +8,10 @@ the postprocessing protocol defined in the configure.yaml file.
 from wrftamer.project_management import project, list_projects
 from wrftamer.experiment_management import experiment
 import datetime as dt
+import sys
 
 
-def run_ppp_for_completed_exp(silent=False, verbose=False):
+def run_ppp_for_completed_exp(silent=False, verbose=False, force=False, projects=None):
     """""
     Args:
         silent: If true, no output is printed at all.
@@ -20,8 +21,17 @@ def run_ppp_for_completed_exp(silent=False, verbose=False):
 
     """
 
-    list_of_proj = list_projects(False)
-    list_of_proj.append(None)
+    if projects is None:
+        list_of_proj = list_projects(False)
+        list_of_proj.append(None)
+    else:
+        if isinstance(projects,list):
+            list_of_proj = projects
+        elif isinstance(projects,str):
+            list_of_proj = [projects]
+        else:
+            list_of_proj = list_projects(False)
+            list_of_proj.append(None)
 
     for proj_name in list_of_proj:
 
@@ -39,7 +49,9 @@ def run_ppp_for_completed_exp(silent=False, verbose=False):
         for exp_name in list_of_exps:
             exp = experiment(proj_name, exp_name)
 
-            if exp.status == 'run complete':
+            # TODO: instead of checking for the status, check if the files exist!
+            #  However, this requires prior knowledge of which files to expect, depending on the ppp...
+            if exp.status == 'run complete' or force:
                 if not silent:
                     print('    ' + str(dt.datetime.now()) +
                           ': Performing ppp for experiment ' + exp.name)
@@ -50,5 +62,26 @@ def run_ppp_for_completed_exp(silent=False, verbose=False):
                           ': Nothing to do for experiment' + exp.name)
 
 
-# if __name__ == '__main__':
-run_ppp_for_completed_exp()
+if __name__ == '__main__':
+
+    # TODO: the arguments must be reworked. Right now, I cannot use -project w/o a first argument.
+    #  Use click?
+
+    if len(sys.argv)==1:
+        run_ppp_for_completed_exp(False,False,False)
+    elif len(sys.argv) in [2,3]:
+        s='s' in sys.argv[1]
+        v='v' in sys.argv[1]
+        f='f' in sys.argv[1]
+
+        try:
+            projects = sys.argv[2].split('=')[-1]
+        except KeyError:
+            projects=None
+
+        run_ppp_for_completed_exp(s,v,f,projects)
+    else:
+        print('usage: python test.py -opts --project=<project>')
+
+
+

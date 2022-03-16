@@ -28,6 +28,10 @@ Author: Daniel Leukauf
 Date: 22.11.2021
 """
 
+# TODO: check if run is archived by seaching for the actual directory, instead of checking the status.
+#  This way, I can perform ppp on archived runs. Right now, this is only possible if I force ppp or manualy
+#  change the xls sheet.
+
 # ---------------------------------------------------------------------
 # These paths will be used by the tamer and can be changed in the cond environment
 
@@ -82,7 +86,7 @@ class experiment:
         #  I need a way to deal with splitruns, special snowflake or not!
         #  DLeuk, 17.01.2022
 
-        if self.status == 'archived':
+        if self.archive_path.is_dir(): # archived.
             self.workdir = self.archive_path
         else:
             self.workdir = self.exp_path
@@ -262,6 +266,10 @@ class experiment:
                 print('No files to move')
 
     def process_tslist(self, location, domain, timeavg: list, verbose=True):
+
+        # TODO: merge_tslist_files take quite a lot of time.
+        #  Put here some code to preform this task only if the files do not exist
+        #  And add a force option to do it anyway.
 
         outdir = self.workdir / 'out'
         idir = (self.workdir / 'out').glob('tsfiles*')

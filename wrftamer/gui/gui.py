@@ -239,9 +239,18 @@ class GUI:
         self.mod_data = dict()
         self.map_cls = None
 
+        # -----------------------------------------------------------------------------
+        # TODO: make dynamic.
         self.list_of_obs = ['AV01', 'AV02', 'AV03', 'AV04', 'AV05', 'AV06',
                             'AV07', 'AV08', 'AV09', 'AV10', 'AV11', 'AV12',
-                            'FINO1']  # TODO: Make dynamic.
+                            'FINO1']
+        self.dataset_dict = dict()
+        self.dataset_dict['FINO1'] = 'FINO1'
+        self.dataset_dict['FINOC'] = 'FINOC'
+        for idx in range(1, 13):
+            self.dataset_dict['AV' + str(idx).zfill(2)] = 'AV'
+        # -----------------------------------------------------------------------------
+
         self.plottypes_avil = ['Timeseries', 'Profiles', 'Obs vs Mod', 'zt-Plot', 'Map']
 
         self.plot_panel = self.wp_create_plot_panel()
@@ -603,11 +612,11 @@ class GUI:
 
         list_of_domains = ['d01', 'd02', 'd03']  # make dynamic in the future
         list_of_locs = ['FINO', 'AV01', 'AV02', 'AV03', 'AV04', 'AV05', 'AV06', 'AV07', 'AV08', 'AV09', 'AV10',
-                        'AV11', 'AV12']  # make dynamic in the future
+                        'AV11', 'AV12']  # TODO: make dynamic, merge with list_of_obs
 
         # dynamically remove tslist for Map? # Removed 'aux' from the list for now. I never use it in ParkCast.
         list_of_obs = ['FINO1', 'FINOC', 'AV01', 'AV02', 'AV03', 'AV04', 'AV05', 'AV06', 'AV07', 'AV08', 'AV09', 'AV10',
-                       'AV11', 'AV12']  # dynamic in the future?
+                       'AV11', 'AV12']  # TODO: make dynamic
 
         list_of_ave_windows = ['raw', '5 min Ave', '10 min Ave', '30 min Ave']
 
@@ -704,6 +713,7 @@ class GUI:
                     sel_var.param.value, sel_lev.param.value, watch=True)
         def _reload_watcher2(proj, exp_names, dom, var, lev):
             # Watches for changes in relevant parameters and indicates that a reload is needed
+            # This is for maps
             alert2.visible = True
 
         def _load_data(event):
@@ -732,7 +742,8 @@ class GUI:
                 self.obs_data = dict()  # to make sure that no nonesens is kept in memory
                 progress.bar_color = 'info'
                 for idx, obs in enumerate(self.list_of_obs):
-                    load_obs_data(self.obs_data, obs, **infos)
+                    dataset = self.dataset_dict[obs]
+                    load_obs_data(self.obs_data, obs, dataset, **infos)
                     progress_value = int(100 * (idx + 1) / len(self.list_of_obs))
                     progress.value = progress_value
 

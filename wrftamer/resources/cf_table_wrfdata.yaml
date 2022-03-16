@@ -62,6 +62,18 @@ lon:
     "wrf_name": "mixing ratio"
     "units": "kg kg-1"
 
+"wsp":
+    "standard_name": "wind_speed"
+    "long_name": "wind speed"
+    "wrf_name": "wind speed"
+    "units": "m s-1"
+
+dir:
+    standard_name: "wind_from_direction"
+    long_name: "wind direction"
+    wrf_name: "wind direction"
+    units: 'degree'
+
 "u10":
     "standard_name": "grid_eastward_wind_at_10m"
     "long_name": "u-wind at 10 m above ground"
@@ -79,6 +91,12 @@ lon:
     "long_name": "wind speed at 10 m"
     "wrf_name": "WSP at 10 m"
     "units": "m s-1"
+
+dir10:
+    standard_name: 'wind_from_direction_at_10m'
+    long_name: 'wind direction at 10 m'
+    wrf_name: 'wind direction at 10 m'
+    units: 'degree'
 
 "t2":
     "standard_name": "air_temperature_at_2m"
@@ -98,11 +116,7 @@ lon:
     "wrf_name": "potential temperature"
     "units": "K"
 
-"wsp":
-    "standard_name": "wind_speed"
-    "long_name": "wind speed"
-    "wrf_name": "wind speed"
-    "units": "m s-1"
+
 
 "psfc":
     "standard_name": "surface_air_pressure"

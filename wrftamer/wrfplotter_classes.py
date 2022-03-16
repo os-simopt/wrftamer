@@ -339,13 +339,13 @@ class Map:
 # -----------------------------------------------------------------------------------------------------------------------
 
 # some helperfunctions
-def get_list_of_filenames(name_of_dataset: str, search_str: str, dtstart: dt.datetime, dtend: dt.datetime):
+def get_list_of_filenames(name_of_dataset: str, dtstart: dt.datetime, dtend: dt.datetime):
     # The user provides an observation path and a stationname to be read in.
     # i.e. the structure is
-    # obs_path/name_of_dataset1/<search_str1_start1_end1.nc>
-    # obs_path/name_of_dataset1/<search_str1_start2_end2.nc>
+    # obs_path/name_of_dataset1/<name_of_dataset1_start1_end1.nc>
+    # obs_path/name_of_dataset1/<name_of_dataset1_start2_end2.nc>
     # obs_path/name_of_dataset1/...
-    # obs_path/name_of_dataset2/<search_str1_start1_end1.nc>
+    # obs_path/name_of_dataset2/<name_of_dataset2_start1_end1.nc>
     # obs_path/...
 
     # All of them must be in the CF-conform filetpye
@@ -359,7 +359,7 @@ def get_list_of_filenames(name_of_dataset: str, search_str: str, dtstart: dt.dat
     #############################################################################
 
     filepath = Path(os.environ['OBSERVATIONS_PATH']) / f'{name_of_dataset}/'
-    list_of_files = list(filepath.glob(f'{search_str}*.nc'))
+    list_of_files = list(filepath.glob(f'{name_of_dataset}*.nc'))
     list_of_files.sort()
 
     list_of_starts = [item.stem.split('_')[1] for item in list_of_files]
@@ -554,14 +554,14 @@ class Timeseries:
     # The methods of hvplot.xarray take care of that and more sophisticated plots
     # are done by the plotter. I keep the availability plot though as this is quite useful.
 
-    def __init__(self, name_of_dataset: str, stationname: str, dtstart: dt.datetime, dtend: dt.datetime,
+    def __init__(self, name_of_dataset: str, dtstart: dt.datetime, dtend: dt.datetime,
                  calc_pt=False, data=None, metadata=None, verbose=False):
 
         if metadata is None:
             metadata = dict()
 
         self.metadata = metadata
-        self.filenames = get_list_of_filenames(name_of_dataset, stationname, dtstart, dtend)
+        self.filenames = get_list_of_filenames(name_of_dataset, dtstart, dtend)
 
         if data is None:
             try:

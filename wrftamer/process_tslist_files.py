@@ -8,6 +8,13 @@ import os
 import itertools
 from wrftamer.wrfplotter_classes import assign_cf_attributes_tslist
 
+def uv_to_FFDD(u, v):
+
+    ff = np.sqrt(u ** 2 + v ** 2)
+    dd = 180. / np.pi * np.arctan2(-u, -v)
+    dd = np.mod(dd, 360)
+
+    return ff, dd
 
 def read_files(fiile, var_element, version: str):
     # TS files have surface variables, all other files vertical levels. Thus columns and names need to specified
@@ -148,12 +155,14 @@ def merge_tslist_files(indir, outdir, location, domain, proj_name, exp_name, ins
 
             xxa = xr.Dataset(all_xxr[f'{loc}.{dom}'])
             if 'UU' in xxa and 'VV' in xxa:
-                wsp = np.sqrt(xxa['UU'] ** 2 + xxa['VV'] ** 2)
-                xxa = xxa.assign({'WSP': wsp})
+                ff, dd = uv_to_FFDD(xxa['UU'], xxa['VV'])
+                xxa = xxa.assign({'WSP': ff})
+                xxa = xxa.assign({'DIR': dd})
 
             if 'U10' in xxa and 'V10' in xxa:
-                wsp10 = np.sqrt(xxa['U10'] ** 2 + xxa['V10'] ** 2)
-                xxa = xxa.assign({'WSP10': wsp10})
+                ff10, dd10 = uv_to_FFDD(xxa['U10'], xxa['V10'])
+                xxa = xxa.assign({'WSP10': ff10})
+                xxa = xxa.assign({'DIR10': dd10})
 
             xxa = xxa.rename({"UU": "U", "VV": "V", "PH": "ALT", "PR": "PRES",
                               "WW": "W", "TH": "PT",

@@ -3,6 +3,8 @@ import pandas as pd
 
 ##########################################################################################
 def get_coords(loc: str) -> (float, float):
+
+    # TODO: this must be generalized as well.
     standorte = pd.read_csv('/inf/windfarms/all_windparks_nr_daniel.csv')
     AV = standorte[standorte.windpark == 'Alpha ventus']
 
@@ -31,9 +33,8 @@ def set_infos(proj_name=None, domain=None, ave=None, observation=None, dataset_d
 
     infos['dom'] = domain
     infos['loc'] = location
-    infos['Obsvec'] = [observation]
     infos['anemometer'] = device
-    infos['obs_dataset'] = dataset_dict[observation] # with this definition, can only select a single obs!
+    infos['Obsvec'] = [observation]
 
     if ave is None:
         infos['AveChoice_WRF'] = None

@@ -15,7 +15,7 @@ def uv_to_FFDD(u, v):
 #                                                  Load Data
 ########################################################################################################################
 
-def load_obs_data(obs_data: dict, obs: str, **kwargs):
+def load_obs_data(obs_data: dict, obs: str, dataset: str, **kwargs):
     """
     This function just loads observations from a single location and stores everything in the obs_data dict.
     """
@@ -24,10 +24,9 @@ def load_obs_data(obs_data: dict, obs: str, **kwargs):
 
     startdate = kwargs['startdate']
     enddate = kwargs['enddate']
-    dataset = kwargs['obs_dataset'] # must unsure somewhere that obs is in dataset
 
     dtstart, dtend = dt.datetime.strptime(startdate, '%Y%m%d'), dt.datetime.strptime(enddate, '%Y%m%d')
-    cls = Timeseries(dataset, dataset, dtstart, dtend, calc_pt=True)
+    cls = Timeseries(dataset, dtstart, dtend, calc_pt=True)
 
     if 'station' in cls.data.dims:
         for stat in cls.data.station:
@@ -47,7 +46,6 @@ def load_mod_data(mod_data: dict, exp_name: str, **kwargs):
 
     from wrftamer.experiment_management import experiment
     from wrftamer.project_management import project
-    import glob
 
     try:
         proj_name = kwargs['proj_name']
@@ -65,44 +63,24 @@ def load_mod_data(mod_data: dict, exp_name: str, **kwargs):
         prefix = 'Ave' + str(ave_window) + 'Min'
 
     exp = experiment(proj_name, exp_name)
-    files2load = glob.glob(f'{exp.workdir}/out/{prefix}*{dom}.nc')
-    files2load.sort()
     list_of_locs = exp.list_tslocs(verbose=False)
+    file2load = f'{exp.workdir}/out/{prefix}_tslist_{dom}.nc'
+    tmp_xa = xr.open_dataset(file2load)
 
     tslist_data = dict()
-    for idx, myfile in enumerate(files2load):
-        tmp_xa = xr.open_dataset(myfile)
+    for dim in range(0, tmp_xa.dims['station']):
+        tmp = tmp_xa.isel(station=dim)
 
-        # TODO: I think I want the location in the generated ncfiles (add this attribute in the process tsfiles,
-        #  write a script to add to existing data...
-        #  then, remove these lines
-        attrs = tmp_xa.attrs
-        attrs['location'] = list_of_locs[idx]
-        tmp_xa.attrs = attrs
+        # TODO: got an error for Ave10 and Ave 5 files. station_name, lat, lon, elevation became f(t)
+        # -> this forces me to do this try/except.
+        # Solve this issue and simplifiy this piece.
+        try:
+            loc = tmp.station_name.values[0]
+        except KeyError:
+            loc = tmp.station_name.values
 
-        # Calculate DIR and DIR10
-        # TODO: I have to assume here that U and V data exists. I prefer to have this in the postprocessing,
-        #  event if this makes the files a bit larger.
-
-        ff, dd = uv_to_FFDD(tmp_xa.U, tmp_xa.V)
-        ff10, dd10 = uv_to_FFDD(tmp_xa.U10, tmp_xa.V10)
-
-        dd.name = 'DIR'
-        dd = dd.assign_attrs(standard_name='wind_direction')
-        dd = dd.assign_attrs(units='degrees')
-        tmp_xa = tmp_xa.assign(DIR=dd)
-
-        dd10.name = 'DIR10'
-        dd10 = dd10.assign_attrs(standard_name='wind_direction_10m')
-        dd10 = dd10.assign_attrs(units='degrees')
-        tmp_xa = tmp_xa.assign(DIR10=dd10)
-
-        # rename time to have it the same way as in WRF
-        ren = dict()
-        ren['time'] = 'Time'  # TODO I should have it called time or Time everywhere. Cleanup needed.
-        tmp_xa = tmp_xa.rename(ren)
-
-        tslist_data[list_of_locs[idx]] = tmp_xa
+        if loc in list_of_locs:
+            tslist_data[loc] = tmp
 
         if bool(tslist_data):
             mod_data[exp_name] = tslist_data
