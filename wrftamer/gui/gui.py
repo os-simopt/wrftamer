@@ -1,9 +1,10 @@
 import os
-import panel as pn
 import re
-import datetime as dt
+import pandas as pd
+from pathlib import Path
 
 from gui_functions import *
+import panel.widgets as pnw
 
 import wrftamer
 from wrftamer.project_management import project, list_projects, list_unassociated_exp, reassociate
@@ -13,12 +14,13 @@ from wrftamer.wrfplotter_classes import Map
 from wrftamer.plotting.collect_infos import set_infos
 from wrftamer.plotting.load_and_prepare import load_obs_data, load_mod_data
 from wrftamer.plotting.hv_plots import create_hv_plot
-
+from wrftamer.plotting.mpl_plots import create_mpl_plot
 
 pn.extension('tabulator')
 tabulator_formatters = {
     'select': {'type': 'tickCross'}
 }
+
 
 def wt_proj_tab(*args):
     list_of_projects = list_projects(verbose=False)
@@ -26,7 +28,7 @@ def wt_proj_tab(*args):
 
     global wt_mc_proj
     wt_mc_proj = pn.widgets.MultiChoice(name='Choose Project', max_items=1, value=[], options=list_of_projects,
-                                     height=75)
+                                        height=75)
 
     textbox = pn.widgets.TextInput(name='New Project Name', value='')
 
@@ -49,6 +51,7 @@ def wt_proj_tab(*args):
     df = proj.provide_info()
     info_df = pn.widgets.Tabulator(df, formatters=tabulator_formatters, height=600)
 
+    # noinspection PyUnusedLocal
     def create_proj(event):
 
         old_options = wt_mc_proj.options.copy()
@@ -90,10 +93,11 @@ def wt_proj_tab(*args):
                 proj_old = project(proj_name_old)
 
                 # first, remove from unassociated list:
-                for exp_name in info_df.value.Name[info_df.value.select == True]:
+                for exp_name in info_df.value.Name[info_df.value.select]:
                     reassociate(proj_old, proj, exp_name)  # this function changes all relevant paths, entries and
                     # moves files.
 
+    # noinspection PyUnusedLocal
     def rename_proj(event):
 
         choice = wt_mc_proj.value
@@ -125,6 +129,7 @@ def wt_proj_tab(*args):
                     print('New Project Name already exists. Cannot rename')
                     return
 
+    # noinspection PyUnusedLocal
     def remove_proj(event):
 
         choice = wt_mc_proj.value
@@ -157,6 +162,7 @@ def wt_proj_tab(*args):
                 del_warn.visible = False
                 b_cancel.visible = False
 
+    # noinspection PyUnusedLocal
     def reassociate_experiments(event):
 
         try:
@@ -182,6 +188,7 @@ def wt_proj_tab(*args):
                 reassociate(proj_old, proj_new,
                             exp_name)  # this function changes all relevant paths, entries and moves files.
 
+    # noinspection PyUnusedLocal
     def _reset_warning(event):
         # reset
         b_delete.name = 'Remove Experiment'
@@ -220,6 +227,7 @@ def wt_proj_tab(*args):
 
     return proj_row
 
+
 class GUI:
 
     def __init__(self):
@@ -235,6 +243,7 @@ class GUI:
 
         # wrfplotter
         self.stats = None
+        self.figure = None
         self.obs_data = dict()
         self.mod_data = dict()
         self.map_cls = None
@@ -257,7 +266,7 @@ class GUI:
         self.menu1, self.menu2, self.menu_map = self.wp_create_menus()
 
         self._wp_update_plot()
-        self.wp = pn.Row(self.menu1, pn.Column(self.menu2, self.plot_panel),name='WRFplotter')
+        self.wp = pn.Row(self.menu1, pn.Column(self.menu2, self.plot_panel), name='WRFplotter')
 
         # Collect all Tabs
         self.view = pn.Tabs(self.project, self.experiment, self.wp, self.about)
@@ -312,6 +321,7 @@ class GUI:
 
         ################################################################################################
 
+        # noinspection PyUnusedLocal
         def create_exp(event):
 
             try:
@@ -366,6 +376,7 @@ class GUI:
 
                 os.remove(configfile)  # this was just a temporary file.
 
+        # noinspection PyUnusedLocal
         def rename_exp(event):
 
             try:
@@ -406,6 +417,7 @@ class GUI:
                     except FileNotFoundError:
                         print('This experiment does not exist.')
 
+        # noinspection PyUnusedLocal
         def remove_exp(event):
 
             try:
@@ -447,6 +459,7 @@ class GUI:
                     del_warn.visible = False
                     b_cancel.visible = False
 
+        # noinspection PyUnusedLocal
         def copy_exp(event):
 
             try:
@@ -485,6 +498,7 @@ class GUI:
                     except FileNotFoundError:
                         print('This experiment does not exist.')
 
+        # noinspection PyUnusedLocal
         def postprocess_exp(event):
 
             try:
@@ -516,6 +530,7 @@ class GUI:
 
                 msg_procesing.visible = False
 
+        # noinspection PyUnusedLocal
         def archive_exp(event):
 
             keep_log = True  # I may want to add a switch later on?
@@ -540,19 +555,21 @@ class GUI:
 
                 msg_procesing.visible = False
 
+        # noinspection PyUnusedLocal
         def _reset_warning(event):
             # reset
             b_delete.name = 'Remove Experiment'
             del_warn.visible = False
             b_cancel.visible = False
 
+        # noinspection PyUnusedLocal
         @pn.depends(file_input.param.filename, watch=True)  # do not use para.value as a trigger here.
         # Reason: value is set before filename. That would cause the second line to fail.
         def _update_textfield(selection):
 
             textfield.value = file_input.value.decode()
             exp_name_box.value = file_input.filename.split('.')[0]
-            # Use the filename as the experiment name. The user may change that in the process.
+            # By default, use the filename as the experiment name. The user may change this manually
 
         @pn.depends(wt_mc_proj.param.value, watch=True)
         def _update_exp_list(selection):
@@ -650,7 +667,9 @@ class GUI:
             'WSP_Sonic'])  # default values
 
         sel_store = pn.widgets.Select(name='data type', options=['markdown', 'csv'])
-        but_store = pn.widgets.Button(name='Save Table', button_type='default', margin=[23, 10])
+        but_store_tab = pn.widgets.Button(name='Save Table', button_type='default', width=140, margin=[23, 10])
+        but_store_fig = pn.widgets.Button(name='Save Figure', button_type='default', width=140, margin=[23, 10])
+        but_store_fig.disabled = True
 
         alert1 = pn.pane.Alert('Time series data should be reloaded', alert_type="danger")
         alert1.visible = False
@@ -666,6 +685,7 @@ class GUI:
         # ---------------------------------------------------------------------------------------------------
         # ------------------------------ Functions that interact with widgets. ------------------------------
         # ---------------------------------------------------------------------------------------------------
+        # noinspection PyUnusedLocal
         def _toggle_dev(event):
 
             if but_dev.name == 'Sonic':
@@ -703,12 +723,14 @@ class GUI:
             except IndexError:
                 pass
 
+        # noinspection PyUnusedLocal
         @pn.depends(mc_proj.param.value, sel_dom.param.value,
                     but_dev.param.name, sel_ave.param.value, watch=True)
         def _reload_watcher1(proj, dom, dev, ave):
             # Watches for changes in relevant parameters and indicates that a reload is needed
             alert1.visible = True
 
+        # noinspection PyUnusedLocal
         @pn.depends(mc_proj.param.value, mc_exp.param.value, sel_dom.param.value,
                     sel_var.param.value, sel_lev.param.value, watch=True)
         def _reload_watcher2(proj, exp_names, dom, var, lev):
@@ -716,6 +738,7 @@ class GUI:
             # This is for maps
             alert2.visible = True
 
+        # noinspection PyUnusedLocal
         def _load_data(event):
 
             try:
@@ -785,7 +808,7 @@ class GUI:
 
                     # poi_file = os.environ['WRFTAMER_POI_FILE'] # Future
                     # testing.
-                    #TODO: generalize!
+                    # TODO: generalize!
                     poi_file = '/home/daniel/projects/parkcast/repos/WRFtamer/wrftamer/resources/Koordinaten_Windpark.csv'
                     poi = pd.read_csv(poi_file, delimiter=';')
                     self.map_cls = Map(poi=poi, intermediate_path=i_path)
@@ -794,18 +817,23 @@ class GUI:
                     alert2.visible = False
                 except Exception as e:
                     print(e)
-                    print(i_path, dom, var, lev)
             else:
                 pass
 
-        @pn.depends(self.plot_panel.param.active, watch=True)  # udating widgets related to table storing
-        def _update_store(active):
+        # udating widgets related to table and figure storing
+        @pn.depends(self.plot_panel.param.active, chk_static.param.value, watch=True)
+        def _update_store(active, static_plots):
             if active in [0, 2]:
                 sel_store.disabled = False
-                but_store.disabled = False
+                but_store_tab.disabled = False
             else:
                 sel_store.disabled = True
-                but_store.disabled = True
+                but_store_tab.disabled = True
+
+            if static_plots:
+                but_store_fig.disabled = False
+            else:
+                but_store_fig.disabled = True
 
         @pn.depends(self.plot_panel.param.active, watch=True)
         def _update_sel_var(active):
@@ -829,9 +857,10 @@ class GUI:
                 sel_lev.disabled = False
                 sel_lev.options = _dict_of_levs_per_plottype_and_var[plottype][tmp_var]
 
+        # noinspection PyUnusedLocal
         def _store_table(event):
 
-            but_store.button_type = 'warning'
+            but_store_tab.button_type = 'warning'
             extension = sel_store.value
             try:
                 if extension == 'csv':
@@ -844,13 +873,26 @@ class GUI:
                 print(e)
                 print(type(self.stats))
 
-            but_store.button_type = 'success'
+            but_store_tab.button_type = 'success'
 
+        # noinspection PyUnusedLocal
+        def _store_figure(event):
+            but_store_fig.button_type = 'warning'
+
+            # TODO: in the future, use plot_path an generate a meaningful name.
+            #  self.plot_path
+
+            self.figure.savefig('test.png', dpi=400)
+
+            but_store_fig.button_type = 'success'
+
+        # noinspection PyUnusedLocal
         def _change_pic_left(event):
             current_filename = Path(png_pane.object)  # The filename must be Map_d0X_VAR_YYYYMMDD_HHMMSS_mlY.png
             new_filename = get_newfilename_from_old(current_filename, -10)  # For now, delta_t is fixed to 10 minuts
             png_pane.object = str(new_filename)
 
+        # noinspection PyUnusedLocal
         def _change_pic_right(event):
             current_filename = Path(png_pane.object)  # The filename must be Map_d0X_VAR_YYYYMMDD_HHMMSS_mlY.png
             new_filename = get_newfilename_from_old(current_filename, +10)  # For now, delta_t is fixed to 10 minuts
@@ -859,14 +901,15 @@ class GUI:
         # Button click events
         but_dev.on_click(_toggle_dev)
         but_load.on_click(_load_data)
-        but_store.on_click(_store_table)
+        but_store_tab.on_click(_store_table)
+        but_store_fig.on_click(_store_figure)
         but_left.on_click(_change_pic_left)
         but_right.on_click(_change_pic_right)
 
         menu1 = pn.Column(mc_proj, mc_exp, sel_dom, sel_loc, sel_obs, but_dev, sel_ave, time_to_plot, chk_static,
                           progress, but_load)
         menu2 = pn.Row(
-            pn.Column(pn.Row(sel_var, sel_lev), pn.Row(sel_store, but_store)),
+            pn.Column(pn.Row(sel_var, sel_lev), pn.Row(sel_store, but_store_tab, but_store_fig)),
             pn.Column(alert1, alert2)
         )
 
@@ -908,9 +951,9 @@ class GUI:
                                       observation=obs)
 
                     if static_plots:
-                        # figure = create_mpl_plot(obs_data, mod_data, infos)
-                        figure = error_message('Static plots not yet implemented.')
+                        figure = create_mpl_plot(obs_data=self.obs_data, mod_data=self.mod_data, infos=infos)
                         self.stats = None
+                        self.figure = figure
                     else:
                         figure, self.stats = create_hv_plot(infos, obs_data=self.obs_data, mod_data=self.mod_data)
 
@@ -929,7 +972,11 @@ class GUI:
                             figure = error_message2(filename)
                     else:
                         try:
-                            # This is not very nice, but the best I can do right now.
+                            # TODO: This is not very nice, but the best I can do right now.
+                            #  Also, the size is too large, but I cannot change this right now, an I do not
+                            #  have time to play around with this issue.
+                            # One thing I found out: if you drop XTIME from the xarray, at least the title is
+                            # better.
                             figure = self.map_cls.data.interactive.sel(Time=pnw.DiscreteSlider).plot()
                         except Exception as e:
                             figure = error_message(e)
@@ -943,6 +990,7 @@ class GUI:
                 tab = (plottype, message)
 
             self.plot_panel[active] = tab
+
 
 a = GUI()
 a.view.servable("WRFtamer")

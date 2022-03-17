@@ -22,10 +22,12 @@ def load_obs_data(obs_data: dict, obs: str, dataset: str, **kwargs):
 
     from wrftamer.wrfplotter_classes import Timeseries
 
-    startdate = kwargs['startdate']
-    enddate = kwargs['enddate']
+    #startdate = kwargs['startdate']
+    #enddate = kwargs['enddate']
+    #dtstart, dtend = dt.datetime.strptime(startdate, '%Y%m%d'), dt.datetime.strptime(enddate, '%Y%m%d')
 
-    dtstart, dtend = dt.datetime.strptime(startdate, '%Y%m%d'), dt.datetime.strptime(enddate, '%Y%m%d')
+    dtstart, dtend = kwargs['obs_load_from_to']
+
     cls = Timeseries(dataset, dtstart, dtend, calc_pt=True)
 
     if 'station' in cls.data.dims:
@@ -173,11 +175,11 @@ def prep_zt_data(mod_data, infos: dict) -> xr.Dataset:
     # new_z
     new_z = mod_data[key][loc]['ALT'].mean(axis=0, keep_attrs=True)
     data2plot = data2plot.drop_vars('ALT')
-    data2plot = data2plot.rename_vars({'zdim': 'ALT'})
+    data2plot = data2plot.rename_vars({'model_level': 'ALT'})
 
     data2plot['ALT'] = new_z
-    data2plot = data2plot.swap_dims({'zdim': 'ALT'})
-    data2plot = data2plot.drop('zdim')
+    data2plot = data2plot.swap_dims({'model_level': 'ALT'})
+    data2plot = data2plot.drop('model_level')
 
     return data2plot[var]
 
@@ -204,6 +206,7 @@ def prep_ts_data(obs_data, mod_data, infos: dict, verbose=False):
 
 def _prep_ts_data(obs_data, mod_data, expvec: list, obsvec: list, loc: str, var: str, lev: str, anemometer: str,
                   verbose=False) -> pd.DataFrame:
+
     """
     Takes the data coming from my classes, selects the right data and concats
     everything into a single dataframe for easy plotting with hvplot.
@@ -219,8 +222,9 @@ def _prep_ts_data(obs_data, mod_data, expvec: list, obsvec: list, loc: str, var:
     """
 
     if len(mod_data) > 0:
-        tmp = mod_data[list(mod_data.keys())[0]][loc].to_dataframe()
-        tlim1, tlim2 = tmp.index[0][0], tmp.index[-1][0]
+        tmp_t = mod_data[list(mod_data.keys())[0]][loc].time.values
+        tlim1 = pd.Timestamp(tmp_t.min())
+        tlim2 = pd.Timestamp(tmp_t.max())
 
     # change a few parameter Names to fit the name of the obs-files
     translator = {'WSP': {'Sonic': '_USA', 'Analog': '_CUP'}, 'DIR': {'Sonic': '_USA', 'Analog': '_VANE'}}
@@ -271,8 +275,8 @@ def _prep_ts_data(obs_data, mod_data, expvec: list, obsvec: list, loc: str, var:
 
             zvec = mymod.ALT[0, :].values
             idx = (np.abs(zvec - float(lev))).argmin()
-            xa1 = mymod.isel(zdim=idx)
-            xa2 = mymod.isel(zdim=idx + 1)
+            xa1 = mymod.isel(model_level=idx)
+            xa2 = mymod.isel(model_level=idx + 1)
             w1 = abs(zvec[idx] - float(lev)) / abs(zvec[idx + 1] - zvec[idx])
             w2 = abs(zvec[idx + 1] - float(lev)) / abs(zvec[idx + 1] - zvec[idx])
             mymod = (xa1 * w2 + xa2 * w1)

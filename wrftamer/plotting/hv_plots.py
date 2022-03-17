@@ -8,207 +8,7 @@ import hvplot.xarray
 import hvplot.pandas
 import cartopy.crs as ccrs
 from wrfplotter.Statistics import Statistics
-
-
-########################################################################################################################
-#                                                Data Preparation
-########################################################################################################################
-
-def prep_profile_data2(obs_data, mod_data, infos: dict, verbose=False) -> list:
-    """
-    Takes the data coming from my classes, selects the right data and puts everyting in a list.
-    In this proj_name, I cannot concat everything into a single dataframe, because the the Z-vectors are different.
-
-    obs_data: dict of observations (usually of the towerdata class)
-    mod_data: dict of model data (usually wrf_zt)
-    """
-
-    anemometer = infos['anemometer']
-    var = infos['var']
-    loc = infos['loc']
-    time_to_plot = infos['time_to_plot']
-    expvec = infos['Expvec']
-    obsvec = infos['Obsvec']
-
-    # change a few parameter Names to fit the
-    translator = {'WSP': {'Sonic': '_USA', 'Analog': '_CUP'}, 'DIR': {'Sonic': '_USA', 'Analog': '_VANE'}}
-    if var in ['WSP', 'DIR']:
-        device = translator.get(var, '').get(anemometer, '')
-    else:
-        device = ''
-
-    data2plot = []
-    for obs in obsvec:
-        zvec, data = [], []
-        myobs = obs_data[obs]
-        ttp = np.datetime64(time_to_plot)
-        myobs = myobs.where(myobs.time == ttp, drop=True)
-
-        for key in myobs.keys():
-            if var in key and 'std' not in key:
-                if device == '':
-                    if 'CUP' not in key and 'USA' not in key and 'VANE' not in key and key.startswith(var + '_'):
-                        zvec.append(float(key.split('_')[1]))
-                        data.append(myobs[key].values[0])
-
-                elif device in key:
-                    zvec.append(float(key.rsplit('_', 1)[1]))
-                    data.append(myobs[key].values[0])
-                    units = myobs[key].units
-                    description = var #  (standard_name contains height)
-
-        df = pd.DataFrame({'ALT': zvec, loc: data})
-        data2plot.append(df)
-
-    for exp in expvec:
-        try:
-            mymod = mod_data[exp][loc]
-            mymod = mymod.where(mymod.time == ttp, drop=True)
-            mymod = mymod.to_dataframe()
-            mymod = mymod.set_index('ALT')
-            mymod = pd.DataFrame(mymod[var])
-            mymod = mymod.rename(columns={var: exp})
-            mymod = mymod.reset_index()
-            data2plot.append(mymod)
-
-            units = mod_data[exp][loc][var].units
-            description = mod_data[exp][loc][var].standard_name
-
-        except KeyError:
-            if verbose:
-                print(f'No data found for experiment {exp}')
-        except IndexError:
-            if verbose:
-                print(f'No data found at this time: {time_to_plot}')
-
-    return data2plot, units, description
-
-
-def prep_zt_data2(mod_data, infos: dict) -> xr.Dataset:
-    var = infos['var']
-    loc = infos['loc']
-
-    key = list(mod_data.keys())[0]
-    data2plot = mod_data[key][loc]
-    new_z = np.mean(mod_data[key][loc]['ALT'], axis=0)
-
-    # new_z
-    data2plot = data2plot.drop_vars('ALT')
-    data2plot = data2plot.rename_vars({'model_level': 'ALT'})
-
-    data2plot['ALT'] = new_z
-    data2plot = data2plot.swap_dims({'model_level': 'ALT'})
-    data2plot = data2plot.drop('model_level')
-
-    return data2plot[var]
-
-
-def prep_ts_data2(obs_data, mod_data, infos: dict, verbose=False):
-    plttype = infos['plttype']
-    anemometer = infos['anemometer']
-    loc = infos['loc']
-    expvec = infos['Expvec']
-    obsvec = infos['Obsvec']
-
-    if plttype == 'Timeseries 2':
-        var1, var2 = infos['var1'], infos['var2']
-        lev1, lev2 = infos['lev1'], infos['lev2']
-        data2plot1 = _prep_ts_data2(obs_data, mod_data, expvec, obsvec, loc, var1, lev1, anemometer, verbose)
-        data2plot2 = _prep_ts_data2(obs_data, mod_data, expvec, obsvec, loc, var2, lev2, anemometer, verbose)
-        return data2plot1, data2plot2
-    else:
-        var = infos['var']
-        lev = infos['lev']
-        data2plot = _prep_ts_data2(obs_data, mod_data, expvec, obsvec, loc, var, lev, anemometer, verbose)
-        return data2plot
-
-
-def _prep_ts_data2(obs_data, mod_data, expvec: list, obsvec: list, loc: str, var: str, lev: str, anemometer: str,
-                   verbose=False) -> pd.DataFrame:
-    """
-    Takes the data coming from my classes, selects the right data and concats
-    everything into a single dataframe for easy plotting with hvplot.
-
-    obs_data: dict of observations (usually of the towerdata class)
-    mod_data: dict of model data (usually wrf_zt)
-    expvec: list of experiments to plot
-    obsvec: list of observations to plot
-    loc: location of the time series
-    var: variable to plot
-    lev: level at which the varialbe is valid
-    anemometer: device used for observation
-    """
-
-    if len(mod_data) > 0:
-        tmp = mod_data[list(mod_data.keys())[0]][loc].to_dataframe()
-        tlim1, tlim2 = tmp.index[0][0], tmp.index[-1][0]
-
-    # change a few parameter Names to fit the name of the obs-files
-    translator = {'WSP': {'Sonic': '_USA', 'Analog': '_CUP'}, 'DIR': {'Sonic': '_USA', 'Analog': '_VANE'}}
-    if var in ['WSP', 'DIR']:
-        device = translator.get(var, '').get(anemometer, '')
-    else:
-        device = ''
-
-    all_df = []
-
-    for obs in obsvec:
-        myobs = obs_data[obs].to_dataframe()
-        try:
-            if obs == 'FINO1':
-                if var == 'PRES':
-                    tmp = myobs[f'P_{lev}']
-                else:
-                    tmp = myobs[f'{var}{device}_{lev}']
-            else:  # AV01-12
-                tmp = myobs[var]  # WSP, DIR, POW, GEN_SPD
-
-            tmp = tmp.rename(obs)
-
-        except KeyError:
-            tmp = pd.DataFrame()
-            tmp.name = 'Data Missing'
-
-        if len(mod_data) > 0:
-            tmp = tmp[tlim1:tlim2]
-
-        all_df.append(tmp)
-
-    for exp in expvec:
-        try:
-            mymod = mod_data[exp][loc]
-
-            # interpolate data to desired level
-            #  TODO: this may fail for DIR- write a proper function somewhere and call!
-            zvec = mymod.ALT[0, :].values
-            idx = (np.abs(zvec - float(lev))).argmin()
-            xa1 = mymod.isel(model_level=idx)
-            xa2 = mymod.isel(model_level=idx + 1)
-            w1 = abs(zvec[idx] - float(lev)) / abs(zvec[idx + 1] - zvec[idx])
-            w2 = abs(zvec[idx + 1] - float(lev)) / abs(zvec[idx + 1] - zvec[idx])
-            mymod = (xa1 * w2 + xa2 * w1)
-
-            mymod = mymod.to_dataframe()
-
-            tmp = mymod[var]
-            tmp = tmp.rename(exp)
-            all_df.append(tmp)
-        except KeyError:
-            if verbose:
-                print(f'No Data for Experiment {exp}')
-
-    if len(all_df) > 0:
-        data2plot = pd.concat(all_df, axis=1)
-    else:
-        data2plot = pd.DataFrame({'time': [dt.datetime(1970, 1, 1), dt.datetime(2020, 1, 1)], 'data': [np.nan, np.nan]})
-        data2plot = data2plot.set_index('time')
-
-    data2plot.variable = var
-    data2plot.level = lev
-    data2plot.anemometer = anemometer
-
-    return data2plot
-
+from wrftamer.plotting.load_and_prepare import prep_profile_data, prep_ts_data, prep_zt_data
 
 ########################################################################################################################
 #                                                      Plots
@@ -221,20 +21,23 @@ def create_hv_plot(infos: dict, obs_data=None, mod_data=None, map_data=None):
     var = infos['var']
 
     if plottype == 'Timeseries':
-        data = prep_ts_data2(obs_data, mod_data, infos)
+        data, units, description = prep_ts_data(obs_data, mod_data, infos)
         stats = Statistics(data, infos)
 
         xlim = [data.index[0], data.index[-1]]
         size = 5
 
-        if var == 'DIR':
-            figure = data[infos['Obsvec']].dropna().hvplot.scatter(xlim=xlim, size=size, ylabel=var,
-                                                                   label=infos['Obsvec'][0]) * \
-                     data[infos['Expvec']].dropna().hvplot.scatter(xlim=xlim, size=size, ylabel=var)
-        else:
-            figure = data[infos['Obsvec']].dropna().hvplot(xlim=xlim, ylabel=var,
-                                                           label=infos['Obsvec'][0]) * \
-                     data[infos['Expvec']].dropna().hvplot(xlim=xlim, ylabel=var)
+        for idx, item in enumerate(data):
+            if idx == 0:
+                if var == 'DIR':
+                    figure = data[item].dropna().hvplot.scatter(xlim=xlim, size=size, ylabel=var)
+                else:
+                    figure = data[item].dropna().hvplot(xlim=xlim, ylabel=var)
+            else:
+                if var == 'DIR':
+                    figure = figure * data[item].dropna().hvplot.scatter(xlim=xlim, size=size, ylabel=var)
+                else:
+                    figure = figure * data[item].dropna().hvplot(xlim=xlim, ylabel=var)
 
         figure.opts(legend_position='bottom_right')
         figure = pn.Column(figure, stats)
@@ -244,7 +47,7 @@ def create_hv_plot(infos: dict, obs_data=None, mod_data=None, map_data=None):
         size = 10
         width = 400
         height = 600
-        data, units, description = prep_profile_data2(obs_data, mod_data, infos)
+        data, units, description = prep_profile_data(obs_data, mod_data, infos)
 
         for num, item in enumerate(data):
             if num == 0:
@@ -270,7 +73,7 @@ def create_hv_plot(infos: dict, obs_data=None, mod_data=None, map_data=None):
         mods = infos['Expvec']
         obs = infos['Obsvec'][0]
 
-        data = prep_ts_data2(obs_data, mod_data, infos)
+        data, units, description = prep_ts_data(obs_data, mod_data, infos)
         stats = Statistics(data, infos)
 
         # For the plot.
@@ -301,7 +104,7 @@ def create_hv_plot(infos: dict, obs_data=None, mod_data=None, map_data=None):
         stats = None
 
     elif plottype == 'zt-Plot':
-        data = prep_zt_data2(mod_data, infos)
+        data = prep_zt_data(mod_data, infos)
         figure = data.hvplot.quadmesh(x='time', y='ALT', ylabel='z (m)',
                                       title=data.standard_name + ' (' + data.units + ')')
         stats = None

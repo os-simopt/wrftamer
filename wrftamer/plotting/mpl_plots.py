@@ -1,5 +1,6 @@
 from wrftamer.plotting.load_and_prepare import prep_profile_data, prep_ts_data, prep_zt_data
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 from matplotlib.dates import DateFormatter
@@ -15,6 +16,7 @@ def create_mpl_plot(obs_data, mod_data, infos: dict, vmin=0, vmax=30):
     # ===================================================================
     # General Stuff
     # ===================================================================
+
     plttype = infos['plttype']
     var = infos['var']
     Expvec = infos['Expvec']
@@ -24,11 +26,17 @@ def create_mpl_plot(obs_data, mod_data, infos: dict, vmin=0, vmax=30):
     stys = ['-', '-', '-', '-', '-', '--', '--', '--', '--', '--']
     stys2 = ['+', '+', '+', '+', '+', 'x', 'x', 'x', 'x', 'x']
 
-    dtmin, dtmax = infos['starttime'], infos['endtime']
+    if len(mod_data) > 0:
+        tmp_t = mod_data[list(mod_data.keys())[0]][loc].time.values
+    else:
+        tmp_t = obs_data[list(obs_data.keys())[0]].time.values # TODO: once I replaced all instances of FINO with FINO1, put loc here.
+
+    dtmin = pd.Timestamp(tmp_t.min())
+    dtmax = pd.Timestamp(tmp_t.max())
 
     if plttype == 'Profiles':
-        zmax = mod_data[Expvec[0]][loc].Z.values.max()
-        zmin = mod_data[Expvec[0]][loc].Z.values.min()
+        zmax = mod_data[Expvec[0]][loc].ALT.values.max()
+        zmin = mod_data[Expvec[0]][loc].ALT.values.min()
 
         data, units, description = prep_profile_data(obs_data, mod_data, infos)
 
@@ -39,7 +47,7 @@ def create_mpl_plot(obs_data, mod_data, infos: dict, vmin=0, vmax=30):
         data, units, description = prep_ts_data(obs_data, mod_data, infos)
         figure = Obs_vs_Mod(data, vmin=vmin, vmax=vmax, col=cols, sty=stys2, unit=units)
 
-    elif plttype == 'Timeseries 1':
+    elif plttype == 'Timeseries':
         data, units, description = prep_ts_data(obs_data, mod_data, infos)
         figure = TimeSeries(data, vmin, vmax, dtmin=dtmin, dtmax=dtmax, col=cols, sty=stys,
                             descr=description, unit=units)
@@ -210,7 +218,7 @@ def TimeSeries(data, vmin, vmax, dtmin, dtmax, figure=None, col=None, sty=None, 
         label = list_of_keys
 
     for n, key in enumerate(data):
-        ax.plot(data[key], color=col[n], linestyle=sty[n], lw=2, label=label[n])
+        ax.plot(data[key].dropna(), color=col[n], linestyle=sty[n], lw=2, label=label[n])
 
     ax.set_xlabel('time (UTC)')
     ax.set_ylabel(descr + ' (' + unit + ')')
@@ -282,8 +290,8 @@ def TimeSeries2(data1, data2, vmin, vmax, dtmin, dtmax, figure=None,
         label = list_of_keys
 
     for n, key in enumerate(list_of_keys):
-        ax[0].plot(data1[key], color=col[n], linestyle=sty1[n], lw=2)
-        ax[1].plot(data2[key], color=col[n], linestyle=sty2[n], marker='.', ms=5, lw=2, label=label[n])
+        ax[0].plot(data1[key].dropna(), color=col[n], linestyle=sty1[n], lw=2)
+        ax[1].plot(data2[key].dropna(), color=col[n], linestyle=sty2[n], marker='.', ms=5, lw=2, label=label[n])
         # maybe I want to improve here. The second plot always has a marker.
 
     for ii in [0, 1]:

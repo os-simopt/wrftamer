@@ -1,5 +1,5 @@
 import pandas as pd
-
+import datetime as dt
 
 ##########################################################################################
 def get_coords(loc: str) -> (float, float):
@@ -89,9 +89,10 @@ def derive_additional_infos(infos: dict) -> dict:
         P = get_coords(loc)
 
     # For FINO1. I only load 1 year. May need more at some point.
-    subdir = str(time_to_plot.year)
-    startdate = subdir + '0101'
-    enddate = str(int(subdir) + 1) + '0101'
+    #startdate = str(time_to_plot.year) + '0101'
+    #enddate = str(time_to_plot.year + 1) + '0101'
+    dtstart = dt.datetime(time_to_plot.year,1,1)
+    dtend = dt.datetime(time_to_plot.year+1,1,1)
 
     infos['var1'] = var1
     infos['lev1'] = lev1
@@ -101,9 +102,10 @@ def derive_additional_infos(infos: dict) -> dict:
     infos['P1'] = P1
     infos['P2'] = P2
     infos['ll'] = ll
-    infos['subdir'] = subdir
-    infos['startdate'] = startdate  # this is needed to load FINO-data
-    infos['enddate'] = enddate
+    #infos['startdate'] = startdate  # this is needed to load FINO-data
+    #infos['enddate'] = enddate
+
+    infos['obs_load_from_to'] = (dtstart, dtend)
 
     return infos
 
