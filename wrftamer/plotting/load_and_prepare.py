@@ -3,13 +3,14 @@ import xarray as xr
 import pandas as pd
 import numpy as np
 
-def uv_to_FFDD(u, v):
 
+def uv_to_FFDD(u, v):
     ff = np.sqrt(u ** 2 + v ** 2)
     dd = 180. / np.pi * np.arctan2(-u, -v)
     dd = np.mod(dd, 360)
 
     return ff, dd
+
 
 ########################################################################################################################
 #                                                  Load Data
@@ -22,9 +23,9 @@ def load_obs_data(obs_data: dict, obs: str, dataset: str, **kwargs):
 
     from wrftamer.wrfplotter_classes import Timeseries
 
-    #startdate = kwargs['startdate']
-    #enddate = kwargs['enddate']
-    #dtstart, dtend = dt.datetime.strptime(startdate, '%Y%m%d'), dt.datetime.strptime(enddate, '%Y%m%d')
+    # startdate = kwargs['startdate']
+    # enddate = kwargs['enddate']
+    # dtstart, dtend = dt.datetime.strptime(startdate, '%Y%m%d'), dt.datetime.strptime(enddate, '%Y%m%d')
 
     dtstart, dtend = kwargs['obs_load_from_to']
 
@@ -41,7 +42,6 @@ def load_obs_data(obs_data: dict, obs: str, dataset: str, **kwargs):
 
 
 def load_mod_data(mod_data: dict, exp_name: str, **kwargs):
-
     """
     This function just loads model data from a single location and stores everything in the mod_data dict.
     """
@@ -76,10 +76,13 @@ def load_mod_data(mod_data: dict, exp_name: str, **kwargs):
         # TODO: got an error for Ave10 and Ave 5 files. station_name, lat, lon, elevation became f(t)
         # -> this forces me to do this try/except.
         # Solve this issue and simplifiy this piece.
+        # Bug solved?
         try:
             loc = tmp.station_name.values[0]
         except IndexError:
             loc = str(tmp.station_name.values)
+
+        # loc = str(tmp.station_name.values)
 
         if loc in list_of_locs:
             tslist_data[loc] = tmp
@@ -136,7 +139,7 @@ def prep_profile_data(obs_data, mod_data, infos: dict, verbose=False) -> list:
                     zvec.append(float(key.rsplit('_', 1)[1]))
                     data.append(myobs[key].values[0])
                     units = myobs[key].units
-                    description = var #  (standard_name contains height)
+                    description = var  # (standard_name contains height)
 
         df = pd.DataFrame({'ALT': zvec, loc: data})
         data2plot.append(df)
@@ -194,19 +197,21 @@ def prep_ts_data(obs_data, mod_data, infos: dict, verbose=False):
     if plttype == 'Timeseries 2':
         var1, var2 = infos['var1'], infos['var2']
         lev1, lev2 = infos['lev1'], infos['lev2']
-        data2plot1, units1, description1 = _prep_ts_data(obs_data, mod_data, expvec, obsvec, loc, var1, lev1, anemometer, verbose)
-        data2plot2, units2, description2 = _prep_ts_data(obs_data, mod_data, expvec, obsvec, loc, var2, lev2, anemometer, verbose)
+        data2plot1, units1, description1 = _prep_ts_data(obs_data, mod_data, expvec, obsvec, loc, var1, lev1,
+                                                         anemometer, verbose)
+        data2plot2, units2, description2 = _prep_ts_data(obs_data, mod_data, expvec, obsvec, loc, var2, lev2,
+                                                         anemometer, verbose)
         return data2plot1, data2plot2, units1, units2, description1, description2
     else:
         var = infos['var']
         lev = infos['lev']
-        data2plot, units, description = _prep_ts_data(obs_data, mod_data, expvec, obsvec, loc, var, lev, anemometer, verbose)
+        data2plot, units, description = _prep_ts_data(obs_data, mod_data, expvec, obsvec, loc, var, lev, anemometer,
+                                                      verbose)
         return data2plot, units, description
 
 
 def _prep_ts_data(obs_data, mod_data, expvec: list, obsvec: list, loc: str, var: str, lev: str, anemometer: str,
                   verbose=False) -> pd.DataFrame:
-
     """
     Takes the data coming from my classes, selects the right data and concats
     everything into a single dataframe for easy plotting with hvplot.

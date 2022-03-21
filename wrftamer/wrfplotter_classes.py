@@ -375,9 +375,9 @@ def get_list_of_filenames(name_of_dataset: str, dtstart: dt.datetime, dtend: dt.
     try:
         idx2 = np.argmax(ends[ends <= dtend])
     except ValueError:
-        idx2= 0
+        idx2 = 0
 
-    filenames = list_of_files[idx1:idx2+1]
+    filenames = list_of_files[idx1:idx2 + 1]
 
     return filenames
 
@@ -462,33 +462,30 @@ def calc_PT(data):
     This may not be general enough!
     """
 
-    # TODO: I need to generalize this code to work for a dataset with multiple stations.
-    # For now, this works fine, since P_ and T_ do not exist for AV datasets.
+    def calc_PT_single_station(sdata):
 
-    tmp1 = [i for i in list(data.variables) if i.startswith('P_')]
-    tmp2 = [i for i in list(data.variables) if i.startswith('T_')]
+        tmp_p = [i for i in list(sdata.variables) if i.startswith('P_')]
+        tmp_t = [i for i in list(sdata.variables) if i.startswith('T_')]
+        hgt = sdata['station_elevation'].values
 
-    hgt = data['station_elevation'].values
-
-    if len(tmp1) > 1 and len(tmp2) > 0:
-        zp = [int(item.split('_')[1]) for item in tmp1]
+        zp = [int(item.split('_')[1]) for item in tmp_p]
         zlow, zhigh = min(zp), max(zp)
 
-        if data['P_' + str(zlow)].units == 'hPa':
+        if sdata['P_' + str(zlow)].units == 'hPa':
             factor = 100
-        elif data['P_' + str(zlow)].units == 'Pa':
-            factor = 100  # TODO: in Future: 1 right now, I got an error in the data.
+        elif sdata['P_' + str(zlow)].units == 'Pa':
+            factor = 1
         else:
             raise ValueError
 
-        plow  = data['P_' + str(zlow) ].values.T * factor
-        phigh = data['P_' + str(zhigh)].values.T * factor
+        plow = sdata['P_' + str(zlow)].values.T * factor
+        phigh = sdata['P_' + str(zhigh)].values.T * factor
 
-        ztarget = np.asarray([int(item.split('_')[1]) for item in tmp2])
+        ztarget = np.asarray([int(item.split('_')[1]) for item in tmp_t])
 
         # z amsl
-        zlow    = float(zlow) + hgt
-        zhigh   = float(zhigh) + hgt
+        zlow = float(zlow) + hgt
+        zhigh = float(zhigh) + hgt
         ztarget = ztarget.astype(float) + hgt
 
         # Transform T in PT
@@ -501,19 +498,36 @@ def calc_PT(data):
         p0 = phigh / np.exp(-zhigh / H)
 
         for zlev in ztarget:
-
             ptarget = p0 * np.exp(-zlev / H)
             ##############################################
             kappa = 2. / 7.  # R/cp
-            p00 = 10 ** 5    # Pa
+            p00 = 10 ** 5  # Pa
             ##############################################
 
-            pt = (data['T_' + str(int(zlev))][:] + 273.15) * (p00 / ptarget) ** kappa
+            pt = (sdata['T_' + str(int(zlev))][:] + 273.15) * (p00 / ptarget) ** kappa
             pt = pt.assign_attrs(units='K')
             pt = pt.assign_attrs(standard_name='potential_temperature')
             pt = pt.assign_attrs(long_name='potential temperature')
-            data = data.assign({'PT_' + str(int(zlev)): pt})
+            sdata = sdata.assign({'PT_' + str(int(zlev)): pt})
         ####################################################################################
+        return sdata
+
+    tmp1 = [i for i in list(data.variables) if i.startswith('P_')]
+    tmp2 = [i for i in list(data.variables) if i.startswith('T_')]
+
+    if len(tmp1) <= 1 or len(tmp2) == 0:
+        return data
+
+    if 'station' in data.dims:
+        nstat = data.dims['station']
+        tmp_all = []
+        for idx in range(0, nstat):
+            tmp_data = data.isel(station=idx)
+            tmp_data = calc_PT_single_station(tmp_data)
+            tmp_all.append(tmp_data)
+        data = xr.concat(tmp_all, dim='station')
+    else:
+        data = calc_PT_single_station(data)
 
     return data
 
@@ -586,6 +600,8 @@ class Timeseries:
                 print(f'Loading File {filename}')
 
         data = xr.open_mfdataset(self.filenames)
+        # This seems to cause problems...
+        # I may have to write this part with load_dataset and concat along the time axis...
 
         if calc_pt:
             # This will only do something if T_X and P_Y exists.

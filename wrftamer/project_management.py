@@ -142,16 +142,13 @@ class project:
             df.set_index('index')
             df.to_excel(self.tamer_path / 'List_of_Experiments.xlsx')
 
-        # copy namelist.template and configure_template to project folder for easy reference and transparancy.
-        # TODO: I may want to remove this default behaviour?
-        #  And instead, put the templates on the Website?
-
         namelist_template = os.path.split(os.path.realpath(__file__))[0] + '/resources/namelist.template'
         wrftamer_conf = os.path.split(os.path.realpath(__file__))[0] + '/resources/configure_template.yaml'
 
         newfile = self.proj_path / 'namelist.template'
         new_conf = self.proj_path / 'configure_template.yaml'
 
+        # copy namelist.template and configure_template to project folder for easy reference and transparancy.
         shutil.copyfile(namelist_template, newfile)
         shutil.copyfile(wrftamer_conf, new_conf)
 
@@ -435,6 +432,10 @@ class project:
 
         if exp_name is not None:
             df = df[df.Name == exp_name]
+
+        # Change datatypes of start and end to string, since the GUI-Tabulator widget throws an error with timestamps!
+        df['start'] = df['start'].astype(str)
+        df['end'] = df['end'].astype(str)
 
         return df
 

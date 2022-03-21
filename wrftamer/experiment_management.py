@@ -28,10 +28,6 @@ Author: Daniel Leukauf
 Date: 22.11.2021
 """
 
-# TODO: check if run is archived by seaching for the actual directory, instead of checking the status.
-#  This way, I can perform ppp on archived runs. Right now, this is only possible if I force ppp or manualy
-#  change the xls sheet.
-
 # ---------------------------------------------------------------------
 # These paths will be used by the tamer and can be changed in the cond environment
 
@@ -41,6 +37,7 @@ try:
     make_submit = bool(os.environ['WRFTAMER_make_submit'])
 except KeyError:
     make_submit = False
+
 
 class experiment:
 
@@ -74,25 +71,20 @@ class experiment:
 
             try:
                 self.status = df[df.Name == exp_name].status.values[0]
-                # TODO: this may cause trouble with the POSTPROC_TEST...
             except IndexError:
                 self.status = 'uncreated'
 
         except FileNotFoundError:
             self.status = 'project uncreated'
 
-        # TODO This causes trouble with split runs.
-        #  I need a way to deal with splitruns, special snowflake or not!
-        #  DLeuk, 17.01.2022
-
-        if self.archive_path.is_dir(): # archived.
+        if self.archive_path.is_dir():  # archived.
             self.workdir = self.archive_path
         else:
             self.workdir = self.exp_path
 
         self.max_dom = self._get_maxdom_from_config()
 
-    #-------------------------------------------------------------------------------------------------------------------
+    # -------------------------------------------------------------------------------------------------------------------
     def create(self, configfile: str, namelisttemplate=None, verbose=True):
 
         """
@@ -269,10 +261,6 @@ class experiment:
 
     def process_tslist(self, location, domain, timeavg: list, verbose=True):
 
-        # TODO: merge_tslist_files take quite a lot of time.
-        #  Put here some code to preform this task only if the files do not exist
-        #  And add a force option to do it anyway.
-
         outdir = self.workdir / 'out'
         idir = (self.workdir / 'out').glob('tsfiles*')
 
@@ -281,6 +269,7 @@ class experiment:
                 print(f"the directory {self.workdir}/out/tsfiles*' does not exist")
             raise FileNotFoundError
 
+        Path(outdir / f'raw_tslist_{domain}')
         merge_tslist_files(idir, outdir, location, domain, self.proj_name, self.name)
 
         # if tslists exists
@@ -341,7 +330,7 @@ class experiment:
             print(f"Target: {self.archive_path}")
             print("---------------------------------------")
 
-        self.exp_path.rename(self.archive_path)
+        shutil.move(self.exp_path, self.archive_path)
         self.status = 'archived'
         self._update_db_entry({'status': 'archived'})
 
@@ -470,7 +459,6 @@ class experiment:
             return
 
         for item in ppp:
-            print(item)
             if item == 'move':
                 if ppp[item] == 1:
                     self.move(verbose)
@@ -600,7 +588,7 @@ class experiment:
         self.status = 'post processed'
         self._update_db_entry({'status': 'post processed'})
 
-    #-------------------------------------------------------------------------------------------------------------------
+    # -------------------------------------------------------------------------------------------------------------------
     def _update_db_entry(self, updates: dict):
         """
         A small helper function to update the data base entries. may go to another file at some point.
@@ -670,12 +658,11 @@ class experiment:
     def _get_maxdom_from_config(self):
 
         configure_file = self.workdir / 'configure.yaml'
+        if configure_file.is_file() is False:
+            return None
 
         with open(configure_file) as f:
-            try:
-                cfg = yaml.safe_load(f)
-            except FileNotFoundError:
-                return None
+            cfg = yaml.safe_load(f)
 
         try:
             max_dom = cfg['namelist_vars']['max_dom']

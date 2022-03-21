@@ -5,12 +5,13 @@ import cartopy.crs as crs
 from cartopy.feature import NaturalEarthFeature
 from wrf import (to_np, get_basemap, latlon_coords, get_cartopy, cartopy_xlim, cartopy_ylim)
 import pandas as pd
-import xarray as xa
+import xarray as xr
+
 
 mpl.rcParams.update({'font.size': 15})
 
 
-def Map_Basemap(data: xa.DataArray, hgt: xa.DataArray, ivg: xa.DataArray, vmin, vmax, cmap, myticks,
+def Map_Basemap(data: xr.DataArray, hgt: xr.DataArray, ivg: xr.DataArray, vmin, vmax, cmap, myticks,
                 points_to_mark: pd.DataFrame, pcmesh=False, add_topo=False, **kwargs):
     var = data.name
     descr = data.description
@@ -85,7 +86,7 @@ def Map_Basemap(data: xa.DataArray, hgt: xa.DataArray, ivg: xa.DataArray, vmin, 
     return fig
 
 
-def Map_Cartopy(data: xa.DataArray, hgt: xa.DataArray, ivg: xa.DataArray, vmin, vmax, cmap,
+def Map_Cartopy(data: xr.DataArray, hgt: xr.DataArray, ivg: xr.DataArray, vmin, vmax, cmap,
                 myticks, points_to_mark: pd.DataFrame, pcmesh=False, add_topo=False, **kwargs):
     lat = data.XLAT
     lon = data.XLONG
@@ -160,8 +161,7 @@ def Map_Cartopy(data: xa.DataArray, hgt: xa.DataArray, ivg: xa.DataArray, vmin, 
     return fig
 
 
-def Map_hvplots(data: xa.DataArray, vmin, vmax, cmap, points_to_mark: pd.DataFrame,):
-
+def Map_hvplots(data: xr.DataArray, vmin, vmax, cmap, points_to_mark: pd.DataFrame, ):
     xlim = np.min(data.XLONG.values), np.max(data.XLONG.values)
     ylim = np.min(data.XLAT.values), np.max(data.XLAT.values)
     clim = (vmin, vmax)

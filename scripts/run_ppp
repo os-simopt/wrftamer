@@ -8,26 +8,42 @@ the postprocessing protocol defined in the configure.yaml file.
 from wrftamer.project_management import project, list_projects
 from wrftamer.experiment_management import experiment
 import datetime as dt
-import sys
+import click
 
 
-def run_ppp_for_completed_exp(silent=False, verbose=False, force=False, projects=None):
+@click.command()
+@click.option('--projects', help='Projects for witch ppp is performed. Run for all by default (str,list)')
+@click.option('--experiments', help='Experiments for witch ppp is performed. Run for all by default (str,list)')
+@click.option('--silent', help='Run in silent mode')
+@click.option('--verbose', help='Run in verbose mode')
+@click.option('--force', help='Force ppp (overwrite files)')
+def run_ppp_for_completed_exp(projects=None, experiments=None, silent=False, verbose=False, force=False):
     """""
     Args:
+        projects: The name of the project for which ppp is performed.
+        experiments: The name of the experiment for which ppp is performed.
         silent: If true, no output is printed at all.
         verbose: If true: Everyting is printed.
+        force: overwrite files (run even if status is not 'run complete')
 
     The default behaviour (silent=False, verbose=False) is most likely the desired behaviour.
 
     """
 
+    if isinstance(force, bool) is False:
+        force = force == 'True'
+    if isinstance(silent, bool) is False:
+        silent = silent == 'True'
+    if isinstance(verbose, bool) is False:
+        verbose = verbose == 'True'
+
     if projects is None:
         list_of_proj = list_projects(False)
         list_of_proj.append(None)
     else:
-        if isinstance(projects,list):
+        if isinstance(projects, list):
             list_of_proj = projects
-        elif isinstance(projects,str):
+        elif isinstance(projects, str):
             list_of_proj = [projects]
         else:
             list_of_proj = list_projects(False)
@@ -44,13 +60,19 @@ def run_ppp_for_completed_exp(silent=False, verbose=False, force=False, projects
 
         proj = project(proj_name)
 
-        list_of_exps = proj.list_exp(False)
+        if experiments is None:
+            list_of_exps = proj.list_exp(False)
+        else:
+            if isinstance(experiments, list):
+                list_of_exps = experiments
+            elif isinstance(experiments, str):
+                list_of_exps = [experiments]
+            else:
+                list_of_exps = proj.list_exp(False)
 
         for exp_name in list_of_exps:
             exp = experiment(proj_name, exp_name)
 
-            # TODO: instead of checking for the status, check if the files exist!
-            #  However, this requires prior knowledge of which files to expect, depending on the ppp...
             if exp.status == 'run complete' or force:
                 if not silent:
                     print('    ' + str(dt.datetime.now()) +
@@ -63,25 +85,4 @@ def run_ppp_for_completed_exp(silent=False, verbose=False, force=False, projects
 
 
 if __name__ == '__main__':
-
-    # TODO: the arguments must be reworked. Right now, I cannot use -project w/o a first argument.
-    #  Use click?
-
-    if len(sys.argv)==1:
-        run_ppp_for_completed_exp(False,False,False)
-    elif len(sys.argv) in [2,3]:
-        s='s' in sys.argv[1]
-        v='v' in sys.argv[1]
-        f='f' in sys.argv[1]
-
-        try:
-            projects = sys.argv[2].split('=')[-1]
-        except KeyError:
-            projects=None
-
-        run_ppp_for_completed_exp(s,v,f,projects)
-    else:
-        print('usage: python test.py -opts --project=<project>')
-
-
-
+    run_ppp_for_completed_exp()

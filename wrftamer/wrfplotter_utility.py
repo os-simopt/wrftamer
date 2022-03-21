@@ -1,6 +1,63 @@
+import os
+from pathlib import Path
+import xarray as xr
+from wrftamer.experiment_management import experiment
+from wrftamer.project_management import project
 from pathlib import PosixPath
 import panel as pn
 import datetime as dt
+
+
+def get_available_obs() -> (dict, list):
+    """
+    This little function looks in OBSERVATIONS_PATH for directories (which should contain netcdf files with
+    cf-conform observations (TimeSeries).
+
+    If looks for station names in all files and return a list of all stations and returns a list of stations
+    and a dictionary mapping a station to the correct directory.
+
+    Pitfall: Station names may not appear in multiple datasets!
+
+    Returns:
+        dict with mapping of station to dataset
+        list of all available stations
+    """
+    list_of_dirs = list(Path(os.environ['OBSERVATIONS_PATH']).glob('*'))
+    datasets = [item.stem for item in list_of_dirs]
+
+    dataset_dict = dict()
+    list_of_obs = []
+    for idx, mydir in enumerate(list_of_dirs):
+
+        print(idx, mydir)
+
+        one_file = list(mydir.glob('*.nc'))[0]
+        xa = xr.open_dataset(one_file)
+
+        if xa.station_name.values.size == 1:
+            list_of_stations = [str(xa.station_name.values)]
+        else:
+            list_of_stations = list(xa.station_name.values)
+
+        xa.close()
+
+        for station in list_of_stations:
+            dataset_dict[station] = datasets[idx]
+            list_of_obs.append(station)
+
+    return dataset_dict, list_of_obs
+
+
+def get_available_doms(proj_name):
+    max_dom = 1
+    proj = project(proj_name)
+    list_of_proj = proj.list_exp(False)
+    for exp_name in list_of_proj:
+        exp = experiment(proj_name, exp_name)
+        max_dom = max(max_dom, exp.max_dom)
+
+    list_of_doms = ['d' + str(i).zfill(2) for i in range(1, max_dom + 1)]
+    return list_of_doms
 
 
 def get_vars_per_plottype() -> dict:

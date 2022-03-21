@@ -13,9 +13,11 @@ from wrftamer.plotting.load_and_prepare import prep_profile_data, prep_ts_data, 
 ########################################################################################################################
 #                                                      Plots
 ########################################################################################################################
+
+# TODO: units are missing for TimeSeries, Profiles, Obs vs Mod
+
 def create_hv_plot(infos: dict, obs_data=None, mod_data=None, map_data=None):
-    # TODO: obs-labels are missing. Reason: * operator removes labels. It seems not be possible to manually add
-    #  more than one label, but since most likely there is only 1 obs, I quick fix this. Mod-lables are fine.
+
 
     plottype = infos['plttype']
     var = infos['var']

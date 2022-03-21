@@ -7,6 +7,8 @@ from matplotlib.dates import DateFormatter
 import matplotlib.cm as cm
 from windrose import WindroseAxes
 
+# TODO: units (time) missing, units display ugly.
+#  Bug with zt-Plot
 
 ########################################################################################################################
 #                                                 Call Plots

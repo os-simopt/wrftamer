@@ -7,6 +7,10 @@ It is needed to provide a config-file which contains information about the desir
 and a namelist.template
 """
 
+# TODO: this script is not as robust as I'd like it to be. For example, it fails
+#  if dx, dy is just a number and not followed by a ','.
+#  Should imporove.
+
 
 def initialize_wrf_namelist(namelist_vars: dict, namelistfile: str, templatefile=None):
     # read template and configuration
@@ -21,6 +25,7 @@ def initialize_wrf_namelist(namelist_vars: dict, namelistfile: str, templatefile
                 'end_year end_month end_day end_hour end_date')
 
     with open(mypath, 'r') as f:
+
         tpl = f.read()
         namelist = tpl.format(**namelist_vars).split('\n')
 
