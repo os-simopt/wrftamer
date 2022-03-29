@@ -17,16 +17,17 @@ def load_obs_data(obs_data: dict, obs: str, dataset: str, **kwargs):
 
     dtstart, dtend = kwargs['obs_load_from_to']
 
-    cls = Timeseries(dataset, dtstart, dtend, calc_pt=True)
+    ts = Timeseries(dataset)
+    ts.read_cfconform_data(dtstart, dtend, calc_pt=True)
 
-    if 'station' in cls.data.dims:
-        for stat in cls.data.station:
-            tmp = cls.data.isel(station=stat)
+    if 'station' in ts.data.dims:
+        for stat in ts.data.station:
+            tmp = ts.data.isel(station=stat)
             if tmp['station_name'].values == obs:
                 obs_data[obs] = tmp
                 break
     else:
-        obs_data[obs] = cls.data
+        obs_data[obs] = ts.data
 
 
 def load_mod_data(mod_data: dict, exp_name: str, **kwargs):
@@ -80,9 +81,10 @@ def load_all_obs_data(dataset, **kwargs):
     from wrftamer.wrfplotter_classes import Timeseries
 
     dtstart, dtend = kwargs['obs_load_from_to']
-    cls = Timeseries(dataset, dtstart, dtend, calc_pt=True)
+    ts = Timeseries(dataset)
+    ts.read_cfconform_data(dtstart, dtend, calc_pt=True)
 
-    return cls.data
+    return ts.data
 
 
 def load_all_mod_data(**kwargs):

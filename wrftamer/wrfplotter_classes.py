@@ -493,8 +493,8 @@ def get_list_of_filenames(name_of_dataset: str, dtstart: dt.datetime, dtend: dt.
     list_of_files = list(filepath.glob(f'{name_of_dataset}*.nc'))
     list_of_files.sort()
 
-    list_of_starts = [item.stem.split('_')[1] for item in list_of_files]
-    list_of_ends = [item.stem.split('_')[2] for item in list_of_files]
+    list_of_starts = [item.stem.replace(name_of_dataset, '').split('_')[1] for item in list_of_files]
+    list_of_ends   = [item.stem.replace(name_of_dataset, '').split('_')[2] for item in list_of_files]
 
     starts = np.asarray([dt.datetime.strptime(item, '%Y%m%d') for item in list_of_starts])
     ends = np.asarray([dt.datetime.strptime(item, '%Y%m%d') for item in list_of_ends])
