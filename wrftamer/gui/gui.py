@@ -16,8 +16,8 @@ class GUI:
     def __init__(self):
         self.project = proj_tab()
         self.experiment = exp_tab(self.project.mc_proj)
-        self.wp = wrfplotter_tab()
         self.about = about_tab()
+        self.wp = wrfplotter_tab(self.about.poi_text)
 
     def view(self):
         all_tabs = pn.Tabs(self.project.view(), self.experiment.view(), self.wp.view(), self.about.view())
@@ -27,3 +27,12 @@ class GUI:
 
 a = GUI()
 a.view().servable("WRFtamer")
+
+# TODO: what happens if no observations exists? What are the levels then?
+# TODO: add windroses
+# TODO: add histogramm plots.
+# TODO: add etalevel program
+# TODO: add domänenübersicht.
+# TODO: most likely, I need to improve the docs on Preparing obs.
+# TODO: plots should be displayed right after load data (add obs_data, mod_data to the watchlist?);
+#  need a render_plot function

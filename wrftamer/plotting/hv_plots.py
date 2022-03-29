@@ -10,15 +10,12 @@ import cartopy.crs as ccrs
 from wrfplotter.Statistics import Statistics
 from wrftamer.plotting.load_and_prepare import prep_profile_data, prep_ts_data, prep_zt_data
 
+
 ########################################################################################################################
 #                                                      Plots
 ########################################################################################################################
 
-# TODO: units are missing for TimeSeries, Profiles, Obs vs Mod
-
 def create_hv_plot(infos: dict, obs_data=None, mod_data=None, map_data=None):
-
-
     plottype = infos['plttype']
     var = infos['var']
 
@@ -29,17 +26,21 @@ def create_hv_plot(infos: dict, obs_data=None, mod_data=None, map_data=None):
         xlim = [data.index[0], data.index[-1]]
         size = 5
 
+        xlabel = f'time (UTC)'
+        ylabel = f'{var} ({units})'
+
         for idx, item in enumerate(data):
             if idx == 0:
                 if var == 'DIR':
-                    figure = data[item].dropna().hvplot.scatter(xlim=xlim, size=size, ylabel=var)
+                    figure = data[item].dropna().hvplot.scatter(xlim=xlim, size=size, xlabel=xlabel, ylabel=ylabel)
                 else:
-                    figure = data[item].dropna().hvplot(xlim=xlim, ylabel=var)
+                    figure = data[item].dropna().hvplot(xlim=xlim, xlabel=xlabel, ylabel=ylabel)
             else:
                 if var == 'DIR':
-                    figure = figure * data[item].dropna().hvplot.scatter(xlim=xlim, size=size, ylabel=var)
+                    figure = figure * data[item].dropna().hvplot.scatter(xlim=xlim, size=size,
+                                                                         xlabel=xlabel, ylabel=ylabel)
                 else:
-                    figure = figure * data[item].dropna().hvplot(xlim=xlim, ylabel=var)
+                    figure = figure * data[item].dropna().hvplot(xlim=xlim, xlabel=xlabel, ylabel=ylabel)
 
         figure.opts(legend_position='bottom_right')
         figure = pn.Column(figure, stats)
@@ -51,20 +52,26 @@ def create_hv_plot(infos: dict, obs_data=None, mod_data=None, map_data=None):
         height = 600
         data, units, description = prep_profile_data(obs_data, mod_data, infos)
 
+        xlabel = f'{var} ({units})'
+        ylabel = f'height (m)'
+
         for num, item in enumerate(data):
             if num == 0:
                 if var == 'DIR':
-                    figure = item.hvplot.scatter(y='ALT', x=item.columns[1], size=size, xlabel=var,
+                    figure = item.hvplot.scatter(y='ALT', x=item.columns[1], size=size,
+                                                 xlabel=xlabel, ylabel=ylabel,
                                                  width=width, height=height, label=item.columns[1])
                 else:
-                    figure = item.hvplot(y='ALT', x=item.columns[1], xlabel=var,
+                    figure = item.hvplot(y='ALT', x=item.columns[1], xlabel=xlabel,
                                          width=width, height=height, label=item.columns[1])
             else:
                 if var == 'DIR':
-                    figure = figure * item.hvplot.scatter(y='ALT', x=item.columns[1], size=size, xlabel=var,
+                    figure = figure * item.hvplot.scatter(y='ALT', x=item.columns[1], size=size,
+                                                          xlabel=xlabel, ylabel=ylabel,
                                                           width=width, height=height, label=item.columns[1])
                 else:
-                    figure = figure * item.hvplot(y='ALT', x=item.columns[1], xlabel=var,
+                    figure = figure * item.hvplot(y='ALT', x=item.columns[1],
+                                                  xlabel=xlabel, ylabel=ylabel,
                                                   width=width, height=height, label=item.columns[1])
 
         figure.opts(legend_position='bottom_right')
@@ -82,7 +89,7 @@ def create_hv_plot(infos: dict, obs_data=None, mod_data=None, map_data=None):
         xlim = [0, data.max().max()]
         size = 5
         height, width = 500, 650
-        xlabel, ylabel = 'OBS', 'MOD'
+        xlabel, ylabel = f'Obserbvation ({units})', f'Model ({units})'
 
         figure = hv.Curve([[0, 0], [xlim[1], xlim[1]]]).opts(color='grey')
         for mod in mods:
@@ -107,7 +114,7 @@ def create_hv_plot(infos: dict, obs_data=None, mod_data=None, map_data=None):
 
     elif plottype == 'zt-Plot':
         data = prep_zt_data(mod_data, infos)
-        figure = data.hvplot.quadmesh(x='time', y='ALT', ylabel='z (m)',
+        figure = data.hvplot.quadmesh(x='time (UTC)', y='ALT', ylabel='z (m)',
                                       title=data.standard_name + ' (' + data.units + ')')
         stats = None
 

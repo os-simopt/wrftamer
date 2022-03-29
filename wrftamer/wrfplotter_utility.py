@@ -67,7 +67,7 @@ def get_vars_per_plottype() -> dict:
     vars_per_plottype['Obs vs Mod'] = ['WSP', 'DIR']
     vars_per_plottype['Timeseries'] = ['WSP', 'DIR', 'PT', 'PRES']
     vars_per_plottype['Timeseries 2'] = ['WSP and DIR', 'WSP and PT']
-    vars_per_plottype['Map'] = ['WSP', 'DIR', 'PT', 'PRES', 'PSFC', 'U', 'V', 'W', 'HFX', 'GRDFLX', 'LH']
+    vars_per_plottype['Map'] = ['WSP', 'DIR', 'PT', 'PRES', 'PSFC', 'U', 'V', 'W', 'HFX', 'GRDFLX', 'LH','HGT']
     vars_per_plottype['Diff Map'] = ['WSP', 'DIR', 'PT', 'PRES', 'PSFC', 'U', 'V', 'W', 'HFX', 'GRDFLX', 'LH']
     vars_per_plottype['CS'] = ['WSP', 'DIR', 'PT', 'PRES', 'PSFC', 'U', 'V', 'W', 'HFX', 'GRDFLX', 'LH']
     vars_per_plottype['Diff CS'] = ['WSP', 'DIR', 'PT', 'PRES', 'PSFC', 'U', 'V', 'W', 'HFX', 'GRDFLX', 'LH']
@@ -96,7 +96,8 @@ def get_lev_per_plottype_and_var() -> dict:
                                                 'WSP and PT_Sonic': ['42 and 42', '62 and 52', '82 and 72'],
                                                 'WSP and PT_Analog': ['41 and 42', '51 and 52', '71 and 72']}
     lev_per_plottype_and_var['Map'] = {'WSP': ['5'], 'DIR': ['5'], 'PT': ['5'], 'PRES': ['5'], 'PSFC': ['0'],
-                                       'U': ['5'], 'V': ['5'], 'W': ['5'], 'HFX': ['0'], 'GRDFLX': ['0'], 'LH': ['0']}
+                                       'U': ['5'], 'V': ['5'], 'W': ['5'], 'HFX': ['0'], 'GRDFLX': ['0'], 'LH': ['0'],
+                                       'HGT': ['0']}
     lev_per_plottype_and_var['Diff Map'] = lev_per_plottype_and_var['Map']
     lev_per_plottype_and_var['CS'] = lev_per_plottype_and_var['Profiles']
     lev_per_plottype_and_var['Diff CS'] = lev_per_plottype_and_var['Profiles']
@@ -124,9 +125,6 @@ def get_newfilename_from_old(current_filename: PosixPath, delta_t: int):
     parts[3] = timestamp2.split('_')[0]
     parts[4] = timestamp2.split('_')[1]
     new_filename = current_filename.parent / ('_'.join(parts) + current_filename.suffix)
-
-    print(current_filename)
-    print(new_filename)
 
     if new_filename.is_file():
         return new_filename

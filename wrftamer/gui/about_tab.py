@@ -12,9 +12,6 @@ class about_tab(gui_base):
     def __init__(self):
         super(about_tab, self).__init__()
 
-        # TODO: most likely, I need a connectio between the poi-file (selector) and the MAP-plots.
-        #  Also, I'm not sure that the path to the filename is stored appropriately.
-
         # Try to read poi file from file selector
         try:
             poi_file = os.environ['WRFTAMER_DEFAULT_POI_FILE']
@@ -28,7 +25,7 @@ class about_tab(gui_base):
         self.text3 = pn.widgets.StaticText(name='Your run directory', value=self.run_path, background='#ffffff')
         self.text4 = pn.widgets.StaticText(name='Your archive directory', value=self.archive_path, background='#ffffff')
         self.text5 = pn.widgets.StaticText(name='Your plot directory', value=self.plot_path, background='#ffffff')
-        self.text6 = pn.widgets.StaticText(name='Your poi file', value=poi_file, background='#ffffff')
+        self.poi_text = pn.widgets.StaticText(name='Your poi file', value=poi_file, background='#ffffff')
 
         self.poi_input = pn.widgets.FileInput(name='Select poi file', accept='.csv', multiple=False)
 
@@ -36,15 +33,15 @@ class about_tab(gui_base):
         def _update_text6(selection):
             if self.poi_input.filename is None:
                 try:
-                    self.text6.value = os.environ['WRFTAMER_DEFAULT_POI_FILE']
+                    self.poi_text.value = os.environ['WRFTAMER_DEFAULT_POI_FILE']
                 except KeyError:
-                    self.text6.value = None
+                    self.poi_text.value = None
             else:
-                self.text6.value = self.poi_input.filename
+                self.poi_text.value = self.poi_input.filename
 
     def view(self):
 
         about = pn.Column(self.text1, self.text2, self.text3,
-                          self.text4, self.text5, self.text6, self.poi_input, name='About')
+                          self.text4, self.text5, self.poi_text, self.poi_input, name='About')
 
         return about

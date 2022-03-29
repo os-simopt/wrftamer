@@ -7,10 +7,6 @@ It is needed to provide a config-file which contains information about the desir
 and a namelist.template
 """
 
-# TODO: this script is not as robust as I'd like it to be. For example, it fails
-#  if dx, dy is just a number and not followed by a ','.
-#  Should imporove.
-
 
 def initialize_wrf_namelist(namelist_vars: dict, namelistfile: str, templatefile=None):
     # read template and configuration
@@ -47,7 +43,7 @@ def initialize_wrf_namelist(namelist_vars: dict, namelistfile: str, templatefile
                 val = str(namelist_vars[key]) + ','
 
             if section == 'geogrid' and key in 'dx dy':
-                val = str(namelist_vars[key].split(',')[0] + ',')
+                val = str(str(namelist_vars[key]).split(',')[0] + ',')
 
             if key == 'run_hours':
                 val = (namelist_vars['dtend'] - namelist_vars['dtbeg']).total_seconds() // 3600

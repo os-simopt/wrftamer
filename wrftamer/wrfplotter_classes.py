@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib as mpl
 import pandas as pd
 import wrf
+import wrftamer.wrf_python2 as wrf2
 import xarray as xr
 import datetime as dt
 from pathlib import PosixPath, Path
@@ -11,7 +12,7 @@ from wrftamer.wrfplotter_functions import Map_Basemap, Map_Cartopy, Map_hvplots
 import os
 from wrftamer.plotting.mpl_plots import Availability
 import yaml
-import typing
+from typing import Union
 
 
 class Map:
@@ -49,7 +50,14 @@ class Map:
         """
 
         This function is basically a wrapper to the wrf.getvar function. It loads the required data and
-        sets metadata accordingly
+        sets metadata accordingly.
+
+        It has a major advantage. Using the wrf-python package allows a user to calculate de-staggered data,
+        apply transformations (grid to earth rotated etc.) This is VERY powerful.
+        HOWEVER, wrf-python does not work with DASK and therefore it cannot lazy-load data. This makes everything
+        EXTREMELY slow. if one wants to read a lot of files.
+        # I may have to look at the code of wrf.get_var at some point and re-write it to work with dask...
+        # Or wait for the guys at NCAR do do it.
 
         filename: a wrfout file
         dom: domain of the wrfoutfile (could be extracted from filename)
@@ -120,6 +128,12 @@ class Map:
         elif var in ['HFX', 'GRDFLX', 'LH', 'PSFC']:
             data = wrf.getvar(fid, var, timeidx=idx, squeeze=False)[:, :, :]
             data.attrs['model_level'] = None
+        elif var in ['LU_INDEX']:
+            data = wrf.getvar(fid, var, timeidx=0, squeeze=False)[:, :, :]
+            data.attrs['model_level'] = None
+        elif var in ['HGT']:
+            data = wrf.getvar(fid, 'ter', units='m', timeidx=0, squeeze=False)[:, :, :]
+            data.attrs['model_level'] = None
         else:
             data = wrf.getvar(fid, var, timeidx=idx, squeeze=False)[:, ml, :, :]
             data.attrs['model_level'] = ml
@@ -143,6 +157,14 @@ class Map:
 
         self.data = data
         self.data.attrs['dom'] = dom
+
+    def extract_data_from_wrfout2(self, filename: PosixPath, select_time: dt.datetime):
+        # This functions gets multiple variables to be displayed by the WRFplotter.
+
+        tvec = wrf2.get_timevector(filename)
+        tidx = np.argmin(abs(tvec - np.datetime64(select_time)))
+
+        self.data = wrf2.get_standard_vars(filename, tindices=(tidx, tidx + 1), ignore_warn=True)
 
     def store_intermediate(self):
         """
@@ -240,6 +262,7 @@ class Map:
             else:
                 cmapname = 'viridis'
 
+            cmap = plt.cm.get_cmap(cmapname)
             myticks = np.linspace(vmin, vmax, 10)
             pcmesh = False
 
@@ -247,6 +270,7 @@ class Map:
             if vmin is None and vmax is None:
                 vmin, vmax = np.floor(self.data.min().values), np.ceil(self.data.max().values)
             cmapname = 'hsv'
+            cmap = plt.cm.get_cmap(cmapname)
             myticks = np.linspace(vmin, vmax, 10)
             pcmesh = False
 
@@ -254,40 +278,49 @@ class Map:
             if vmin is None and vmax is None:
                 vmin, vmax = 0, 360
             cmapname = 'hsv'
+            cmap = plt.cm.get_cmap(cmapname)
             vdel = 10
             myticks = np.arange(vmin, vmax + vdel, vdel)
             pcmesh = False
 
-        elif self.data.name in ['HGT']:
-            cmapname = 'terrain'
-            if vmin is None and vmax is None:
-                vmin, vmax = self.hgt.min().values, self.hgt.max.values()
+        elif self.data.name in ['HGT', 'terrain']:
+
+            if map_t in ['Basemap', 'Cartopy']:
+                cmapname = 'terrain'
+                cmap = plt.cm.get_cmap(cmapname)
+            else:
+                cmapname = 'bgyw'
+
+            if vmin is None or vmax is None:
+                vmin, vmax = self.hgt.values.min(), self.hgt.values.max()
 
             vmin = int(25 * round(float(vmin) / 25.))
             vmax = int(25 * round(float(vmax) / 25.))
             myticks = np.linspace(vmin, vmax, 10)
-            # myticks = np.arange(vmin, vmax, int(25 * round((vmax - vmin) / 250.)))
             pcmesh = False
 
-        elif self.data.name == 'IVGTYP':
+        elif self.data.name == 'LU_INDEX':
+            # At some point, I want to rework the LU_INDEX plot anyway, as this routine reduces everything to
+            # 3 categories!
+
             if vmin is None and vmax is None:
                 vmin, vmax = 1, 3
             cmap = mpl.colors.ListedColormap(['#8B0000', '#013220', '#D3D3D3'])
             bounds = range(1, vmax + 1)
             norm = mpl.colors.BoundaryNorm(bounds, cmap.N)
             names = ['Urban', 'Forest', 'Other']
+            tmp = self.data.values
             myticks = range(1, vmax + 1)
-            self.data[(self.data > 1) & (self.data < 11)] = 3  # Other
-            self.data[(self.data > 10) & (self.data < 16)] = 2  # Forest
-            self.data[self.data > 15] = 3  # Other
+            tmp[(tmp > 1) & (tmp < 11)] = 3  # Other
+            tmp[(tmp > 10) & (tmp < 16)] = 2  # Forest
+            tmp[tmp > 15] = 3  # Other
             pcmesh = False
-            cmapname = 'jet'  # TODO: must find a workaround.
+            cmapname = 'jet'  # for the hvplot. Not optimal for LU_Index anyway...
         else:
             cmapname = 'viridis'
+            cmap = plt.cm.get_cmap(cmapname)
             myticks = np.arange(vmin, vmax, int(25 * round((vmax - vmin) / 250.)))
             pcmesh = True
-
-        cmap = plt.cm.get_cmap(cmapname)
 
         if store:  # loop over all indices and save files
             tdim = self.data.shape[0]
@@ -335,11 +368,109 @@ class Map:
 
             return figure
 
+    def plot2(self, map_t='Basemap', var='WSP', vmin=None, vmax=None, **kwargs) -> None:
+        """
+        This methods prepares the data for plotting using basemap or cartopy. Limits are set, cmaps
+        are prepared, for IVGTYP, a simplification is applied.
+        """
+
+        if 'tidx' in kwargs:
+            tidx = kwargs['tidx']
+        else:
+            tidx = 0
+
+        if 'ml' in kwargs:
+            ml = kwargs['ml']
+        else:
+            ml = 0
+
+        tmp_data = self.data[var][tidx, ml, :, :]
+        hgt = self.data['HGT'][tidx, :, :]
+        ivg = self.data['LU_INDEX'][tidx, :, :]
+
+        if var == 'WSP':
+            if vmin is None and vmax is None:
+                vmin, vmax = np.floor(tmp_data.min().values), np.ceil(tmp_data.max().values)
+
+            cmapname = 'viridis'
+            cmap = plt.cm.get_cmap(cmapname)
+            myticks = np.linspace(vmin, vmax, 10)
+            pcmesh = False
+
+        elif var in ['U', 'V']:
+            if vmin is None and vmax is None:
+                vmin, vmax = np.floor(tmp_data.min().values), np.ceil(tmp_data.max().values)
+            cmapname = 'hsv'
+            cmap = plt.cm.get_cmap(cmapname)
+            myticks = np.linspace(vmin, vmax, 10)
+            pcmesh = False
+
+        elif var in ['DIR']:
+            if vmin is None and vmax is None:
+                vmin, vmax = 0, 360
+            cmapname = 'hsv'
+            cmap = plt.cm.get_cmap(cmapname)
+            vdel = 10
+            myticks = np.arange(vmin, vmax + vdel, vdel)
+            pcmesh = False
+
+        elif var in ['HGT', 'terrain']:
+
+            if map_t in ['Basemap', 'Cartopy']:
+                cmapname = 'terrain'
+                cmap = plt.cm.get_cmap(cmapname)
+            else:
+                cmapname = 'bgyw'
+
+            if vmin is None or vmax is None:
+                vmin, vmax = hgt.values.min(), hgt.values.max()
+
+            vmin = int(25 * round(float(vmin) / 25.))
+            vmax = int(25 * round(float(vmax) / 25.))
+            myticks = np.linspace(vmin, vmax, 10)
+            pcmesh = False
+
+        elif var == 'LU_INDEX':
+            # At some point, I want to rework the LU_INDEX plot anyway, as this routine reduces everything to
+            # 3 categories!
+
+            if vmin is None and vmax is None:
+                vmin, vmax = 1, 3
+            cmap = mpl.colors.ListedColormap(['#8B0000', '#013220', '#D3D3D3'])
+            bounds = range(1, vmax + 1)
+            norm = mpl.colors.BoundaryNorm(bounds, cmap.N)
+            names = ['Urban', 'Forest', 'Other']
+            tmp = tmp_data.values
+            myticks = range(1, vmax + 1)
+            tmp[(tmp > 1) & (tmp < 11)] = 3  # Other
+            tmp[(tmp > 10) & (tmp < 16)] = 2  # Forest
+            tmp[tmp > 15] = 3  # Other
+            pcmesh = False
+            cmapname = 'jet'  # for the hvplot. Not optimal for LU_Index anyway...
+        else:
+            cmapname = 'viridis'
+            cmap = plt.cm.get_cmap(cmapname)
+            myticks = np.arange(vmin, vmax, int(25 * round((vmax - vmin) / 250.)))
+            pcmesh = True
+
+        if map_t == 'Basemap':
+            figure = Map_Basemap(tmp_data, hgt, ivg, vmin, vmax, cmap,
+                                 myticks, self.poi, pcmesh=pcmesh, add_topo=False, **kwargs)
+        elif map_t == 'Cartopy':
+            figure = Map_Cartopy(tmp_data, hgt, ivg, vmin, vmax, cmap,
+                                 myticks, self.poi, pcmesh=pcmesh, add_topo=False)
+        else:
+            figure = Map_hvplots(tmp_data, vmin, vmax, cmapname, self.poi)
+
+        return figure
+
 
 # -----------------------------------------------------------------------------------------------------------------------
 
 # some helperfunctions
 def get_list_of_filenames(name_of_dataset: str, dtstart: dt.datetime, dtend: dt.datetime):
+    # this is for reading...
+
     # The user provides an observation path and a stationname to be read in.
     # i.e. the structure is
     # obs_path/name_of_dataset1/<name_of_dataset1_start1_end1.nc>
@@ -382,7 +513,20 @@ def get_list_of_filenames(name_of_dataset: str, dtstart: dt.datetime, dtend: dt.
     return filenames
 
 
-def assign_cf_attributes_tslist(data: xr.Dataset, metadata: dict, cf_table: typing.Union[str, bytes, os.PathLike],
+def get_list_of_filenames2(name_of_dataset: str, dtstart: dt.datetime, dtend: dt.datetime):
+    # this is for writing...
+    # TODO: combine the two routines.
+    # TODO: create a rule when to split by time and create multiple files...
+
+    filepath = Path(os.environ['OBSERVATIONS_PATH']) / f'{name_of_dataset}/'
+    start_str = dtstart.strftime('%Y%m%d')
+    end_str = dtend.strftime('%Y%m%d')
+    filename = f'{name_of_dataset}_{start_str}_{end_str}.nc'
+
+    return filepath / filename
+
+
+def assign_cf_attributes_tslist(data: xr.Dataset, metadata: dict, cf_table: Union[str, bytes, os.PathLike],
                                 old_attrs=None, verbose=False):
     """
     Required metadata:
@@ -400,11 +544,15 @@ def assign_cf_attributes_tslist(data: xr.Dataset, metadata: dict, cf_table: typi
         old_attrs = []
 
     # Check for minimal amout of metadata
-    minimal_set = ['Conventions', 'featureType', 'station_name', 'lat', 'lon', 'station_elevation']
+    minimal_set = ['featureType', 'station_name', 'lat', 'lon', 'station_elevation']
     for item in minimal_set:
         if item not in metadata:
             print(f'Required entry {item} not found in metadata. Aborting')
             return
+
+    if 'Conventions' not in metadata:
+        print('"Conventions" not in metadata. Selecting CF-1.8 as default.')
+        metadata['Conventions'] = 'CF-1.8'
 
     recommended_set = ['title', 'institution', 'source', 'history', 'references', 'comment']
     for item in recommended_set:
@@ -412,22 +560,30 @@ def assign_cf_attributes_tslist(data: xr.Dataset, metadata: dict, cf_table: typi
             if verbose:
                 print(f'Consider putting {item} into the metadata')
 
+    # Add lat, lon, station_name and station_elevation to coordinates.
     if 'lat' not in data:  # assuming all are missing if one are missing.
         lat = xr.DataArray(metadata['lat'])
         lon = xr.DataArray(metadata['lon'])
         alt = xr.DataArray(metadata['station_elevation'])
 
         data = data.assign({'lat': lat, 'lon': lon, 'station_elevation': alt})
+        data = data.set_coords(['lat', 'lon', 'station_elevation'])
 
     if 'station_name' not in data:
         name = xr.DataArray(metadata['station_name'])  # maybe I have to assign stationname in a different way?
         data = data.assign({'station_name': name})
+        data = data.set_coords(['station_name'])
 
+    # ---------------------------------------------------------------------------
+    # Add attributes.
     with open(cf_table, 'r') as fid:
         cf_con = yaml.safe_load(fid)
 
     # set attributes of variables according to cf table
-    for item in data:
+    l1 = list(data.coords.keys())
+    l2 = list(data.keys())
+    l1.extend(l2)
+    for item in l1:
         if item in ['station_name', 'station_elevation', 'GEN_SPD']:
             var = item.lower()
         else:
@@ -437,7 +593,6 @@ def assign_cf_attributes_tslist(data: xr.Dataset, metadata: dict, cf_table: typi
 
     data.time.attrs = cf_con['time']
 
-    # Set attributes
     for item in metadata:
         if item in ['lat', 'lon', 'station_elevation', 'station_name']:
             pass  # created above
@@ -568,40 +723,59 @@ class Timeseries:
     # The methods of hvplot.xarray take care of that and more sophisticated plots
     # are done by the plotter. I keep the availability plot though as this is quite useful.
 
-    def __init__(self, name_of_dataset: str, dtstart: dt.datetime, dtend: dt.datetime,
-                 calc_pt=False, data=None, metadata=None, verbose=False):
+    def __init__(self, name_of_dataset: str, data=None):
+        """
+        There are multiple ways to initialize this class:
+        1) Provide "data". Must be an xr.Dataset or xr.DataArray.
+        2) Read data conform with this class. -> read_cfconform_data
+        3) Read non-conform nc-data. -> read_non_conform_ncdata
+        4) to be extended.
 
-        if metadata is None:
-            metadata = dict()
+        Args:
+            name_of_dataset: The name of the Dataset. Used to create a folderstructure and search for data.
+            data: optional, an xr.Dataset or an xr.DataArray
+        """
 
-        self.metadata = metadata
-        self.filenames = get_list_of_filenames(name_of_dataset, dtstart, dtend)
+        self.dataset = name_of_dataset
 
-        if data is None:
-            try:
-                self.data = self._read_cfconform_data(calc_pt, verbose)
-            except Exception as e:
-                print(e)
-                self.data = None
+        if isinstance(data, xr.Dataset) or isinstance(data, xr.DataArray):
+            self.data = data
+        elif data is None:
+            self.data = None
         else:
-            if isinstance(data, xr.Dataset) or isinstance(data, xr.DataArray):
-                self.data = data
-            else:
-                print('data must be of type xarray.Dataset of xarray.DataArray.')
-                return
+            print('data must be of type xarray.Dataset of xarray.DataArray.')
+            return
 
     # ----------------------------------------------------------------------
     #  Getters
     # ----------------------------------------------------------------------
-    def _read_cfconform_data(self, calc_pt=False, verbose=False):
+    def read_cfconform_data(self, dtstart: dt.datetime, dtend: dt.datetime,
+                            metadata=None, calc_pt=False, verbose=False):
+        """
+        Read timeseries data that is already conform with this class, i.e. get_list_of_filenames can find the data
+        based on dataset name, dtstart and dtend and data is already in the correct format and has metadata.
+        Data must be stored in the folder os.environ['OBSERVATIONS_PATH']/name_of_dataset/
+        Args:
+            dtstart: start of the dataset as YYYYMMDD
+            dtend: end of the dataset as YYYYMMDD
+            metadata: additional metadata or changes to the metadata that should be made.
+            calc_pt: if potential temperature should be caluclated from temperature and pressure.
+            verbose: Speak with user.
+
+        Returns: None
+
+        """
+
+        if metadata is None:
+            metadata = dict()
+
+        filenames = get_list_of_filenames(self.dataset, dtstart, dtend)
 
         if verbose:
-            for filename in self.filenames:
+            for filename in filenames:
                 print(f'Loading File {filename}')
 
-        data = xr.open_mfdataset(self.filenames)
-        # This seems to cause problems...
-        # I may have to write this part with load_dataset and concat along the time axis...
+        data = xr.open_mfdataset(filenames)
 
         if calc_pt:
             # This will only do something if T_X and P_Y exists.
@@ -610,10 +784,59 @@ class Timeseries:
             except:
                 pass
 
-        # CF Conform data already has attributes
-        # Add more medadata. If these already exist, they are overwritten.
-        data = data.assign_attrs(self.metadata)
-        return data
+        # CF Conform data already has attributes, but I can add more medadata here.
+        # If these already exist, they are overwritten.
+        data = data.assign_attrs(metadata)
+        self.data = data
+
+    def read_non_conform_ncdata(self, filenames: Union[str, list, PosixPath, os.PathLike],
+                                concat_dim: str, translator: dict, meta_table: pd.DataFrame, metadata=None,
+                                old_attrs=None, verbose=False):
+        """
+        Reads netcdf data that are not conform with this class and puts everything into a dataset
+         that is conform with this class.
+        Args:
+            filenames: a path or a list of paths to the filenames to be read.
+            concat_dim: the name of the dimension along whicht the files in filenames should be concatenated.
+            translator: a dict that translated variable names in the dataset to variable names used with this class.
+            meta_table: a pandas dataframe with the following entries: station_name, lat, lon, elev. station_name must
+                be declared as the index of the table; lat,lon,elev declare the latitude, longitude and elevation of each
+                station_name. latitude and longitude are assumend to be in degrees, elevation in meters.
+            metadata: a dict of attributes that will be used as metadata. Do not provide station_name, lat, lon and
+                station_elecation, as these will be read from the meta_table.
+            old_attrs: a list of attributes that may exist in the ncdata and should be removed.
+            verbose: if True, speak with user
+
+        Returns: None
+
+        """
+        if isinstance(filenames, list) is False:
+            filenames = [filenames]
+        if metadata is None:
+            metadata = dict()
+            metadata['featureType'] = 'timeSeries'  # assuming the feature
+        if old_attrs is None:
+            old_attrs = []
+
+        all_data = []
+        for idx, filename in enumerate(filenames):
+            data = xr.open_dataset(filename)
+            data = data.rename(translator)
+
+            # Preparing metadata:
+            metadata['station_name'] = meta_table.iloc[idx].name
+            metadata['lat'] = meta_table.iloc[idx].lat
+            metadata['lon'] = meta_table.iloc[idx].lon
+            metadata['station_elevation'] = meta_table.iloc[idx].elev
+
+            cf_table = os.path.split(os.path.realpath(__file__))[0] + '/resources/cf_table_timeseries_fields.yaml'
+            data = assign_cf_attributes_tslist(data, metadata, cf_table, old_attrs, verbose)
+            all_data.append(data)
+
+        self.data = xr.concat(all_data, dim=concat_dim)
+
+    def read_non_conform_csvdata(self):
+        raise NotImplementedError
 
     # ----------------------------------------------------------------------
     #  Selectors # Im not even sure I need these....
@@ -640,20 +863,41 @@ class Timeseries:
     # ----------------------------------------------------------------------
     #  Writers
     # ----------------------------------------------------------------------
-    def write_cfconform_data(self, targetfile, metadata, old_attrs=None, overwrite=False, verbose=False):
+    def write_cfconform_data(self, overwrite=False, concat_dim='station', verbose=False):
+        """
+        Write data to
+        Args:
+            overwrite: if True, an existing file will be overwritten. If False, and the file exists,
+            data will be appended along the dimension concat_dim.
+            concat_dim: the dimension along which data will be concatenated if a file already exists.
+            verbose: if True, speak with user
 
-        cf_table = os.path.split(os.path.realpath(__file__))[0] + '../wrftamer/resources/cf_table_wrfdata.yaml'
-        self.data = assign_cf_attributes_tslist(self.data, metadata, cf_table, old_attrs, verbose)
+        Returns: None
+
+        """
+
+        # Create class conform filename.
+        t1 = self.data.time[0].values
+        t2 = self.data.time[-1].values
+        dtstart = dt.datetime.fromtimestamp(t1.item() / 10 ** 9)
+        dtend = dt.datetime.fromtimestamp(t2.item() / 10 ** 9)
+
+        targetfile = get_list_of_filenames2(self.dataset, dtstart, dtend)
 
         if os.path.exists(targetfile) and not overwrite:
-            print(f'merging into {targetfile}')
+            if verbose:
+                print(f'merging into {targetfile}')
             old_data = xr.open_dataset(targetfile)
-            all_data = xr.concat([old_data, self.data], dim='station')
+            all_data = xr.concat([old_data, self.data], dim=concat_dim)
             old_data.close()
             all_data.to_netcdf(targetfile, mode='w', unlimited_dims='time')
             all_data.close()
-        else:
-            print(f'Write new file {targetfile}')
+        elif os.path.exists(targetfile) and overwrite:
+            if verbose:
+                print(f'Write new file {targetfile}')
+            self.data.to_netcdf(targetfile, mode='w', unlimited_dims='time')
+        elif not os.path.exists(targetfile):
+            targetfile.parent.mkdir()
             self.data.to_netcdf(targetfile, mode='w', unlimited_dims='time')
 
     # ----------------------------------------------------------------------

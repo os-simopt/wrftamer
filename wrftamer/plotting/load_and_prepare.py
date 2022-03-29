@@ -4,14 +4,6 @@ import pandas as pd
 import numpy as np
 
 
-def uv_to_FFDD(u, v):
-    ff = np.sqrt(u ** 2 + v ** 2)
-    dd = 180. / np.pi * np.arctan2(-u, -v)
-    dd = np.mod(dd, 360)
-
-    return ff, dd
-
-
 ########################################################################################################################
 #                                                  Load Data
 ########################################################################################################################
@@ -22,10 +14,6 @@ def load_obs_data(obs_data: dict, obs: str, dataset: str, **kwargs):
     """
 
     from wrftamer.wrfplotter_classes import Timeseries
-
-    # startdate = kwargs['startdate']
-    # enddate = kwargs['enddate']
-    # dtstart, dtend = dt.datetime.strptime(startdate, '%Y%m%d'), dt.datetime.strptime(enddate, '%Y%m%d')
 
     dtstart, dtend = kwargs['obs_load_from_to']
 
@@ -47,7 +35,6 @@ def load_mod_data(mod_data: dict, exp_name: str, **kwargs):
     """
 
     from wrftamer.experiment_management import experiment
-    from wrftamer.project_management import project
 
     try:
         proj_name = kwargs['proj_name']
@@ -66,37 +53,94 @@ def load_mod_data(mod_data: dict, exp_name: str, **kwargs):
 
     exp = experiment(proj_name, exp_name)
     list_of_locs = exp.list_tslocs(verbose=False)
-    file2load = f'{exp.workdir}/out/{prefix}_tslist_{dom}.nc'
-    tmp_xa = xr.open_dataset(file2load)
+    file2load = exp.workdir / f'out/{prefix}_tslist_{dom}.nc'
 
-    tslist_data = dict()
-    for dim in range(0, tmp_xa.dims['station']):
-        tmp = tmp_xa.isel(station=dim)
+    if file2load.is_file():
+        tmp_xa = xr.open_dataset(file2load)
 
-        # TODO: got an error for Ave10 and Ave 5 files. station_name, lat, lon, elevation became f(t)
-        # -> this forces me to do this try/except.
-        # Solve this issue and simplifiy this piece.
-        # Bug solved?
-        try:
-            loc = tmp.station_name.values[0]
-        except IndexError:
-            loc = str(tmp.station_name.values)
+        tslist_data = dict()
+        for dim in range(0, tmp_xa.dims['station']):
+            tmp = tmp_xa.isel(station=dim)
 
-        # loc = str(tmp.station_name.values)
+            loc = str(tmp.station_name.values)  # Important: station_name cannot have other dims than station!
 
-        if loc in list_of_locs:
-            tslist_data[loc] = tmp
+            if loc in list_of_locs:
+                tslist_data[loc] = tmp
 
-        if bool(tslist_data):
-            mod_data[exp_name] = tslist_data
+            if bool(tslist_data):
+                mod_data[exp_name] = tslist_data
+            else:
+                print('No data for Experiment sdsd', exp_name)
+                pass  # do not add empty dicts
+    else:
+        print('No data for Experiment', exp_name)
+
+
+def load_all_obs_data(dataset, **kwargs):
+    from wrftamer.wrfplotter_classes import Timeseries
+
+    dtstart, dtend = kwargs['obs_load_from_to']
+    cls = Timeseries(dataset, dtstart, dtend, calc_pt=True)
+
+    return cls.data
+
+
+def load_all_mod_data(**kwargs):
+    """
+    Loads all data (all experiments in <list_of_exps>) for all locations and concats the data to a single dataset.
+
+    Args:
+        **kwargs:
+
+    Returns:
+
+    """
+
+    from wrftamer.experiment_management import experiment
+
+    try:
+        proj_name = kwargs['proj_name']
+    except KeyError:
+        proj_name = None
+
+    dom = kwargs['dom']
+    ave_window = kwargs.get('AveChoice_WRF', None)
+    pred_window = kwargs.get('Prediction_Range', None)
+
+    if ave_window in [0, 'raw']:
+        prefix = 'raw'
+    elif ave_window in [-10, 'ten']:
+        prefix = 'ten'
+    else:
+        prefix = 'Ave' + str(ave_window) + 'Min'
+
+    all_xa = []
+    for exp_name in kwargs['Expvec']:
+        exp = experiment(proj_name, exp_name)
+        if pred_window is None:
+            file2load = f'{exp.workdir}/out/{prefix}_tslist_{dom}.nc'
         else:
-            print('No data for Experiment', exp_name)
-            pass  # do not add empty dicts
+            file2load = f'{exp.workdir}/out/{pred_window}_{dom}.nc'
+
+        tmp_xa = xr.open_dataset(file2load)
+        all_xa.append(tmp_xa)
+        tmp_xa.close()
+
+    all_xa = xr.concat(all_xa, dim='time')
+
+    return all_xa
 
 
 ########################################################################################################################
 #                                                Data Preparation
 ########################################################################################################################
+
+# TODO: this preperation data routines have some hardcoded stuff and is strongly dependent the FINO station.
+#  Need to make variable selection dynamic; need to define variable name convention
+#  Need to improve these readers.
+# Also, is it really nessecary to load everything into these dicts?
+# The prep routines should be able to extract data on demand just as easily.
+
 
 def prep_profile_data(obs_data, mod_data, infos: dict, verbose=False) -> list:
     """

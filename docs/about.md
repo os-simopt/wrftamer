@@ -2,11 +2,21 @@
 
 ## Release Notes
 
-**Version 1.1.0 - 23.02.2022**
+**Version 1.1.0 - 22.03.2022**
 Added functionallity
 - A watchdog to automatically perform postprocessing once a run is finished.
+- the actions performed automatically are defined in the "postprocessing protocol", a section in the configure.yaml file.
 - The column "archived" of the xlsx files is renamed to "status". It contains now a string describing the status
 of an experiment instead of a boolean.
+- The status of each experiment is now listed in the GUIs project tab.
+- WRFplotter, a GUI to create interactive standard plots like timeseries, profiles, maps and zt plots has been added to the GUI.
+- WRFplotter may display observation of your choosing, provided they are in a format WRFplotter can read. See [WRFplotter](wrfplotter.md) for more information.
+
+Minor changes:
+- bugfixes
+- timeseries produced by the tslist processing are now in a (mostly) cf-conform datastructure.
+- General imporovements to the code.
+
 
 **Version 1.0.0 - 16.02.2022**
 
@@ -14,7 +24,6 @@ of an experiment instead of a boolean.
 
 **Future Releases**
 
-- Add an overview for the state of each experiment.
 - Add a watchdog to automatically perform postprocessing once a run is finished.
 
 <!--

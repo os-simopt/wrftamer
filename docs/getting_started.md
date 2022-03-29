@@ -25,38 +25,8 @@ pip install -e .
 
 ### 1. (optional) Set environment Variables
 
-This program uses four environmental variables to set important paths and options. Setting these variables is optional, as default default directories are defined.
-
-| env variable          | default                |
-| --------------------- | -----------------------|
-| WRFTAMER_HOME_PATH    | $HOME/wrftamer         |
-| WRFTAMER_RUN_PATH     | $HOME/wrftamer/run     |
-| WRFTAMER_ARCHIVE_PATH | $HOME/wrftamer/archive |
-| WRFTAMER_make_submit  | False                  |
-
-With conda, you may set and unset these variables in the environment. If these files don't exist, just create them.
-
-In the file:
-```~/.conda/envs/<env_name>/etc/conda/activate.d/env_vars.sh``` put the lines
-
-```bash
-set env WRFTAMER_HOME_PATH <your/desired/path/>
-set env WRFTAMER_RUN_PATH <your/desired/path/>
-set env WRFTAMER_ARCHIVE_PATH <your/desired/path/>
-set env WRFTAMER_make_submit <False or True>
-```
-
-In the file
-```~/.conda/envs/<env_name>/etc/conda/deactivate.d/env_vars.sh``` add
-
-```bash
-unset env WRFTAMER_HOME_PATH
-unset env WRFTAMER_RUN_PATH
-unset env WRFTAMER_ARCHIVE_PATH
-unset env WRFTAMER_make_submit
-```
-
-This way, these variables are set each time you load your conda environment and are unset on deactivation.
+We recommend to set some environmental variables to define where WRFtamer related files and directories will be created.
+See [optional environmental variables](customizing.md#optional-environmental-variables).
 
 ### 2. (required) Prepare WRF and WPS
 

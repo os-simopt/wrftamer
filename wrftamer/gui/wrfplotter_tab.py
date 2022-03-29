@@ -1,4 +1,5 @@
 import panel as pn
+from io import StringIO
 import panel.widgets as pnw
 import datetime as dt
 import pandas as pd
@@ -14,6 +15,7 @@ from wrftamer.plotting.collect_infos import set_infos
 from wrftamer.plotting.load_and_prepare import load_obs_data, load_mod_data
 from wrftamer.plotting.hv_plots import create_hv_plot
 from wrftamer.plotting.mpl_plots import create_mpl_plot
+from wrftamer.utility import get_random_string
 
 
 def create_plot_panel(plottypes_avil):
@@ -31,19 +33,16 @@ def create_plot_panel(plottypes_avil):
 
 class wrfplotter_tab(gui_base):
     """
-    Manual tests of gui NOT sucessful (WRFTamer Version 1.1)
-    FIXME: zt-Plot (fixed = mpl) leads to error
-    FIXME: Load Data does not work properly. (Data is loaded, but routine not finished.
-    FIXME: max of mpl plots fixed to 30 m/s -> dynamic!
-    Rest seems to work.
+    Manual tests of gui sucessful (WRFTamer Version 1.1)
     """
 
-    def __init__(self):
+    def __init__(self, poi_text):
         super(wrfplotter_tab, self).__init__()
 
         # Available observations in os['OBSERVATIONS_PATH']
         self.dataset_dict, self.list_of_obs = get_available_obs()
-        self.plottypes_avil = ['Timeseries', 'Profiles', 'Obs vs Mod', 'zt-Plot', 'Map']
+        self.plottypes_avil = ['Timeseries', 'Profiles', 'Obs vs Mod', 'Histogram', 'Windrose', 'zt-Plot', 'Map',
+                               'MapSequence']
         self.dict_of_vars_per_plottype = get_vars_per_plottype()  # prefefined. Not dynamically
         self.dict_of_levs_per_plottype_and_var = get_lev_per_plottype_and_var()  # prefefined. Not dynamically
 
@@ -77,7 +76,7 @@ class wrfplotter_tab(gui_base):
 
         # Menu2
         self.sel_var = pn.widgets.Select(name='Variable', options=self.dict_of_vars_per_plottype['Timeseries'])
-        self.sel_lev = pn.widgets.Select(name='Level', options=self.dict_of_levs_per_plottype_and_var['Timeseries'][
+        self.sel_lev = pn.widgets.Select(name='height', options=self.dict_of_levs_per_plottype_and_var['Timeseries'][
             'WSP_Sonic'])
 
         self.sel_store = pn.widgets.Select(name='data type', options=['markdown', 'csv'])
@@ -95,6 +94,23 @@ class wrfplotter_tab(gui_base):
         self.but_left = pn.widgets.Button(name='\u25c0', width=50)
         self.but_right = pn.widgets.Button(name='\u25b6', width=50)
         self.png_pane = pn.pane.PNG(None, width=500)
+
+        # Manual Settings
+        title = pn.widgets.TextInput(placeholder='title')
+        xlabel = pn.widgets.TextInput(placeholder='xlabel')
+        ylabel = pn.widgets.TextInput(placeholder='ylabel')
+        font_size = pn.widgets.IntSlider(name='Font Size', value=15, start=10, end=25, step=1)
+        xlim = pn.widgets.RangeSlider(name='xlim', start=0, end=50, value=(0, 50), step=0.01)
+        ylim = pn.widgets.RangeSlider(name='ylim', start=0, end=50, value=(0, 50), step=0.01)
+        clim = pn.widgets.RangeSlider(name='clim', start=0, end=100, value=(0, 50), step=0.01)
+        default_poi = 'lat; lon\n 50.45; 9.8 \n 45.1,7.5 \n'
+        poi_data = pn.widgets.input.TextAreaInput(name='points of interest', placeholder=default_poi, height=100)
+        but_render = pn.widgets.Button(name='Render Plot', button_type='success')
+        self.card_ms = pn.Card(title, xlabel, ylabel, font_size, xlim, ylim, clim, poi_data, but_render,
+                               title='Manual Settings')
+        self.card_ms.collapsed = True
+        # TODO: write update function for the card_ms
+        # TODO write funtion for but_render to do something.
 
         # wrfplotter variables
         self.stats = None
@@ -175,8 +191,12 @@ class wrfplotter_tab(gui_base):
                 self.alert1.visible = False
 
             elif plottype == 'Map':
+                ttp = self.time_to_plot.value
+
+
+            elif plottype == 'MapSequence':
                 # --------------------------------------
-                #                Map
+                #                MapSequence
                 # --------------------------------------
                 self.map_cls = None
                 try:
@@ -187,11 +207,15 @@ class wrfplotter_tab(gui_base):
                     exp = experiment(proj_name, exp_name)
                     i_path = exp.exp_path / 'out'
 
-                    # poi_file = os.environ['WRFTAMER_POI_FILE'] # Future
-                    # testing.
-                    # TODO: generalize!
-                    poi_file = '/home/daniel/projects/parkcast/repos/WRFtamer/wrftamer/resources/Koordinaten_Windpark.csv'
-                    poi = pd.read_csv(poi_file, delimiter=';')
+                    try:
+                        poi_file = poi_text.value
+                        if isinstance(poi_file, bytes):
+                            s = str(poi_file, 'utf-8')
+                            poi_file = StringIO(s)
+
+                        poi = pd.read_csv(poi_file, delimiter=';')
+                    except:
+                        poi = pd.DataFrame()
                     self.map_cls = Map(poi=poi, intermediate_path=i_path)
                     self.map_cls.load_intermediate(dom, var, lev, '*')
 
@@ -215,7 +239,6 @@ class wrfplotter_tab(gui_base):
                     print('Data Stored to file Statistics.md')
             except Exception as e:
                 print(e)
-                print(type(self.stats))
 
             self.but_store_tab.button_type = 'success'
 
@@ -223,10 +246,10 @@ class wrfplotter_tab(gui_base):
         def _store_figure(event):
             self.but_store_fig.button_type = 'warning'
 
-            # TODO: in the future, use plot_path an generate a meaningful name.
-            #  self.plot_path
+            filename = 'WP_' + get_random_string(30) + '.png'
+            file2save = self.plot_path / filename
 
-            self.figure.savefig('test.png', dpi=400)
+            self.figure.savefig(file2save, dpi=400)
 
             self.but_store_fig.button_type = 'success'
 
@@ -352,12 +375,17 @@ class wrfplotter_tab(gui_base):
 
             plottype = self.plottypes_avil[active]
 
-            if active in [1]:
+            if active in [1, 3]:
                 self.sel_lev.disabled = True
                 self.sel_lev.options = []
             else:
                 self.sel_lev.disabled = False
                 self.sel_lev.options = self.dict_of_levs_per_plottype_and_var[plottype][tmp_var]
+
+            if plottype in ['Map']:
+                self.sel_lev.name = 'level'
+            else:
+                self.sel_lev.name = 'height'
 
         @pn.depends(self.plot_panel.param.active,
                     self.mc_proj.param.value, self.mc_exp.param.value, self.sel_dom.param.value,
@@ -427,10 +455,12 @@ class wrfplotter_tab(gui_base):
                           self.progress, self.but_load)
         menu2 = pn.Row(
             pn.Column(pn.Row(self.sel_var, self.sel_lev),
-                      pn.Row(self.sel_store, self.but_store_tab, self.but_store_fig)),
-            pn.Column(self.alert1, self.alert2)
+                      pn.Row(self.sel_store, self.but_store_tab, self.but_store_fig)
+                      )
         )
 
-        wp = pn.Row(menu1, pn.Column(menu2, self.plot_panel), name='WRFplotter')
+        side_menu = pn.Column(self.alert1, self.alert2, self.card_ms)
+
+        wp = pn.Row(menu1, pn.Column(menu2, self.plot_panel), side_menu, name='WRFplotter')
 
         return wp

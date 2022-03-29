@@ -14,17 +14,17 @@ lon:
     long_name: "station longitude"
     units: "degrees_east"
 
-"time":
-    "standard_name": "time"
+time:
+    standard_name: "time"
     long_name: "time"
     #"units": "seconds since 1970-01-01 00:00:00 UTC"
     #"calendar": "gregorian"
 
-"model_level":
-    "standard_name": "model level number"
-    "positive": "up"
+model_level:
+    standard_name: "model level number"
+    positive: "up"
 
-"alt":
+alt:
     "standard_name": "height"
     "long_name": "vertical distance above the surface"
     'wrf_name': 'model height - [MSL] (mass grid)'

@@ -1,3 +1,7 @@
+import random
+import string
+
+
 def printProgressBar(iteration, total, prefix='', suffix='', decimals=1, length=100, fill='█', printEnd="\r"):
     """
     Call in a loop to create terminal progress bar
@@ -24,3 +28,10 @@ def printProgressBar(iteration, total, prefix='', suffix='', decimals=1, length=
     # Print New Line on Complete
     if iteration == total:
         print()
+
+
+def get_random_string(length):
+    # generates a ranom string of <length>. Used for unique filenames.
+    letters = string.ascii_lowercase  # choose from all lowercase letter
+    result_str = ''.join(random.choice(letters) for i in range(length))
+    return result_str

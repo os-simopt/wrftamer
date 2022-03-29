@@ -7,20 +7,17 @@ from matplotlib.dates import DateFormatter
 import matplotlib.cm as cm
 from windrose import WindroseAxes
 
-# TODO: units (time) missing, units display ugly.
-#  Bug with zt-Plot
 
 ########################################################################################################################
 #                                                 Call Plots
 ########################################################################################################################
 
-def create_mpl_plot(obs_data, mod_data, infos: dict, vmin=0, vmax=30):
+def create_mpl_plot(obs_data, mod_data, infos: dict):
     # ===================================================================
     # General Stuff
     # ===================================================================
 
     plttype = infos['plttype']
-    var = infos['var']
     Expvec = infos['Expvec']
     loc = infos['loc']
 
@@ -31,7 +28,7 @@ def create_mpl_plot(obs_data, mod_data, infos: dict, vmin=0, vmax=30):
     if len(mod_data) > 0:
         tmp_t = mod_data[list(mod_data.keys())[0]][loc].time.values
     else:
-        tmp_t = obs_data[list(obs_data.keys())[0]].time.values # TODO: once I replaced all instances of FINO with FINO1, put loc here.
+        tmp_t = obs_data[list(obs_data.keys())[0]].time.values
 
     dtmin = pd.Timestamp(tmp_t.min())
     dtmax = pd.Timestamp(tmp_t.max())
@@ -41,30 +38,35 @@ def create_mpl_plot(obs_data, mod_data, infos: dict, vmin=0, vmax=30):
         zmin = mod_data[Expvec[0]][loc].ALT.values.min()
 
         data, units, description = prep_profile_data(obs_data, mod_data, infos)
+        vmin, vmax = 0, max(data.max()) * 1.1
 
         figure = Profile(data, vmin, vmax, zmin, zmax, label=None, unit=units,
                          zunit='m', descr=description, col=cols, sty=stys)
 
     elif plttype == 'Obs vs Mod':
         data, units, description = prep_ts_data(obs_data, mod_data, infos)
+        vmin, vmax = 0, max(data.max()) * 1.1
         figure = Obs_vs_Mod(data, vmin=vmin, vmax=vmax, col=cols, sty=stys2, unit=units)
 
     elif plttype == 'Timeseries':
         data, units, description = prep_ts_data(obs_data, mod_data, infos)
+        vmin, vmax = 0, max(data.max()) * 1.1
         figure = TimeSeries(data, vmin, vmax, dtmin=dtmin, dtmax=dtmax, col=cols, sty=stys,
                             descr=description, unit=units)
 
     elif plttype == 'Timeseries 2':
         zmin, zmax = 0, 360
         data1, data2, units1, units2, description1, description2 = prep_ts_data(obs_data, mod_data, infos)
+        vmin, vmax = 0, max(data1.max()) * 1.1
         figure = TimeSeries2(data1, data2, vmin=[vmin, zmin], vmax=[vmax, zmax], dtmin=dtmin,
                              dtmax=dtmax, col=cols, sty1=stys, sty2=None,
-                             descr=[description1, description2], unit=[units1,units2])
+                             descr=[description1, description2], unit=[units1, units2])
 
     elif plttype == 'zt-Plot':
 
         data = prep_zt_data(mod_data, infos)
         zmin, zmax = data.ALT.values.min(), data.ALT.values.max()
+        vmin, vmax = 0, max(data.max()) * 1.1
         figure = zt(data, vmin, vmax, zmin, zmax)
 
     else:
@@ -205,7 +207,7 @@ def TimeSeries(data, vmin, vmax, dtmin, dtmax, figure=None, col=None, sty=None, 
 
     # I may not need this anymore. Anyway: keep for now.
     if figure is None:  # figure does not exist -> create!
-        factor = 1.2
+        factor = 1.0
         figure, ax = plt.subplots(1, 1, figsize=(5.5 * factor, 4.5 * factor), facecolor='w', edgecolor='k')
     else:
         ax = figure.gca()  # there is only one axis.
@@ -275,7 +277,7 @@ def TimeSeries2(data1, data2, vmin, vmax, dtmin, dtmax, figure=None,
 
     # I may not need this anymore. Anyway: keep for now.
     if figure is None:  # figure does not exist -> create!
-        factor = 1.2  # 1.4
+        factor = 1.0  # 1.4
         figure, ax = plt.subplots(1, 2, figsize=(10.5 * factor, 4.5 * factor), facecolor='w', edgecolor='k')
     else:
         ax = figure.axes
@@ -319,7 +321,7 @@ def zt(data, vmin, vmax, zmin, zmax, figure=None):
     mpl.rcParams.update({'font.size': 15})
 
     if figure is None:  # figure does not exist-> create!
-        factor = 1.2
+        factor = 1.0
         figure, ax = plt.subplots(1, 1, figsize=(5.5 * factor, 4.5 * factor), facecolor='w', edgecolor='k')
     else:
         ax = figure.gca()  # there is only one axis.
@@ -417,8 +419,8 @@ def Obs_vs_Mod(data, vmin, vmax, sty=None, col=None, label=None, unit=None, figu
 
     ax.plot([vmin, vmax], [vmin, vmax], 'grey', lw=2)
 
-    ax.set_xlabel('Obs (' + unit + ')')
-    ax.set_ylabel('Mod (' + unit + ')')
+    ax.set_xlabel('Observation (' + unit + ')')
+    ax.set_ylabel('Model (' + unit + ')')
 
     ax.set_xlim([vmin, vmax])
     ax.set_ylim([vmin, vmax])
