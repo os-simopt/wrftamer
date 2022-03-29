@@ -6,6 +6,7 @@ nav:
     - Customizing WRFtamer: customizing.md
     - Command Line tools: command_line_tools.md
     - GUI: GUI.md
+    - WRFplotter: wrfplotter.md
     - FAQ: faq.md
     - About: about.md
 
