@@ -1,7 +1,7 @@
 import os
 import shutil
 import datetime as dt
-from pathlib import Path, PosixPath
+from pathlib import Path
 import glob
 import pandas as pd
 import numpy as np
@@ -14,7 +14,6 @@ import wrftamer.wrftamer_functions as wtfun
 from wrftamer.wrfplotter_classes import Map
 import yaml
 
-# from wrftamer.wrf_timing import wrf_timing
 """
 A management tool for WRF Experiments
 A WRF Experiment is a directory with a certain structure of subfolders in which a WRF run is set up and run.
@@ -539,7 +538,7 @@ class experiment:
                         list_of_mls = [5]
                         list_of_vars = ['WSP']
                         list_of_doms = ['d01']
-                        poi = pd.DataFrame()
+                        poi = None
                         store = True
 
                     else:
@@ -560,7 +559,7 @@ class experiment:
                             poi_file = ppp[item]['poi_file']
                             poi = pd.read_csv(poi_file, delimiter=';')  # points of interest
                         except KeyError:
-                            poi = pd.DataFrame()
+                            poi = None
                         try:
                             store = bool(ppp[item]['store'])
                         except:
@@ -570,7 +569,7 @@ class experiment:
                     intermediate_path = self.exp_path / 'out'
                     fmt = 'png'
 
-                    cls = Map(poi=poi, plot_path=plot_path, intermediate_path=intermediate_path, fmt=fmt)
+                    cls = Map(plot_path=plot_path, intermediate_path=intermediate_path, fmt=fmt)
 
                     for dom in list_of_doms:
                         inpath = self.exp_path / 'out'
@@ -583,7 +582,7 @@ class experiment:
                                     if store:
                                         cls.store_intermediate()
                                     else:
-                                        cls.plot()
+                                        cls.plot(map_t='Cartopy', store=True, poi=poi)
 
         self.status = 'post processed'
         self._update_db_entry({'status': 'post processed'})

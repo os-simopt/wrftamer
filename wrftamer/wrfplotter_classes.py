@@ -4,13 +4,13 @@ import numpy as np
 import matplotlib as mpl
 import pandas as pd
 import wrf
-import wrftamer.wrf_python2 as wrf2
 import xarray as xr
 import datetime as dt
 from pathlib import PosixPath, Path
-from wrftamer.wrfplotter_functions import Map_Basemap, Map_Cartopy, Map_hvplots
 import os
-from wrftamer.plotting.mpl_plots import Availability
+from wrftamer.plotting.mpl_plots import Availability, Map_Cartopy
+from wrftamer.plotting.hv_plots import Map_hvplots
+from wrftamer.plotting.load_and_prepare import get_limits_and_labels
 import yaml
 from typing import Union
 
@@ -20,9 +20,7 @@ class Map:
     Management of wrfdata for Map plotting. Loads data, manages units, cmaps and vlims.
     """
 
-    def __init__(self, poi=pd.DataFrame(), **kwargs):
-
-        self.poi = poi
+    def __init__(self, **kwargs):
 
         self.data = xr.DataArray()
         self.hgt = xr.DataArray()
@@ -158,14 +156,6 @@ class Map:
         self.data = data
         self.data.attrs['dom'] = dom
 
-    def extract_data_from_wrfout2(self, filename: PosixPath, select_time: dt.datetime):
-        # This functions gets multiple variables to be displayed by the WRFplotter.
-
-        tvec = wrf2.get_timevector(filename)
-        tidx = np.argmin(abs(tvec - np.datetime64(select_time)))
-
-        self.data = wrf2.get_standard_vars(filename, tindices=(tidx, tidx + 1), ignore_warn=True)
-
     def store_intermediate(self):
         """
         Extraction a subsample of Data from the full WRF Model output seems to be the best option to deal
@@ -247,80 +237,17 @@ class Map:
         self.hgt = replace_proj2(self.hgt)
         self.ivg = replace_proj2(self.ivg)
 
-    def plot(self, map_t='Basemap', vmin=None, vmax=None, store=True, **kwargs) -> None:
+    def plot(self, map_t='Cartopy', store=False, **kwargs) -> None:
         """
         This methods prepares the data for plotting using basemap or cartopy. Limits are set, cmaps
         are prepared, for IVGTYP, a simplification is applied.
         """
 
-        if self.data.name == 'WSP':
-            if vmin is None and vmax is None:
-                vmin, vmax = np.floor(self.data.min().values), np.ceil(self.data.max().values)
+        ttp = kwargs.get('time_to_plot', None)
+        var = kwargs.get('var',None)
+        plottype = kwargs.get('plottype','Map')
 
-            if self.data.description.split(' ')[-1] == 'Difference':
-                cmapname = 'seismic'
-            else:
-                cmapname = 'viridis'
-
-            cmap = plt.cm.get_cmap(cmapname)
-            myticks = np.linspace(vmin, vmax, 10)
-            pcmesh = False
-
-        elif self.data.name in ['U', 'V']:
-            if vmin is None and vmax is None:
-                vmin, vmax = np.floor(self.data.min().values), np.ceil(self.data.max().values)
-            cmapname = 'hsv'
-            cmap = plt.cm.get_cmap(cmapname)
-            myticks = np.linspace(vmin, vmax, 10)
-            pcmesh = False
-
-        elif self.data.name in ['DIR']:
-            if vmin is None and vmax is None:
-                vmin, vmax = 0, 360
-            cmapname = 'hsv'
-            cmap = plt.cm.get_cmap(cmapname)
-            vdel = 10
-            myticks = np.arange(vmin, vmax + vdel, vdel)
-            pcmesh = False
-
-        elif self.data.name in ['HGT', 'terrain']:
-
-            if map_t in ['Basemap', 'Cartopy']:
-                cmapname = 'terrain'
-                cmap = plt.cm.get_cmap(cmapname)
-            else:
-                cmapname = 'bgyw'
-
-            if vmin is None or vmax is None:
-                vmin, vmax = self.hgt.values.min(), self.hgt.values.max()
-
-            vmin = int(25 * round(float(vmin) / 25.))
-            vmax = int(25 * round(float(vmax) / 25.))
-            myticks = np.linspace(vmin, vmax, 10)
-            pcmesh = False
-
-        elif self.data.name == 'LU_INDEX':
-            # At some point, I want to rework the LU_INDEX plot anyway, as this routine reduces everything to
-            # 3 categories!
-
-            if vmin is None and vmax is None:
-                vmin, vmax = 1, 3
-            cmap = mpl.colors.ListedColormap(['#8B0000', '#013220', '#D3D3D3'])
-            bounds = range(1, vmax + 1)
-            norm = mpl.colors.BoundaryNorm(bounds, cmap.N)
-            names = ['Urban', 'Forest', 'Other']
-            tmp = self.data.values
-            myticks = range(1, vmax + 1)
-            tmp[(tmp > 1) & (tmp < 11)] = 3  # Other
-            tmp[(tmp > 10) & (tmp < 16)] = 2  # Forest
-            tmp[tmp > 15] = 3  # Other
-            pcmesh = False
-            cmapname = 'jet'  # for the hvplot. Not optimal for LU_Index anyway...
-        else:
-            cmapname = 'viridis'
-            cmap = plt.cm.get_cmap(cmapname)
-            myticks = np.arange(vmin, vmax, int(25 * round((vmax - vmin) / 250.)))
-            pcmesh = True
+        infos = get_limits_and_labels(plottype,var, map_data=self.data)
 
         if store:  # loop over all indices and save files
             tdim = self.data.shape[0]
@@ -328,14 +255,10 @@ class Map:
 
                 tmp_data = self.data[tidx, :, :]
 
-                if map_t == 'Basemap':
-                    figure = Map_Basemap(tmp_data, self.hgt, self.ivg, vmin, vmax, cmap,
-                                         myticks, self.poi, pcmesh=pcmesh, add_topo=False, **kwargs)
-                elif map_t == 'Cartopy':
-                    figure = Map_Cartopy(tmp_data, self.hgt, self.ivg, vmin, vmax, cmap,
-                                         myticks, self.poi, pcmesh=pcmesh, add_topo=False)
+                if map_t == 'Cartopy':
+                    figure = Map_Cartopy(tmp_data, hgt=self.hgt, ivg=self.ivg, **infos)
                 else:
-                    figure = Map_hvplots(tmp_data, vmin, vmax, cmapname, self.poi)
+                    figure = Map_hvplots(tmp_data, **infos)
 
                 date = tmp_data.Time.values
                 t = pd.to_datetime(str(date))
@@ -350,119 +273,20 @@ class Map:
                 plt.close(figure)
 
         else:  # display only required tidx and return figure
-            if 'tidx' in kwargs:
-                tidx = kwargs['tidx']
-            else:
-                tidx = 0
 
-            tmp_data = self.data[tidx, :, :]
-
-            if map_t == 'Basemap':
-                figure = Map_Basemap(tmp_data, self.hgt, self.ivg, vmin, vmax, cmap,
-                                     myticks, self.poi, pcmesh=pcmesh, add_topo=False, **kwargs)
-            elif map_t == 'Cartopy':
-                figure = Map_Cartopy(tmp_data, self.hgt, self.ivg, vmin, vmax, cmap,
-                                     myticks, self.poi, pcmesh=pcmesh, add_topo=False)
+            if ttp is not None:
+                timestamp = ttp.strftime('%Y-%m-%d %H:%M:%S')
             else:
-                figure = Map_hvplots(tmp_data, vmin, vmax, cmapname, self.poi)
+                timestamp = self.data.indexes['Time'][0]
+
+            tmp_data = self.data.sel({'Time': timestamp})
+
+            if map_t == 'Cartopy':
+                figure = Map_Cartopy(tmp_data, hgt=self.hgt, ivg=self.ivg, **infos)
+            else:
+                figure = Map_hvplots(tmp_data, **infos)
 
             return figure
-
-    def plot2(self, map_t='Basemap', var='WSP', vmin=None, vmax=None, **kwargs) -> None:
-        """
-        This methods prepares the data for plotting using basemap or cartopy. Limits are set, cmaps
-        are prepared, for IVGTYP, a simplification is applied.
-        """
-
-        if 'tidx' in kwargs:
-            tidx = kwargs['tidx']
-        else:
-            tidx = 0
-
-        if 'ml' in kwargs:
-            ml = kwargs['ml']
-        else:
-            ml = 0
-
-        tmp_data = self.data[var][tidx, ml, :, :]
-        hgt = self.data['HGT'][tidx, :, :]
-        ivg = self.data['LU_INDEX'][tidx, :, :]
-
-        if var == 'WSP':
-            if vmin is None and vmax is None:
-                vmin, vmax = np.floor(tmp_data.min().values), np.ceil(tmp_data.max().values)
-
-            cmapname = 'viridis'
-            cmap = plt.cm.get_cmap(cmapname)
-            myticks = np.linspace(vmin, vmax, 10)
-            pcmesh = False
-
-        elif var in ['U', 'V']:
-            if vmin is None and vmax is None:
-                vmin, vmax = np.floor(tmp_data.min().values), np.ceil(tmp_data.max().values)
-            cmapname = 'hsv'
-            cmap = plt.cm.get_cmap(cmapname)
-            myticks = np.linspace(vmin, vmax, 10)
-            pcmesh = False
-
-        elif var in ['DIR']:
-            if vmin is None and vmax is None:
-                vmin, vmax = 0, 360
-            cmapname = 'hsv'
-            cmap = plt.cm.get_cmap(cmapname)
-            vdel = 10
-            myticks = np.arange(vmin, vmax + vdel, vdel)
-            pcmesh = False
-
-        elif var in ['HGT', 'terrain']:
-
-            if map_t in ['Basemap', 'Cartopy']:
-                cmapname = 'terrain'
-                cmap = plt.cm.get_cmap(cmapname)
-            else:
-                cmapname = 'bgyw'
-
-            if vmin is None or vmax is None:
-                vmin, vmax = hgt.values.min(), hgt.values.max()
-
-            vmin = int(25 * round(float(vmin) / 25.))
-            vmax = int(25 * round(float(vmax) / 25.))
-            myticks = np.linspace(vmin, vmax, 10)
-            pcmesh = False
-
-        elif var == 'LU_INDEX':
-            # At some point, I want to rework the LU_INDEX plot anyway, as this routine reduces everything to
-            # 3 categories!
-
-            if vmin is None and vmax is None:
-                vmin, vmax = 1, 3
-            cmap = mpl.colors.ListedColormap(['#8B0000', '#013220', '#D3D3D3'])
-            bounds = range(1, vmax + 1)
-            norm = mpl.colors.BoundaryNorm(bounds, cmap.N)
-            names = ['Urban', 'Forest', 'Other']
-            tmp = tmp_data.values
-            myticks = range(1, vmax + 1)
-            tmp[(tmp > 1) & (tmp < 11)] = 3  # Other
-            tmp[(tmp > 10) & (tmp < 16)] = 2  # Forest
-            tmp[tmp > 15] = 3  # Other
-            pcmesh = False
-            cmapname = 'jet'  # for the hvplot. Not optimal for LU_Index anyway...
-        else:
-            cmapname = 'viridis'
-            cmap = plt.cm.get_cmap(cmapname)
-            myticks = np.arange(vmin, vmax, int(25 * round((vmax - vmin) / 250.)))
-            pcmesh = True
-
-        if map_t == 'Basemap':
-            figure = Map_Basemap(tmp_data, hgt, ivg, vmin, vmax, cmap,
-                                 myticks, self.poi, pcmesh=pcmesh, add_topo=False, **kwargs)
-        elif map_t == 'Cartopy':
-            figure = Map_Cartopy(tmp_data, hgt, ivg, vmin, vmax, cmap,
-                                 myticks, self.poi, pcmesh=pcmesh, add_topo=False)
-        else:
-            figure = Map_hvplots(tmp_data, vmin, vmax, cmapname, self.poi)
-
-        return figure
 
 
 # -----------------------------------------------------------------------------------------------------------------------
@@ -494,7 +318,7 @@ def get_list_of_filenames(name_of_dataset: str, dtstart: dt.datetime, dtend: dt.
     list_of_files.sort()
 
     list_of_starts = [item.stem.replace(name_of_dataset, '').split('_')[1] for item in list_of_files]
-    list_of_ends   = [item.stem.replace(name_of_dataset, '').split('_')[2] for item in list_of_files]
+    list_of_ends = [item.stem.replace(name_of_dataset, '').split('_')[2] for item in list_of_files]
 
     starts = np.asarray([dt.datetime.strptime(item, '%Y%m%d') for item in list_of_starts])
     ends = np.asarray([dt.datetime.strptime(item, '%Y%m%d') for item in list_of_ends])
@@ -673,14 +497,15 @@ def calc_PT(data):
     if len(tmp1) <= 1 or len(tmp2) == 0:
         return data
 
-    if 'station' in data.dims:
-        nstat = data.dims['station']
+    if 'station_name' in data.dims:
+        nstat = data.dims['station_name']
         tmp_all = []
         for idx in range(0, nstat):
-            tmp_data = data.isel(station=idx)
+            tmp_data = data.isel(station_name=idx)
             tmp_data = calc_PT_single_station(tmp_data)
             tmp_all.append(tmp_data)
-        data = xr.concat(tmp_all, dim='station')
+        data = xr.concat(tmp_all, dim='station_name')
+        data = data.set_coords({'station_name': 'station_name'})
     else:
         data = calc_PT_single_station(data)
 
@@ -709,7 +534,7 @@ class Timeseries:
 
     ****
     Be aware that right now, ds.to_netcdf is not able to write cf-conform netcdf files.
-    One issue is, that a string variable, as used for the station name has a variable length (VLEN),
+    One issue is, that a string variable, as used for the station_name has a variable length (VLEN),
     which is not allowed by the CF standard (and the cf-checker complains)
 
     This may be resolved with future version of either ds.to_netcdf or a less strict CF-convention.
@@ -834,6 +659,7 @@ class Timeseries:
             all_data.append(data)
 
         self.data = xr.concat(all_data, dim=concat_dim)
+        self.data = self.data.set_index({concat_dim: concat_dim})
 
     def read_non_conform_csvdata(self):
         raise NotImplementedError
@@ -863,7 +689,7 @@ class Timeseries:
     # ----------------------------------------------------------------------
     #  Writers
     # ----------------------------------------------------------------------
-    def write_cfconform_data(self, overwrite=False, concat_dim='station', verbose=False):
+    def write_cfconform_data(self, overwrite=False, concat_dim='station_name', verbose=False):
         """
         Write data to
         Args:
@@ -889,6 +715,7 @@ class Timeseries:
                 print(f'merging into {targetfile}')
             old_data = xr.open_dataset(targetfile)
             all_data = xr.concat([old_data, self.data], dim=concat_dim)
+            all_data = all_data.set_index({concat_dim: concat_dim})
             old_data.close()
             all_data.to_netcdf(targetfile, mode='w', unlimited_dims='time')
             all_data.close()
@@ -897,7 +724,7 @@ class Timeseries:
                 print(f'Write new file {targetfile}')
             self.data.to_netcdf(targetfile, mode='w', unlimited_dims='time')
         elif not os.path.exists(targetfile):
-            targetfile.parent.mkdir()
+            targetfile.parent.mkdir(exist_ok=True)
             self.data.to_netcdf(targetfile, mode='w', unlimited_dims='time')
 
     # ----------------------------------------------------------------------

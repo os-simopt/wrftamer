@@ -1,73 +1,46 @@
-from wrftamer.plotting.load_and_prepare import prep_profile_data, prep_ts_data, prep_zt_data
+from wrftamer.plotting.load_and_prepare import prep_profile_data, prep_ts_data, prep_zt_data, get_limits_and_labels
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 from matplotlib.dates import DateFormatter
 import matplotlib.cm as cm
 from windrose import WindroseAxes
+import cartopy.crs as crs
+from cartopy.feature import NaturalEarthFeature
+from wrf import (get_cartopy, cartopy_xlim, cartopy_ylim)
+import xarray as xr
 
 
 ########################################################################################################################
 #                                                 Call Plots
 ########################################################################################################################
 
-def create_mpl_plot(obs_data, mod_data, infos: dict):
+def create_mpl_plot(data, infos: dict):
     # ===================================================================
     # General Stuff
     # ===================================================================
 
-    plttype = infos['plttype']
-    Expvec = infos['Expvec']
-    loc = infos['loc']
+    plottype = infos['plottype']
 
     cols = ['b', 'k', 'r', 'g', 'm', 'b', 'k', 'r', 'g', 'm']
     stys = ['-', '-', '-', '-', '-', '--', '--', '--', '--', '--']
     stys2 = ['+', '+', '+', '+', '+', 'x', 'x', 'x', 'x', 'x']
 
-    if len(mod_data) > 0:
-        tmp_t = mod_data[list(mod_data.keys())[0]][loc].time.values
-    else:
-        tmp_t = obs_data[list(obs_data.keys())[0]].time.values
+    if plottype == 'Profiles':
+        figure = Profile(data, col=cols, sty=stys, **infos)
 
-    dtmin = pd.Timestamp(tmp_t.min())
-    dtmax = pd.Timestamp(tmp_t.max())
+    elif plottype == 'Obs vs Mod':
+        figure = Obs_vs_Mod(data, col=cols, sty=stys2, **infos)
 
-    if plttype == 'Profiles':
-        zmax = mod_data[Expvec[0]][loc].ALT.values.max()
-        zmin = mod_data[Expvec[0]][loc].ALT.values.min()
+    elif plottype == 'Timeseries':
+        figure = TimeSeries(data, col=cols, sty=stys, **infos)
 
-        data, units, description = prep_profile_data(obs_data, mod_data, infos)
-        vmin, vmax = 0, max(data.max()) * 1.1
+    elif plottype == 'zt-Plot':
+        figure = zt(data, **infos)
 
-        figure = Profile(data, vmin, vmax, zmin, zmax, label=None, unit=units,
-                         zunit='m', descr=description, col=cols, sty=stys)
-
-    elif plttype == 'Obs vs Mod':
-        data, units, description = prep_ts_data(obs_data, mod_data, infos)
-        vmin, vmax = 0, max(data.max()) * 1.1
-        figure = Obs_vs_Mod(data, vmin=vmin, vmax=vmax, col=cols, sty=stys2, unit=units)
-
-    elif plttype == 'Timeseries':
-        data, units, description = prep_ts_data(obs_data, mod_data, infos)
-        vmin, vmax = 0, max(data.max()) * 1.1
-        figure = TimeSeries(data, vmin, vmax, dtmin=dtmin, dtmax=dtmax, col=cols, sty=stys,
-                            descr=description, unit=units)
-
-    elif plttype == 'Timeseries 2':
-        zmin, zmax = 0, 360
-        data1, data2, units1, units2, description1, description2 = prep_ts_data(obs_data, mod_data, infos)
-        vmin, vmax = 0, max(data1.max()) * 1.1
-        figure = TimeSeries2(data1, data2, vmin=[vmin, zmin], vmax=[vmax, zmax], dtmin=dtmin,
-                             dtmax=dtmax, col=cols, sty1=stys, sty2=None,
-                             descr=[description1, description2], unit=[units1, units2])
-
-    elif plttype == 'zt-Plot':
-
-        data = prep_zt_data(mod_data, infos)
-        zmin, zmax = data.ALT.values.min(), data.ALT.values.max()
-        vmin, vmax = 0, max(data.max()) * 1.1
-        figure = zt(data, vmin, vmax, zmin, zmax)
+    elif plottype == 'Map':
+        print('Use Class')
+        figure = None
 
     else:
         print('not yet implemented. 02')
@@ -131,44 +104,38 @@ def CrossSection(dat_CS, xmat_CS, zmat_CS, xvec_CS, hgt_CS, PT_CS, hgt_ivg_CS,
 
 
 # -----------------------------------------------------------------------------------------------------------------------
-def Profile(data: list, vmin, vmax, zmin, zmax, label=None, unit='', zunit='', descr='',
-            figure=None, col='k', sty='-'):
+def Profile(data: list, col=None, sty=None, **kwargs):
     """
     # Update 4.3.2022
     # Changes to the code to work with pandas dataframes in order to work with the same data preparation methods I am
     # using for the hvplots.
-
     """
 
-    # jupyterlab calls plt.show() and plt.close()
-    # automatically. for this reason, it is not possible to
-    # add lines to the plot by calling Plot.Profile multiple times.
+    font_size = kwargs.get('font_size', 15)
+    xlim = kwargs.get('xlim', (0, 1))
+    ylim = kwargs.get('ylim', (0, 1))
+    xlabel = kwargs.get('xlabel', '')
+    ylabel = kwargs.get('ylabel', '')
 
-    # This option works, however, from the console/program!
+    mpl.rcParams.update({'font.size': font_size})
 
-    mpl.rcParams.update({'font.size': 15})
-
-    if figure is None:  # figure does not exist-> create!
-        factor = 0.8
-        figure = plt.figure(figsize=(8 * factor, 8 * factor), facecolor='w', edgecolor='k')
-        ax = figure.add_axes([0.15, 0.15, 0.80, 0.80])
-    else:
-        ax = figure.gca()  # there is only one axis.
+    factor = 0.8
+    figure = plt.figure(figsize=(8 * factor, 8 * factor), facecolor='w', edgecolor='k')
+    ax = figure.add_axes([0.15, 0.15, 0.80, 0.80])
 
     if sty is None:
         sty = ['-' for i in range(len(data))]
     if col is None:
         col = ['k' for i in range(len(data))]
 
-    zlabel = 'z (' + zunit + ')'
     for n, item in enumerate(data):
         ax.plot(item.iloc[:, 1], item.iloc[:, 0], linestyle=sty[n], color=col[n], label=item.iloc[:, 1].name, lw=2)
 
     # Limits and Labels.
-    ax.set_xlim([vmin, vmax])
-    ax.set_ylim([zmin, zmax])
-    ax.set_ylabel(zlabel)
-    ax.set_xlabel(descr + ' ' + r' (' + unit + ')')
+    ax.set_xlim(xlim)
+    ax.set_ylim(ylim)
+    ax.set_ylabel(ylabel)
+    ax.set_xlabel(xlabel)
 
     h, l = ax.get_legend_handles_labels()  # this should automatically add new labels.
     plt.legend(h, l)
@@ -177,7 +144,7 @@ def Profile(data: list, vmin, vmax, zmin, zmax, label=None, unit='', zunit='', d
 
 
 # -----------------------------------------------------------------------------------------------------------------------
-def TimeSeries(data, vmin, vmax, dtmin, dtmax, figure=None, col=None, sty=None, label=None, descr='', unit=''):
+def TimeSeries(data, col=None, sty=None, label=None, **kwargs):
     """
     This function plots multiple time series in a single plots.
 
@@ -203,14 +170,16 @@ def TimeSeries(data, vmin, vmax, dtmin, dtmax, figure=None, col=None, sty=None, 
 
     """
 
-    mpl.rcParams.update({'font.size': 15})
+    font_size = kwargs.get('font_size', 10)
+    tlim = kwargs.get('tlim', (0, 1))
+    ylim = kwargs.get('ylim', (0, 1))
+    xlabel = kwargs.get('xlabel', '')
+    ylabel = kwargs.get('ylabel', '')
 
-    # I may not need this anymore. Anyway: keep for now.
-    if figure is None:  # figure does not exist -> create!
-        factor = 1.0
-        figure, ax = plt.subplots(1, 1, figsize=(5.5 * factor, 4.5 * factor), facecolor='w', edgecolor='k')
-    else:
-        ax = figure.gca()  # there is only one axis.
+    mpl.rcParams.update({'font.size': font_size})
+
+    factor = 0.75
+    figure, ax = plt.subplots(1, 1, figsize=(5.5 * factor, 4.5 * factor), facecolor='w', edgecolor='k')
 
     list_of_keys = list(data.keys())
 
@@ -224,11 +193,11 @@ def TimeSeries(data, vmin, vmax, dtmin, dtmax, figure=None, col=None, sty=None, 
     for n, key in enumerate(data):
         ax.plot(data[key].dropna(), color=col[n], linestyle=sty[n], lw=2, label=label[n])
 
-    ax.set_xlabel('time (UTC)')
-    ax.set_ylabel(descr + ' (' + unit + ')')
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
 
-    ax.set_ylim([vmin, vmax])
-    ax.set_xlim([dtmin, dtmax])
+    ax.set_ylim(ylim)
+    ax.set_xlim(tlim)
     plt.setp(ax.xaxis.get_majorticklabels(), rotation=40)
 
     formatter = DateFormatter('%H:%M')
@@ -242,99 +211,26 @@ def TimeSeries(data, vmin, vmax, dtmin, dtmax, figure=None, col=None, sty=None, 
 
 
 # -----------------------------------------------------------------------------------------------------------------------
-def TimeSeries2(data1, data2, vmin, vmax, dtmin, dtmax, figure=None,
-                col=None, sty1=None, sty2=None, label=None, descr=None, unit=None):
-    """
-    This function plots multiple time series in two plots. The time vector of the two plots is assumed to be the same
+def zt(data, **kwargs):
+    font_size = kwargs.get('font_size', 10)
+    clim = kwargs.get('clim', (0, 1))
+    tlim = kwargs.get('tlim', (0, 1))
+    ylim = kwargs.get('ylim', (0, 1))
+    xlabel = kwargs.get('xlabel', '')
+    ylabel = kwargs.get('ylabel', '')
 
-    dtvec: dict of n datetime objects. Each may have a different lenght.
-    data1: dict of n data vecors to be plotted in the first panel. Each may have a different lenght.
-    data2: dict of n data vecors to be plotted in the second panel. Each may have a different lenght.
+    mpl.rcParams.update({'font.size': font_size})
 
-    data1 and 2 may contain up to n sigma_data vectors with data of the standard deviation. May plot any one of them if
-    add_std is true.
+    factor = 0.75
+    figure, ax = plt.subplots(1, 1, figsize=(5.5 * factor, 4.5 * factor), facecolor='w', edgecolor='k')
 
-    descr: list of two strings, for the titles
-    unit: list of two strings, for the units
-    labels: list of ndim strings, for the legend
-    col: list of colors. If none: default colors
-    sty1: list of styles for the fist plot. If none: default styles
-    sty2: list of styles for the second plot. If none: default styles
-
-    # Improvement for the future: allow data to be of a more general type, so the whole thing works for a
-    single entry as well. Otherwise, I have to convert my data to a dict for a single line plot...
-
-    DLeuk, 25.02.2021
-
-    """
-
-    if unit is None:
-        unit = ['', '']
-    if descr is None:
-        descr = ['', '']
-
-    mpl.rcParams.update({'font.size': 15})
-
-    # I may not need this anymore. Anyway: keep for now.
-    if figure is None:  # figure does not exist -> create!
-        factor = 1.0  # 1.4
-        figure, ax = plt.subplots(1, 2, figsize=(10.5 * factor, 4.5 * factor), facecolor='w', edgecolor='k')
-    else:
-        ax = figure.axes
-
-    list_of_keys = list(data1.keys())
-
-    if sty1 is None:
-        sty1 = ['-' for key in list_of_keys]
-    if sty2 is None:
-        sty2 = [' ' for key in list_of_keys]
-    if col is None:
-        col = ['k' for key in list_of_keys]
-    if label is None:
-        label = list_of_keys
-
-    for n, key in enumerate(list_of_keys):
-        ax[0].plot(data1[key].dropna(), color=col[n], linestyle=sty1[n], lw=2)
-        ax[1].plot(data2[key].dropna(), color=col[n], linestyle=sty2[n], marker='.', ms=5, lw=2, label=label[n])
-        # maybe I want to improve here. The second plot always has a marker.
-
-    for ii in [0, 1]:
-        ax[ii].set_xlabel('time (UTC)')
-        ax[ii].set_ylabel(descr[ii] + ' (' + unit[ii] + ')')
-
-        ax[ii].set_ylim([vmin[ii], vmax[ii]])
-        ax[ii].set_xlim([dtmin, dtmax])
-        plt.setp(ax[ii].xaxis.get_majorticklabels(), rotation=40)
-
-        formatter = DateFormatter('%H:%M')
-        ax[ii].xaxis.set_major_formatter(formatter)
-
-    # legend only in the right plot.
-    h, l = ax[1].get_legend_handles_labels()  # this should automatically add new labels.
-    plt.legend(h, l)
-
-    return figure
-
-
-# -----------------------------------------------------------------------------------------------------------------------
-def zt(data, vmin, vmax, zmin, zmax, figure=None):
-    mpl.rcParams.update({'font.size': 15})
-
-    if figure is None:  # figure does not exist-> create!
-        factor = 1.0
-        figure, ax = plt.subplots(1, 1, figsize=(5.5 * factor, 4.5 * factor), facecolor='w', edgecolor='k')
-    else:
-        ax = figure.gca()  # there is only one axis.
-
-    zlabel = 'z (' + data.ALT.units + ')'
-
-    plt.contourf(data.time, data.ALT, data.T, 20, vmin=vmin, vmax=vmax)
+    plt.contourf(data.time, data.ALT, data.T, 20, vmin=clim[0], vmax=clim[1])
 
     cbar = plt.colorbar()
     cbar.set_label('(' + data.units + ')')
 
-    ax.set_xlim([data.time[0], data.time[-1]])
-    ax.set_ylim([zmin, zmax])
+    ax.set_xlim(tlim)
+    ax.set_ylim(ylim)
 
     plt.setp(ax.xaxis.get_majorticklabels(), rotation=40)
 
@@ -343,13 +239,13 @@ def zt(data, vmin, vmax, zmin, zmax, figure=None):
 
     plt.title(data.standard_name)
 
-    ax.set_xlabel('time (UTC)')
-    ax.set_ylabel(zlabel)
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
 
     return figure
 
 
-def Windrose(dirvec: np.ndarray, wspvec: np.ndarray, wspmax=10., savename=None, title=None, lab=None) -> None:
+def Windrose(dirvec: np.ndarray, wspvec: np.ndarray, wspmax=10., savename=None, title=None) -> None:
     """
     Create a windrose plot. NaN are removed if present. cmap: Hot
     Args:
@@ -389,16 +285,18 @@ def Windrose(dirvec: np.ndarray, wspvec: np.ndarray, wspmax=10., savename=None, 
         plt.close()
 
 
-# -----------------------------------------------------------------------------------------------------------------------
-def Obs_vs_Mod(data, vmin, vmax, sty=None, col=None, label=None, unit=None, figure=None):
-    mpl.rcParams.update({'font.size': 15})
+# ----------------------------------------------------------------------------------------------------------------------
+def Obs_vs_Mod(data, sty=None, col=None, label=None, **kwargs):
+    font_size = kwargs.get('font_size', 10)
+    xlim = kwargs.get('xlim', (0, 1))
+    ylim = kwargs.get('ylim', (0, 1))
+    xlabel = kwargs.get('xlabel', '')
+    ylabel = kwargs.get('ylabel', '')
 
-    # I may not need this anymore. Anyway: keep for now.
-    if figure is None:  # figure does not exist -> create!
-        factor = 1.2
-        figure, ax = plt.subplots(1, 1, figsize=(5.5 * factor, 5.5 * factor), facecolor='w', edgecolor='k')
-    else:
-        ax = figure.gca()  # there is only one axis.
+    mpl.rcParams.update({'font.size': font_size})
+
+    factor = 0.75
+    figure, ax = plt.subplots(1, 1, figsize=(5.5 * factor, 5.5 * factor), facecolor='w', edgecolor='k')
 
     list_of_keys = list(data.keys())
 
@@ -411,28 +309,104 @@ def Obs_vs_Mod(data, vmin, vmax, sty=None, col=None, label=None, unit=None, figu
         col = ['k' for key in list_of_keys]
     if label is None:
         label = list_of_keys
-    if unit is None:
-        unit = '-'
 
     for n, key in enumerate(list_of_keys):
         ax.plot(data[obs_key], data[key], color=col[n], ls='', marker=sty[n], ms=5, mew=1, label=label[n])
 
-    ax.plot([vmin, vmax], [vmin, vmax], 'grey', lw=2)
+    ax.plot(xlim, xlim, 'grey', lw=2)
 
-    ax.set_xlabel('Observation (' + unit + ')')
-    ax.set_ylabel('Model (' + unit + ')')
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
 
-    ax.set_xlim([vmin, vmax])
-    ax.set_ylim([vmin, vmax])
+    ax.set_xlim(xlim)
+    ax.set_ylim(ylim)
 
-    # legend only in the right plot.
-    h, l = ax.get_legend_handles_labels()  # this should automatically add new labels.
+    h, l = ax.get_legend_handles_labels()
     plt.legend(h, l)
 
     return figure
 
 
-# -----------------------------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
+def Map_Cartopy(data: xr.DataArray, hgt=None, ivg=None, pcmesh=False, **kwargs):
+    font_size = kwargs.get('font_size', 10)
+    clim = kwargs.get('clim', (0, 1))
+    xlim = kwargs.get('xlim', (0, 1))
+    ylim = kwargs.get('ylim', (0, 1))
+    xlabel = kwargs.get('xlabel', '')
+    ylabel = kwargs.get('ylabel', '')
+    title = kwargs.get('title', '')
+    factor = kwargs.get('size_factor', 1.0)
+    cmap = kwargs.get('cmapname', 'viridis')
+    myticks = kwargs.get('myticks', np.linspace(clim[0], clim[1], 10))
+    points_to_mark = kwargs.get('poi', None)
+
+    lat = data.XLAT.values
+    lon = data.XLONG.values
+    var = data.name
+
+    mpl.rcParams.update({'font.size': font_size})
+
+    fig = plt.figure(num=None, figsize=(5.5 * factor, 4.5 * factor), facecolor='w', edgecolor='k')
+
+    cart_proj = get_cartopy(hgt)
+    ax = plt.axes(projection=cart_proj)
+
+    states = NaturalEarthFeature(category="cultural", scale="50m",
+                                 facecolor="none", name="admin_0_countries")  # admin_1_states_provinces_shp
+    ax.add_feature(states, linewidth=0.5, edgecolor="black")
+    ax.coastlines('50m', linewidth=0.8)
+
+    if pcmesh:
+        cs = plt.pcolormesh(lon, lat, data.values, vmin=clim[0], vmax=clim[1],
+                            cmap=cmap, transform=crs.PlateCarree())
+    else:
+        cs = plt.contourf(lon, lat, data.values, 25, vmin=clim[0], vmax=clim[1],
+                          cmap=cmap, transform=crs.PlateCarree())
+
+    # Colorbar
+    if var != 'LU_INDEX':
+        plt.clim(clim)
+        plt.colorbar(cs, ax=ax, orientation="vertical", pad=.02, ticks=myticks, shrink=.83)
+    else:
+        names = ['Urban', 'Forest', 'Other']
+        plt.clim(clim[0] - 0.5, clim[1] + 0.5)
+        formatter = plt.FuncFormatter(lambda val, loc: names[val - 1])
+        plt.colorbar(ticks=myticks, format=formatter)
+
+    # Topography overlay.
+    if hgt is not None:
+        # Add topography
+        hlines = np.arange(0, 1050, 50)
+        plt.contour(lon, lat, hgt.values, levels=hlines, colors='grey',
+                    transform=crs.PlateCarree(), alpha=0.5)
+
+    if ivg is not None:
+        plt.contourf(lon, lat, ivg.values, hatches=['.'], colors='none', transform=crs.PlateCarree())
+
+    # Marking the position of points of interest
+    if points_to_mark is not None:  # TODO: This needs some cleanup
+        for index in points_to_mark.index:
+            plt.plot(points_to_mark.lon[index], points_to_mark.lat[index], '+', ms=10, mew=2, color='k',
+                     transform=crs.PlateCarree())
+
+    # Set the map bounds
+    ax.set_xlim(cartopy_xlim(data))
+    ax.set_ylim(cartopy_ylim(data))
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+
+    gl = ax.gridlines(transform=crs.PlateCarree(), draw_labels=True, linewidth=1, x_inline=False, y_inline=False,
+                      ls='--')
+
+    gl.top_labels = False
+    gl.right_labels = False
+    plt.title(title)
+
+    return fig
+
+
+# ----------------------------------------------------------------------------------------------------------------------
 def Availability(Avail: np.ndarray, zz: float, var: str, year: str, savename=None) -> None:
     """
     Plot data availability

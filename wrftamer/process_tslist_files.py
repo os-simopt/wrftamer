@@ -172,7 +172,8 @@ def merge_tslist_files(indir, outdir, location, domain, proj_name, exp_name, ins
             xxa = assign_cf_attributes_tslist(xxa, metadata, cf_table)
             all_xxa.append(xxa)
 
-        all_data = xr.concat(all_xxa, dim='station')
+        all_data = xr.concat(all_xxa, dim='station_name')
+        all_data = all_data.set_index({'station_name': 'station_name'})
         all_data = all_data.set_coords(['lat', 'lon', 'station_elevation', 'station_name'])
 
         all_data.to_netcdf(f'{outdir}/raw_tslist_{dom}.nc', mode='w')

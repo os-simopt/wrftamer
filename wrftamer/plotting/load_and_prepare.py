@@ -3,7 +3,6 @@ import xarray as xr
 import pandas as pd
 import numpy as np
 
-
 ########################################################################################################################
 #                                                  Load Data
 ########################################################################################################################
@@ -15,12 +14,17 @@ def load_obs_data(obs_data: dict, obs: str, dataset: str, **kwargs):
 
     from wrftamer.wrfplotter_classes import Timeseries
 
-    dtstart, dtend = kwargs['obs_load_from_to']
+    try:
+        dtstart, dtend = kwargs['obs_load_from_to']
+    except KeyError:
+        ttp = kwargs['time_to_plot']
+        dtstart = dt.datetime(ttp.year, 1, 1)
+        dtend = dt.datetime(ttp.year + 1, 1, 1)
 
     ts = Timeseries(dataset)
     ts.read_cfconform_data(dtstart, dtend, calc_pt=True)
 
-    if 'station' in ts.data.dims:
+    if 'station' in ts.data.dims:  # TODO must update to station_name
         for stat in ts.data.station:
             tmp = ts.data.isel(station=stat)
             if tmp['station_name'].values == obs:
@@ -60,7 +64,7 @@ def load_mod_data(mod_data: dict, exp_name: str, **kwargs):
         tmp_xa = xr.open_dataset(file2load)
 
         tslist_data = dict()
-        for dim in range(0, tmp_xa.dims['station']):
+        for dim in range(0, tmp_xa.dims['station']):  # TODO: must update to station_name
             tmp = tmp_xa.isel(station=dim)
 
             loc = str(tmp.station_name.values)  # Important: station_name cannot have other dims than station!
@@ -71,16 +75,24 @@ def load_mod_data(mod_data: dict, exp_name: str, **kwargs):
             if bool(tslist_data):
                 mod_data[exp_name] = tslist_data
             else:
-                print('No data for Experiment sdsd', exp_name)
+                print('No data for Experiment ', exp_name)
                 pass  # do not add empty dicts
     else:
         print('No data for Experiment', exp_name)
 
 
 def load_all_obs_data(dataset, **kwargs):
+
     from wrftamer.wrfplotter_classes import Timeseries
 
-    dtstart, dtend = kwargs['obs_load_from_to']
+    try:
+        dtstart, dtend = kwargs['obs_load_from_to']
+    except KeyError:
+        ttp = kwargs['time_to_plot']
+
+        dtstart = dt.datetime(ttp.year, 1, 1)
+        dtend = dt.datetime(ttp.year + 1, 1, 1)
+
     ts = Timeseries(dataset)
     ts.read_cfconform_data(dtstart, dtend, calc_pt=True)
 
@@ -136,8 +148,87 @@ def load_all_mod_data(**kwargs):
 ########################################################################################################################
 #                                                Data Preparation
 ########################################################################################################################
+def get_limits_and_labels(plottype: str, var: str, data=None, map_data=None, units=None, description=None):
 
-# TODO: this preperation data routines have some hardcoded stuff and is strongly dependent the FINO station.
+    infos = dict()
+    infos['plottype'] = plottype
+    infos['var'] = var
+
+    if plottype == 'Profiles':
+
+        infos['ylim'] = [0, np.nanmax([item.ALT.max() for item in data])]
+        infos['xlim'] = [np.nanmin([item.iloc[:, 1].min() for item in data]),
+                         np.nanmax([item.iloc[:, 1].max() for item in data])]
+
+        infos['xlabel'] = f'{description} ({units})'
+        infos['ylabel'] = 'z (m)'
+        infos['title'] = ''
+        infos['font_size'] = 15
+
+    elif plottype == 'Timeseries':
+
+        infos['ylim'] = [np.floor(np.nanmin(data.min())), np.ceil(np.nanmax(data.max()))]
+        infos['tlim'] = [data.index.min(), data.index.max()]
+
+        infos['xlabel'] = 'time (UTC)'
+        infos['ylabel'] = f'{description} ({units})'
+        infos['title'] = ''
+        infos['font_size'] = 15
+
+    elif plottype == 'Obs vs Mod':
+
+        vmin = np.floor(np.nanmin(data.min()))
+        vmax = np.ceil(np.nanmax(data.max()))
+
+        infos['ylim'] = [vmin, vmax]
+        infos['xlim'] = [vmin, vmax]
+
+        infos['xlabel'] = f'Observation ({units})'
+        infos['ylabel'] = f'Model ({units})'
+        infos['title'] = ''
+        infos['font_size'] = 15
+
+    elif plottype == 'zt-Plot':
+
+        infos['clim'] = [np.floor(data.values.min()), np.ceil(data.values.max())]
+        infos['ylim'] = [np.floor(data.indexes['ALT'].min()), np.ceil(data.indexes['ALT'].max())]
+        infos['tlim'] = [data.indexes['time'].min(), data.indexes['time'].max()]
+
+        infos['xlabel'] = 'time (UTC)'
+        infos['ylabel'] = f'z ({data.ALT.units})'
+        infos['title'] = f'{data.long_name} ({data.units})'
+        infos['font_size'] = 15
+
+    elif plottype in ['Map', 'MapSequence']:
+
+        vmin, vmax = np.floor(map_data.values.min()), np.ceil(map_data.values.max())
+        cmapname = 'viridis'  # standard colormap
+
+        if map_data.name in ['DIR', 'dir', 'dd']:
+            vmin, vmax = 0, 360
+            cmapname = 'hsv'
+        elif map_data.name in ['HGT', 'hgt', 'terrain']:
+            vmin = int(25 * round(float(vmin) / 25.))
+            vmax = int(25 * round(float(vmax) / 25.))
+            cmapname = 'terrain'
+        elif map_data.name == 'LU_INDEX':
+            vmin, vmax = 1, 3
+            cmapname = 'jet'
+
+        infos['clim'] = [vmin, vmax]
+        infos['xlim'] = [map_data.XLONG.values.min(), map_data.XLONG.values.max()]
+        infos['ylim'] = [map_data.XLAT.values.min(), map_data.XLAT.values.max()]
+        infos['xlabel'] = 'longitude (°)'
+        infos['ylabel'] = 'latitude (°)'
+        infos['title'] = f'{map_data.description} ({map_data.units}) at model level {map_data.model_level}'
+        infos['font_size'] = 15
+        infos['ticks'] = np.linspace(vmin, vmax, 10)
+        infos['cmapname'] = cmapname
+
+    return infos
+
+
+# TODO: these preperation data routines have some hardcoded stuff and is strongly dependent the FINO station.
 #  Need to make variable selection dynamic; need to define variable name convention
 #  Need to improve these readers.
 # Also, is it really nessecary to load everything into these dicts?
@@ -233,31 +324,7 @@ def prep_zt_data(mod_data, infos: dict) -> xr.Dataset:
     return data2plot[var]
 
 
-def prep_ts_data(obs_data, mod_data, infos: dict, verbose=False):
-    plttype = infos['plttype']
-    anemometer = infos['anemometer']
-    loc = infos['loc']
-    expvec = infos['Expvec']
-    obsvec = infos['Obsvec']
-
-    if plttype == 'Timeseries 2':
-        var1, var2 = infos['var1'], infos['var2']
-        lev1, lev2 = infos['lev1'], infos['lev2']
-        data2plot1, units1, description1 = _prep_ts_data(obs_data, mod_data, expvec, obsvec, loc, var1, lev1,
-                                                         anemometer, verbose)
-        data2plot2, units2, description2 = _prep_ts_data(obs_data, mod_data, expvec, obsvec, loc, var2, lev2,
-                                                         anemometer, verbose)
-        return data2plot1, data2plot2, units1, units2, description1, description2
-    else:
-        var = infos['var']
-        lev = infos['lev']
-        data2plot, units, description = _prep_ts_data(obs_data, mod_data, expvec, obsvec, loc, var, lev, anemometer,
-                                                      verbose)
-        return data2plot, units, description
-
-
-def _prep_ts_data(obs_data, mod_data, expvec: list, obsvec: list, loc: str, var: str, lev: str, anemometer: str,
-                  verbose=False) -> pd.DataFrame:
+def prep_ts_data(obs_data, mod_data, infos: dict, verbose=False) -> pd.DataFrame:
     """
     Takes the data coming from my classes, selects the right data and concats
     everything into a single dataframe for easy plotting with hvplot.
@@ -271,6 +338,14 @@ def _prep_ts_data(obs_data, mod_data, expvec: list, obsvec: list, loc: str, var:
     lev: level at which the varialbe is valid
     anemometer: device used for observation
     """
+
+    anemometer = infos['anemometer']
+    loc = infos['loc']
+    expvec = infos['Expvec']
+    obsvec = infos['Obsvec']
+
+    var = infos['var']
+    lev = infos['lev']
 
     if len(mod_data) > 0:
         tmp_t = mod_data[list(mod_data.keys())[0]][loc].time.values
@@ -350,5 +425,10 @@ def _prep_ts_data(obs_data, mod_data, expvec: list, obsvec: list, loc: str, var:
     data2plot.variable = var
     data2plot.level = lev
     data2plot.anemometer = anemometer
+
+    data2plot.proj_name = infos['proj_name']
+    data2plot.location = loc
+    data2plot.Expvec = expvec
+    data2plot.Obsvec = obsvec
 
     return data2plot, units, description
