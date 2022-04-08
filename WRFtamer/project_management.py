@@ -3,13 +3,13 @@ import os
 import shutil
 import datetime as dt
 import numpy as np
-from wrftamer.experiment_management import experiment
-from wrftamer.wrftamer_paths import wrftamer_paths
+from WRFtamer.experiment_management import experiment
+from WRFtamer.wrftamer_paths import wrftamer_paths
 
 """
 A management tool for WRF Projects.
 Each Project is associated with several experiments.
-For each project, a directory is create in the run directory and anoter one in the .wrftamer directory
+For each project, a directory is create in the run directory and anoter one in the .WRFtamer directory
 
 Tools:
 project
@@ -384,7 +384,7 @@ class project:
     def rewrite_xls(self):
         """
         Sometimes, when I edit the xls shet manually, It happens that it is stored with tousands of lines, all containing
-        just nans. This makes the wrftamer and especially the GUI extremely slow. An xlsx sheet like this must be reead
+        just nans. This makes the WRFtamer and especially the GUI extremely slow. An xlsx sheet like this must be reead
         and rewritten. This function does exactly that.
         """
 

@@ -4,10 +4,10 @@ import os
 from pathlib import Path
 import click
 
-from wrftamer.experiment_management import experiment
-from wrftamer.project_management import project, list_projects
-from wrftamer.wrftamer_paths import wrftamer_paths
-import wrftamer.wrftamer_functions as wtfun
+from WRFtamer.experiment_management import experiment
+from WRFtamer.project_management import project, list_projects
+from WRFtamer.wrftamer_paths import wrftamer_paths
+import WRFtamer.wrftamer_functions as wtfun
 import shutil
 from crontab import CronTab
 
@@ -27,7 +27,7 @@ class PythonLiteralOption(click.Option):
             raise click.BadParameter(value)
 
 
-@click.group(name='wrftamer')
+@click.group(name='WRFtamer')
 def cli():
     pass
 
@@ -37,11 +37,11 @@ def cli():
                                                                                  'directories, '
                                                                                  'copies essential data.')
 @click.argument('wrf_and_wsp_parent_dir', type=click.Path(exists=True))
-@click.option('--exe_dir', help='the name of the executables directory [default: $HOME/wrftamer/bin/wrf_executables]')
+@click.option('--exe_dir', help='the name of the executables directory [default: $HOME/WRFtamer/bin/wrf_executables]')
 @click.option('--essentials_dir',
-              help='the name of the essentials directory [default: $HOME/wrftamer/src/wrf_nonessentials]')
+              help='the name of the essentials directory [default: $HOME/WRFtamer/src/wrf_nonessentials]')
 @click.option('--non_essentials_dir',
-              help='the name of the non_essentials directory [default: $HOME/wrftamer/src/wrf_nonessentials]')
+              help='the name of the non_essentials directory [default: $HOME/WRFtamer/src/wrf_nonessentials]')
 @click.option('--vtable', help='The name of the Vtable to be copied [default: Vtable.ECMWF]')
 def cli_first_steps(wrf_and_wsp_parent_dir, exe_dir=None, essentials_dir=None, non_essentials_dir=None, vtable=None):
     """

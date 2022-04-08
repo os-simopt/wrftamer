@@ -15,29 +15,29 @@ def wrftamer_paths():
         home_path = Path(os.environ['WRFTAMER_HOME_PATH'])
         db_path = home_path / 'db'
     except KeyError:
-        home_path = Path(os.environ['HOME']) / 'wrftamer'
-        db_path = Path(os.environ['HOME']) / 'wrftamer/db'
+        home_path = Path(os.environ['HOME']) / 'WRFtamer'
+        db_path = Path(os.environ['HOME']) / 'WRFtamer/db'
 
     try:
         run_path = Path(os.environ['WRFTAMER_RUN_PATH'])
     except KeyError:
-        run_path = Path(os.environ['HOME']) / 'wrftamer/run'
+        run_path = Path(os.environ['HOME']) / 'WRFtamer/run'
 
     try:
         archive_path = Path(os.environ['WRFTAMER_ARCHIVE_PATH'])
     except KeyError:
-        archive_path = Path(os.environ['HOME']) / 'wrftamer/archive'
+        archive_path = Path(os.environ['HOME']) / 'WRFtamer/archive'
 
     try:
         plot_path = Path(os.environ['WRFTAMER_PLOT_PATH'])
     except KeyError:
-        plot_path = Path(os.environ['HOME']) / 'wrftamer/plots'
+        plot_path = Path(os.environ['HOME']) / 'WRFtamer/plots'
 
 
     # I may add more paths later on. These include:
-    # $HOME/wrftamer/src/wrf_essentials
-    # $HOME/wrftamer/src/wrf_nonessentials
-    # $HOME/wrftamer/bin/wrf_executables
+    # $HOME/WRFtamer/src/wrf_essentials
+    # $HOME/WRFtamer/src/wrf_nonessentials
+    # $HOME/WRFtamer/bin/wrf_executables
     # This way, everything would be together at a single place.
     # Of course, the user may always set their own paths.
 

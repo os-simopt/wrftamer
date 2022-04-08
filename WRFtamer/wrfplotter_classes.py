@@ -8,9 +8,9 @@ import xarray as xr
 import datetime as dt
 from pathlib import PosixPath, Path
 import os
-from wrftamer.plotting.mpl_plots import Availability, Map_Cartopy
-from wrftamer.plotting.hv_plots import Map_hvplots
-from wrftamer.plotting.load_and_prepare import get_limits_and_labels
+from WRFtamer.plotting.mpl_plots import Availability, Map_Cartopy
+from WRFtamer.plotting.hv_plots import Map_hvplots
+from WRFtamer.plotting.load_and_prepare import get_limits_and_labels
 import yaml
 from typing import Union
 

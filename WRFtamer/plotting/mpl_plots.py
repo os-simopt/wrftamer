@@ -1,4 +1,4 @@
-from wrftamer.plotting.load_and_prepare import prep_profile_data, prep_ts_data, prep_zt_data, get_limits_and_labels
+from WRFtamer.plotting.load_and_prepare import prep_profile_data, prep_ts_data, prep_zt_data, get_limits_and_labels
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl

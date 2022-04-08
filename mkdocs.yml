@@ -1,5 +1,5 @@
 site_name: WRFtamer
-site_url: https://wrftamer.readthedocs.io/en/latest/
+site_url: https://WRFtamer.readthedocs.io/en/latest/
 nav:
     - Home: index.md
     - Getting Started: getting_started.md

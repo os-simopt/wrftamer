@@ -2,9 +2,9 @@ import os
 import re
 import panel as pn
 
-from wrftamer.experiment_management import experiment
-from wrftamer.project_management import project, list_unassociated_exp
-from wrftamer.gui.gui_base import gui_base
+from WRFtamer.experiment_management import experiment
+from WRFtamer.project_management import project, list_unassociated_exp
+from WRFtamer.gui.gui_base import gui_base
 
 
 class exp_tab(gui_base):

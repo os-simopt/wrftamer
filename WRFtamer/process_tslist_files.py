@@ -6,7 +6,7 @@ import xarray as xr
 import numpy as np
 import os
 import itertools
-from wrftamer.wrfplotter_classes import assign_cf_attributes_tslist
+from WRFtamer.wrfplotter_classes import assign_cf_attributes_tslist
 
 
 def uv_to_FFDD(u, v):
@@ -94,7 +94,7 @@ def merge_tslist_files(indir, outdir, location, domain, proj_name, exp_name, ins
         Ncdf is written to outdir
     """
 
-    cf_table = os.path.split(os.path.realpath(__file__))[0] + '/../wrftamer/resources/cf_table_wrfdata.yaml'
+    cf_table = os.path.split(os.path.realpath(__file__))[0] + '/../WRFtamer/resources/cf_table_wrfdata.yaml'
 
     indir = list(indir) if not isinstance(indir, list) else indir  # check if indir is one folder or a list of folders
     ts_files = [glob.glob(f'{directory}/*') for directory in indir]  # find all files in given folder

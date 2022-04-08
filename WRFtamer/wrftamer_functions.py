@@ -4,9 +4,9 @@ import datetime as dt
 import yaml
 import pandas as pd
 from pathlib import Path
-from wrftamer.initialize_wrf_namelist import initialize_wrf_namelist
-from wrftamer.link_grib import link_grib
-from wrftamer.wrftamer_paths import wrftamer_paths
+from WRFtamer.initialize_wrf_namelist import initialize_wrf_namelist
+from WRFtamer.link_grib import link_grib
+from WRFtamer.wrftamer_paths import wrftamer_paths
 import re
 import subprocess
 from pathlib import PosixPath
@@ -130,7 +130,7 @@ def create_rundir(exp_path: PosixPath, configure_file: str, namelist_template: s
     os.makedirs(exp_path / 'wrf', exist_ok=True)
 
     # create empty logfile
-    with open(exp_path / 'log/wrftamer.log', 'w') as f:
+    with open(exp_path / 'log/WRFtamer.log', 'w') as f:
         f.write('')
 
     # now, link files
@@ -176,7 +176,7 @@ def copy_dirs(old_run_path: PosixPath, new_run_path: PosixPath, ignore_submit=Fa
     os.makedirs(new_run_path / 'wrf', exist_ok=True)
 
     # create empty logfile
-    with open(new_run_path / 'log/wrftamer.log', 'w') as f:
+    with open(new_run_path / 'log/WRFtamer.log', 'w') as f:
         f.write('')
 
     # copy configure file, get paths
@@ -364,7 +364,7 @@ def run_wps_command(exp_path: PosixPath, program: str):
     """
 
     wrfpath = exp_path / 'wrf'
-    wt_log = f'{exp_path}/log/wrftamer.log'
+    wt_log = f'{exp_path}/log/WRFtamer.log'
     prog_log = f"{exp_path}/log/{program}.log"
 
     cmd = f"{wrfpath}/{program}.exe"
@@ -376,7 +376,7 @@ def run_wps_command(exp_path: PosixPath, program: str):
 
     (wrfpath / f'{program}.log').rename(prog_log)
 
-    # write to wrftamer.log file
+    # write to WRFtamer.log file
     with open(prog_log, 'r') as f:  # This may be slow is logfile is huge.
         lines = f.read().splitlines()
         if len(lines) > 0:

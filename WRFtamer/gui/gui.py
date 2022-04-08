@@ -1,9 +1,9 @@
 import panel as pn
 
-from wrftamer.gui.proj_tab import proj_tab
-from wrftamer.gui.exp_tab import exp_tab
-from wrftamer.gui.about_tab import about_tab
-from wrftamer.gui.wrfplotter_tab import wrfplotter_tab
+from WRFtamer.gui.proj_tab import proj_tab
+from WRFtamer.gui.exp_tab import exp_tab
+from WRFtamer.gui.about_tab import about_tab
+from WRFtamer.gui.wrfplotter_tab import wrfplotter_tab
 
 pn.extension('tabulator')
 tabulator_formatters = {

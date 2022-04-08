@@ -21,7 +21,7 @@ import netCDF4 as nc
 import numpy as np
 
 
-# from wrftamer.domainsetup.domain_from_namelist import lambert_xticks, lambert_yticks_left, calc_wps_domain_info, \
+# from WRFtamer.domainsetup.domain_from_namelist import lambert_xticks, lambert_yticks_left, calc_wps_domain_info, \
 #    reproject_corners, calc_wps_projection_info, check_domain
 
 

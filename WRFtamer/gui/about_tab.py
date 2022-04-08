@@ -1,6 +1,6 @@
 import os
-import wrftamer
-from wrftamer.gui.gui_base import gui_base
+import WRFtamer
+from WRFtamer.gui.gui_base import gui_base
 import panel as pn
 
 
@@ -18,7 +18,7 @@ class about_tab(gui_base):
         except KeyError:
             poi_file = None
 
-        message = f'This is WRFtamer, Version {wrftamer.__version__}'
+        message = f'This is WRFtamer, Version {WRFtamer.__version__}'
 
         self.text1 = pn.widgets.StaticText(name='Information', value=message, background='#ffffff')
         self.text2 = pn.widgets.StaticText(name='Your Tamer Path', value=self.db_path, background='#ffffff')

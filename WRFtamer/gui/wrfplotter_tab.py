@@ -3,18 +3,18 @@ import panel.widgets as pnw
 import datetime as dt
 import pandas as pd
 from pathlib import Path
-from wrftamer.gui.gui_base import gui_base
-from wrftamer.project_management import project, list_projects, list_unassociated_exp
-from wrftamer.experiment_management import experiment
-from wrftamer.gui.wrfplotter_utility import get_available_obs, get_available_doms, get_vars_per_plottype, \
+from WRFtamer.gui.gui_base import gui_base
+from WRFtamer.project_management import project, list_projects, list_unassociated_exp
+from WRFtamer.experiment_management import experiment
+from WRFtamer.gui.wrfplotter_utility import get_available_obs, get_available_doms, get_vars_per_plottype, \
     get_lev_per_plottype_and_var, error_message, error_message2, get_newfilename_from_old
 
-from wrftamer.wrfplotter_classes import Map
-from wrftamer.plotting.load_and_prepare import load_obs_data, load_mod_data
-from wrftamer.plotting.load_and_prepare import prep_profile_data, prep_ts_data, prep_zt_data, get_limits_and_labels
-from wrftamer.plotting.hv_plots import create_hv_plot
-from wrftamer.plotting.mpl_plots import create_mpl_plot
-from wrftamer.utility import get_random_string
+from WRFtamer.wrfplotter_classes import Map
+from WRFtamer.plotting.load_and_prepare import load_obs_data, load_mod_data
+from WRFtamer.plotting.load_and_prepare import prep_profile_data, prep_ts_data, prep_zt_data, get_limits_and_labels
+from WRFtamer.plotting.hv_plots import create_hv_plot
+from WRFtamer.plotting.mpl_plots import create_mpl_plot
+from WRFtamer.utility import get_random_string
 import holoviews as hv
 
 hv.extension("bokeh")

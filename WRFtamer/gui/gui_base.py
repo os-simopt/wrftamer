@@ -1,4 +1,4 @@
-from wrftamer.wrftamer_paths import wrftamer_paths
+from WRFtamer.wrftamer_paths import wrftamer_paths
 
 
 class gui_base:
