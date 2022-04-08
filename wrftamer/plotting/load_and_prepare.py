@@ -3,6 +3,7 @@ import xarray as xr
 import pandas as pd
 import numpy as np
 
+
 ########################################################################################################################
 #                                                  Load Data
 ########################################################################################################################
@@ -82,7 +83,6 @@ def load_mod_data(mod_data: dict, exp_name: str, **kwargs):
 
 
 def load_all_obs_data(dataset, **kwargs):
-
     from wrftamer.wrfplotter_classes import Timeseries
 
     try:
@@ -94,7 +94,10 @@ def load_all_obs_data(dataset, **kwargs):
         dtend = dt.datetime(ttp.year + 1, 1, 1)
 
     ts = Timeseries(dataset)
-    ts.read_cfconform_data(dtstart, dtend, calc_pt=True)
+
+    use_dask = kwargs.get('use_dask', True)
+
+    ts.read_cfconform_data(dtstart, dtend, calc_pt=True, use_dask=use_dask)
 
     return ts.data
 
@@ -149,7 +152,6 @@ def load_all_mod_data(**kwargs):
 #                                                Data Preparation
 ########################################################################################################################
 def get_limits_and_labels(plottype: str, var: str, data=None, map_data=None, units=None, description=None):
-
     infos = dict()
     infos['plottype'] = plottype
     infos['var'] = var

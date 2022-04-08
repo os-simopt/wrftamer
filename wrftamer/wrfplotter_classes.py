@@ -244,10 +244,10 @@ class Map:
         """
 
         ttp = kwargs.get('time_to_plot', None)
-        var = kwargs.get('var',None)
-        plottype = kwargs.get('plottype','Map')
+        var = kwargs.get('var', None)
+        plottype = kwargs.get('plottype', 'Map')
 
-        infos = get_limits_and_labels(plottype,var, map_data=self.data)
+        infos = get_limits_and_labels(plottype, var, map_data=self.data)
 
         if store:  # loop over all indices and save files
             tdim = self.data.shape[0]
@@ -575,7 +575,7 @@ class Timeseries:
     #  Getters
     # ----------------------------------------------------------------------
     def read_cfconform_data(self, dtstart: dt.datetime, dtend: dt.datetime,
-                            metadata=None, calc_pt=False, verbose=False):
+                            metadata=None, calc_pt=False, verbose=False, use_dask=True):
         """
         Read timeseries data that is already conform with this class, i.e. get_list_of_filenames can find the data
         based on dataset name, dtstart and dtend and data is already in the correct format and has metadata.
@@ -586,6 +586,7 @@ class Timeseries:
             metadata: additional metadata or changes to the metadata that should be made.
             calc_pt: if potential temperature should be caluclated from temperature and pressure.
             verbose: Speak with user.
+            use_dask: open as dask array
 
         Returns: None
 
@@ -600,7 +601,14 @@ class Timeseries:
             for filename in filenames:
                 print(f'Loading File {filename}')
 
-        data = xr.open_mfdataset(filenames)
+        if use_dask:
+            data = xr.open_mfdataset(filenames)
+        else:
+            data = []
+            for filename in filenames:
+                tmp = xr.load_dataset(filename)
+                data.append(tmp)
+            data = xr.concat(data, dim='time')
 
         if calc_pt:
             # This will only do something if T_X and P_Y exists.
@@ -659,7 +667,9 @@ class Timeseries:
             all_data.append(data)
 
         self.data = xr.concat(all_data, dim=concat_dim)
-        self.data = self.data.set_index({concat_dim: concat_dim})
+        save_attts = self.data[concat_dim].attrs
+        self.data = self.data.set_index({concat_dim: concat_dim})  # leads to loss of attributes for some reason.
+        self.data[concat_dim].attrs = save_attts
 
     def read_non_conform_csvdata(self):
         raise NotImplementedError

@@ -444,12 +444,13 @@ class experiment:
 
         return loc_list
 
-    def run_postprocessing_protocol(self, verbose=True):
+    def run_postprocessing_protocol(self, verbose=True, cfg=None):
 
-        configure_file = self.workdir / 'configure.yaml'
+        if cfg is None:
+            configure_file = self.workdir / 'configure.yaml'
 
-        with open(configure_file) as f:
-            cfg = yaml.safe_load(f)
+            with open(configure_file) as f:
+                cfg = yaml.safe_load(f)
 
         try:
             ppp = cfg['pp_protocol']

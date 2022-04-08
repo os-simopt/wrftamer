@@ -34,5 +34,3 @@ a.view().servable("WRFtamer")
 # TODO: add etalevel program
 # TODO: add domänenübersicht.
 # TODO: most likely, I need to improve the docs on Preparing obs.
-# TODO: plots should be displayed right after load data (add obs_data, mod_data to the watchlist?);
-#  need a render_plot function

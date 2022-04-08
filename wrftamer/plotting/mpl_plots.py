@@ -272,8 +272,8 @@ def Windrose(dirvec: np.ndarray, wspvec: np.ndarray, wspmax=10., savename=None, 
 
     ax = WindroseAxes.from_ax()
 
-    ax.contourf(dirvec, wspvec, bins=bins, cmap=cm.hot, normed=True, nsector=32, edgecolor='white')
-    ax.contour(dirvec, wspvec, bins=bins, colors='black', normed=True, nsector=32, edgecolor='white')
+    ax.contourf(dirvec, wspvec, bins=bins, cmap=cm.hot, normed=True, nsector=32)
+    ax.contour(dirvec, wspvec, bins=bins, colors='black', normed=True, nsector=32)
     ax.set_xticklabels(['E', 'NE', 'N', 'NW', 'W', 'SW', 'S', 'SE'])
     ax.set_legend()
 

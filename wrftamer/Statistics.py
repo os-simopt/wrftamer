@@ -1,10 +1,11 @@
 import numpy as np
 import pandas as pd
+import xarray as xr
 
 
 def _StatCalc(obs, mod):
     bias = np.nanmean(mod - obs)
-    std_err = np.std(mod - obs)
+    std_err = np.nanstd(mod - obs)
     mae = np.nanmean(abs(mod - obs))
     # mape = np.nanmean(abs((obs - mod) / mod)) * 100. # old def. leads to inf if mod==0.
 
@@ -37,7 +38,7 @@ def _StatCalc_dir(obs, mod):
     tmp[tmp > 180] -= 360.
     tmp[tmp < -180] += 360.
     bias = np.nanmean(tmp)
-    std_err = np.std(tmp)
+    std_err = np.nanstd(tmp)
     mae = np.nanmean(abs(tmp))
 
     mape = np.nan
@@ -100,3 +101,135 @@ def Statistics(input_dataframe: pd.DataFrame) -> pd.DataFrame:
     return Stats
 
     ##########################################################################
+
+
+def Statistics_xarray(input_ds: xr.Dataset, calc_for_ramp=False) -> xr.Dataset:
+    """
+    This statistics function calculates the usual statistics for a dataset consisting of
+    a number timeseries at station_name locations. These time series represent model runs.
+    One of these timeseries MUST contain Observation data, taken as truth for the statistics.
+    It must be called "Obs" and be a function of time and station_name as well.
+
+    Optional: if one of the data variables is called ramp_marker and calc_for_ramp=True, the statistics are
+    calculated for ramp events.
+    """
+
+    is_dir = input_ds.attrs['var'] in ['dir', 'wdir', 'DIR', 'dd']
+
+    obsname = 'Obs'
+    mod_names = list(input_ds.data_vars.keys())
+    mod_names.remove(obsname)
+    if 'ramp_marker' in mod_names:
+        ramp = input_ds['ramp_marker']
+        mod_names.remove('ramp_marker')
+    elif calc_for_ramp:
+        print('ramp_marker not found in dataset. Setting for_ramp to false.')
+        calc_for_ramp = False
+
+    station_names = input_ds.station_name.values
+
+    Stats = np.zeros([6, len(mod_names), len(station_names)])
+
+    for ss, station_name in enumerate(station_names):
+
+        if calc_for_ramp:
+            obs = input_ds[obsname][ss, :][ramp[ss, :]].values
+        else:
+            obs = input_ds[obsname][ss, :].values
+
+        for mm, modname in enumerate(mod_names):
+
+            if calc_for_ramp:
+                mod = input_ds[modname][ss, :][ramp[ss, :]].values
+            else:
+                mod = input_ds[modname][ss, :].values
+
+            if is_dir:
+                Stats[:, mm, ss] = _StatCalc_dir(obs, mod)
+            else:
+                Stats[:, mm, ss] = _StatCalc(obs, mod)
+
+    dims = ["mod_name", "station_name"]
+
+    Stats = xr.Dataset(
+        {
+            'bias': (dims, Stats[0, :, :]),
+            'std': (dims, Stats[1, :, :]),
+            'mae': (dims, Stats[2, :, :]),
+            'CorCo': (dims, Stats[3, :, :]),
+            'mape': (dims, Stats[4, :, :]),
+            'rmse': (dims, Stats[5, :, :])
+        },
+        coords={'mod_name': mod_names, 'station_name': station_names}
+    )
+
+    Stats.attrs = input_ds.attrs
+    Stats.attrs['calc_for_ramp'] = calc_for_ramp
+
+    return Stats
+
+
+def Statistics_xarray2(input_ds: xr.Dataset, calc_for_ramp=False) -> xr.Dataset:
+    """
+    This statistics function calculates the usual statistics for a dataset consisting of
+    a number timeseries at station_name locations. These time series represent model runs.
+    One of these timeseries MUST contain Observation data, taken as truth for the statistics.
+    It must be called "Obs" and be a function of time and station_name as well.
+
+    Optional: if one of the data variables is called ramp_marker and calc_for_ramp=True, the statistics are
+    calculated for ramp events.
+    """
+
+    is_dir = input_ds.attrs['var'] in ['dir', 'wdir', 'DIR', 'dd']
+
+    obsname = 'Obs'
+    mod_names = list(input_ds.data_vars.keys())
+    mod_names.remove(obsname)
+    if 'ramp_marker' in mod_names:
+        ramp = input_ds['ramp_marker']
+        mod_names.remove('ramp_marker')
+    elif calc_for_ramp:
+        print('ramp_marker not found in dataset. Setting for_ramp to false.')
+        calc_for_ramp = False
+
+    exp_names = input_ds.exp_name.values
+
+    Stats = np.zeros([6, len(mod_names), len(exp_names)])
+
+    for ee, exp_name in enumerate(exp_names):
+
+        if calc_for_ramp:
+            obs = input_ds[obsname][ee, :][ramp[ee, :]].values
+        else:
+            obs = input_ds[obsname][ee, :].values
+
+        for mm, modname in enumerate(mod_names):
+
+            if calc_for_ramp:
+                mod = input_ds[modname][ee, :][ramp[ee, :]].values
+            else:
+                mod = input_ds[modname][ee, :].values
+
+            if is_dir:
+                Stats[:, mm, ee] = _StatCalc_dir(obs, mod)
+            else:
+                Stats[:, mm, ee] = _StatCalc(obs, mod)
+
+    dims = ["mod_name", "exp_name"]
+
+    Stats = xr.Dataset(
+        {
+            'bias': (dims, Stats[0, :, :]),
+            'std': (dims, Stats[1, :, :]),
+            'mae': (dims, Stats[2, :, :]),
+            'CorCo': (dims, Stats[3, :, :]),
+            'mape': (dims, Stats[4, :, :]),
+            'rmse': (dims, Stats[5, :, :])
+        },
+        coords={'mod_name': mod_names, 'exp_name': exp_names}
+    )
+
+    Stats.attrs = input_ds.attrs
+    Stats.attrs['calc_for_ramp'] = calc_for_ramp
+
+    return Stats
