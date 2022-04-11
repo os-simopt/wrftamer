@@ -1,8 +1,8 @@
 import os
 from pathlib import Path
 import xarray as xr
-from WRFtamer.experiment_management import experiment
-from WRFtamer.project_management import project
+from wrftamer.experiment_management import experiment
+from wrftamer.project_management import project
 from pathlib import PosixPath
 import panel as pn
 import datetime as dt

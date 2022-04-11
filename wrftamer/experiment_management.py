@@ -7,11 +7,11 @@ import pandas as pd
 import numpy as np
 from collections import defaultdict
 
-from WRFtamer.utility import printProgressBar
-from WRFtamer.process_tslist_files import merge_tslist_files, average_ts_files
-from WRFtamer.wrftamer_paths import wrftamer_paths
-import WRFtamer.wrftamer_functions as wtfun
-from WRFtamer.wrfplotter_classes import Map
+from wrftamer.utility import printProgressBar
+from wrftamer.process_tslist_files import merge_tslist_files, average_ts_files
+from wrftamer.wrftamer_paths import wrftamer_paths
+import wrftamer.wrftamer_functions as wtfun
+from wrftamer.wrfplotter_classes import Map
 import yaml
 
 """

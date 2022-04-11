@@ -1,4 +1,4 @@
-from WRFtamer.project_management import project, list_projects
+from wrftamer.project_management import project, list_projects
 import pytest
 import os
 from pathlib import Path
@@ -106,8 +106,8 @@ def test_list_projects():
 
 
 def test_list_projects2():
-    # to make the function proj_list fail, I would have to delete the .WRFtamer directory in the
-    # WRFtamer home. Since this directory could contain important data, I'm not gonna do that for testing.
+    # to make the function proj_list fail, I would have to delete the .wrftamer directory in the
+    # wrftamer home. Since this directory could contain important data, I'm not gonna do that for testing.
     # I think it is fine, if this case goes untested.
     # Otherwise, may pass db_path as an argument?
 

@@ -2,8 +2,8 @@ import os
 import shutil
 import pytest
 
-from WRFtamer.experiment_management import experiment
-from WRFtamer.project_management import project
+from wrftamer.experiment_management import experiment
+from wrftamer.project_management import project
 
 proj_name = 'WRFTAMER_TEST'
 proj_name2 = 'WRFTAMER_TEST2'

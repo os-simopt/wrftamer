@@ -13,7 +13,7 @@ def load_obs_data(obs_data: dict, obs: str, dataset: str, **kwargs):
     This function just loads observations from a single location and stores everything in the obs_data dict.
     """
 
-    from WRFtamer.wrfplotter_classes import Timeseries
+    from wrftamer.wrfplotter_classes import Timeseries
 
     try:
         dtstart, dtend = kwargs['obs_load_from_to']
@@ -40,7 +40,7 @@ def load_mod_data(mod_data: dict, exp_name: str, **kwargs):
     This function just loads model data from a single location and stores everything in the mod_data dict.
     """
 
-    from WRFtamer.experiment_management import experiment
+    from wrftamer.experiment_management import experiment
 
     try:
         proj_name = kwargs['proj_name']
@@ -83,7 +83,7 @@ def load_mod_data(mod_data: dict, exp_name: str, **kwargs):
 
 
 def load_all_obs_data(dataset, **kwargs):
-    from WRFtamer.wrfplotter_classes import Timeseries
+    from wrftamer.wrfplotter_classes import Timeseries
 
     try:
         dtstart, dtend = kwargs['obs_load_from_to']
@@ -113,7 +113,7 @@ def load_all_mod_data(**kwargs):
 
     """
 
-    from WRFtamer.experiment_management import experiment
+    from wrftamer.experiment_management import experiment
 
     try:
         proj_name = kwargs['proj_name']

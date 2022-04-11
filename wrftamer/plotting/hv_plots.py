@@ -4,7 +4,7 @@ import holoviews as hv
 import hvplot.xarray
 import hvplot.pandas
 import cartopy.crs as crs
-from WRFtamer.Statistics import Statistics
+from wrftamer.Statistics import Statistics
 
 
 ########################################################################################################################

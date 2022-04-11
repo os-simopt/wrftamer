@@ -45,7 +45,7 @@ The full documentation is available [here](https://wrftamer.readthedocs.io/en/la
 ├── scripts # main file with all options
 ├── tests # test script for this repository
 ├── resources # all resources that are used by the tests
-├── WRFtamer # python scripts for some of the options
+├── wrftamer # python scripts for some of the options
 ├── resources # templates for the namelist and the config-file 
 ├── documentation  # documentaion using mkdocs 
 ```

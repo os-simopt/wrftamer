@@ -1,4 +1,4 @@
-from WRFtamer.experiment_management import experiment
+from wrftamer.experiment_management import experiment
 import pytest
 import os
 

@@ -215,9 +215,9 @@ This command combines the make_essential_data_dir and make_executable_dir and pr
 
 Default values:
 ```bash
-exe_dir  = $HOME/WRFtamer/bin/wrf_executables
-ess_dir  = $HOME/WRFtamer/src/wrf_essentials
-ness_dir = $HOME/WRFtamer/src/wrf_nonessentials
+exe_dir  = $HOME/wrftamer/bin/wrf_executables
+ess_dir  = $HOME/wrftamer/src/wrf_essentials
+ness_dir = $HOME/wrftamer/src/wrf_nonessentials
 vtable = 'Vtable.ECMWF'
 ```
 

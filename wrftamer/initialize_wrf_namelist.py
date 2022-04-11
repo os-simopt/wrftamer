@@ -12,7 +12,7 @@ def initialize_wrf_namelist(namelist_vars: dict, namelistfile: str, templatefile
     # read template and configuration
     if templatefile is None:
         mypath = os.path.split(os.path.realpath(__file__))[0] \
-                 + '/../WRFtamer/resources/namelist.template'
+                 + '/../wrftamer/resources/namelist.template'
     else:
         mypath = templatefile
 

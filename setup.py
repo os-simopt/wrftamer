@@ -12,10 +12,10 @@ scripts = (['scripts/' + s for s in pyscripts])
 with open('README.md') as f:
     long_description = f.read()
 
-exec(open('WRFtamer/version.py').read())
+exec(open('wrftamer/version.py').read())
 
 setup(
-    name='WRFtamer',
+    name='wrftamer',
     version=__version__,
     license='LICENCE.txt',
     description='A python packate to help you mangaging WRF projects and experiments',
@@ -24,6 +24,6 @@ setup(
     maintainer='Daniel Leukauf',
     maintainer_email='daniel.leukauf@zsw-bw.de',
     scripts=scripts,
-    packages=['WRFtamer', 'WRFtamer.gui', 'WRFtamer.plotting'],
-    package_data={'WRFtamer': ['resources/*.csv', 'resources/*.yaml', 'resources/namelist*']}
+    packages=['wrftamer', 'wrftamer.gui', 'wrftamer.plotting'],
+    package_data={'wrftamer': ['resources/*.csv', 'resources/*.yaml', 'resources/namelist*']}
 )
