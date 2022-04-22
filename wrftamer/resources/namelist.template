@@ -112,6 +112,7 @@
  /
 
  &dynamics
+ rk_ord                              = 3,
  w_damping                           = 1,
  diff_opt                            = 1,
  km_opt                              = 4,
@@ -133,8 +134,8 @@
  spec_bdy_width                      = 5,
  spec_zone                           = 1,
  relax_zone                          = 4,
- specified                           = .true., .false.,.false.,.false.,.false.,
- nested                              = .false., .true., .true.,.true.,.true.,
+ specified                           = .true., .false., .false., .false., .false.,
+ nested                              = .false., .true., .true., .true., .true.,
  /
 
  &grib2

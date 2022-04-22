@@ -15,14 +15,9 @@ pyscripts = [
 
 scripts = (['scripts/' + s for s in pyscripts])
 
-with open('README.md') as f:
-    long_description = f.read()
-
-exec(open('wrftamer/_version.py').read())
-
 setup(
     name='wrftamer',
-     version=versioneer.get_version(),
+    version=versioneer.get_version(),
     cmdclass=versioneer.get_cmdclass(),
     setup_requires=SETUP_REQUIRES,
     scripts=scripts,
