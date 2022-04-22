@@ -17,7 +17,7 @@ class GUI:
         self.project = proj_tab()
         self.experiment = exp_tab(self.project.mc_proj)
         self.about = about_tab()
-        self.wp = wrfplotter_tab(self.about.poi_text)
+        self.wp = wrfplotter_tab()
 
     def view(self):
         all_tabs = pn.Tabs(self.project.view(), self.experiment.view(), self.wp.view(), self.about.view())

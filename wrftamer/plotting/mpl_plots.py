@@ -423,18 +423,32 @@ def Availability(Avail: np.ndarray, zz: float, var: str, year: str, savename=Non
 
     """
 
-    factor = 4.5
-    plt.figure(num=None, figsize=(2.583 * factor, factor),
-               facecolor='w', edgecolor='k')
+    xvec = np.arange(1, 33)
+    yvec = np.arange(1, 14)
+    xticks = np.arange(5.5, 35.5, 5)
+    yticks = np.arange(2.5, 14.5, 2)
 
-    plt.pcolor(Avail, cmap='RdYlGn')
+    xtick_labels = np.arange(5, 35, 5)
+    ytick_labels = np.arange(2, 14, 2)
+
+    factor = 4.5
+    fig = plt.figure(num=None, figsize=(2.583 * factor, factor), facecolor='w', edgecolor='k')
+    ax1 = plt.subplot(111)
+
+    ax1.set_xticks(xticks)
+    ax1.set_yticks(yticks)
+
+    ax1.set_xticklabels(xtick_labels, fontsize=15)
+    ax1.set_yticklabels(ytick_labels, fontsize=15)
+
+    plt.pcolor(xvec, yvec, Avail, cmap='RdYlGn', vmin=0, vmax=100)
     plt.colorbar()
-    plt.xlabel('day')
-    plt.ylabel('month')
-    plt.title('Data Availability (%), ' + var + ' at z=' + str(zz) + ', ' + year)
+    plt.xlabel('day', fontsize=20)
+    plt.ylabel('month', fontsize=20)
+    plt.title('Data Availability (%), ' + var + ' at z=' + str(zz) + ', ' + year, fontsize=15)
 
     if savename is None:
         plt.show()
     else:
-        plt.savefig(savename, bbox_inches='tight', dpi=400)
+        plt.savefig(savename+'.svg', bbox_inches='tight')
         plt.close()

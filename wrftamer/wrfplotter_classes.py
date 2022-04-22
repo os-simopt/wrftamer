@@ -741,7 +741,7 @@ class Timeseries:
     #  Plotters
     # ----------------------------------------------------------------------
 
-    def plot_Availability(self, var: str, year: str, zz: float):
+    def plot_Availability(self, var: str, station_name:str, year: str, zz: float, savename: str):
 
         """
         Creates a plot of the data availability.
@@ -758,7 +758,11 @@ class Timeseries:
         """
 
         # first, get timeseries of the chosen variable and dtvec
-        data = self.data[var].values
+        if 'station_name' in self.data:
+            data = self.data.sel({'station_name': station_name})[var].values
+        else:
+            data = self.data[var].values
+
         dtvec = self.data.time.values
 
         dtvec_dt = []
@@ -778,4 +782,4 @@ class Timeseries:
                 if len(tmp_dtvec) > 0:
                     Avail[mon - 1, day - 1] = (1 - sum(np.isnan(tmp_data)) / len(tmp_data)) * 100.
 
-        Availability(Avail, zz, var, year)
+        Availability(Avail, zz, var, year, savename)
