@@ -38,7 +38,8 @@ To get started with WRFtamer, got to
 [first steps](https://wrftamer.readthedocs.io/en/latest/getting_started/#first-steps-to-use-wrftamer)
 
 The full documentation is available [here](https://wrftamer.readthedocs.io/en/latest/)
- 
+
+=======
 
 ## Repo Structure
 ```bash

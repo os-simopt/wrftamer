@@ -31,3 +31,15 @@ submit_file:
 
 link_grib:
   suffix_len : 3
+
+pp_protocol:
+  move: 1
+  tslist_processing:
+    timeavg: [5,10]
+  create_maps:
+    list_of_model_levels: [5]
+    list_of_variables: ['WSP']
+    list_of_domains: ['d01']
+    poi_file: '/path/to/poi_file'
+    store: True
+

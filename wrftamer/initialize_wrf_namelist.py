@@ -21,6 +21,7 @@ def initialize_wrf_namelist(namelist_vars: dict, namelistfile: str, templatefile
                 'end_year end_month end_day end_hour end_date')
 
     with open(mypath, 'r') as f:
+
         tpl = f.read()
         namelist = tpl.format(**namelist_vars).split('\n')
 
@@ -42,7 +43,7 @@ def initialize_wrf_namelist(namelist_vars: dict, namelistfile: str, templatefile
                 val = str(namelist_vars[key]) + ','
 
             if section == 'geogrid' and key in 'dx dy':
-                val = str(namelist_vars[key].split(',')[0] + ',')
+                val = str(str(namelist_vars[key]).split(',')[0] + ',')
 
             if key == 'run_hours':
                 val = (namelist_vars['dtend'] - namelist_vars['dtbeg']).total_seconds() // 3600

@@ -35,7 +35,7 @@ experiments
 # The defaults are $HOME/.wrtfaner and $HOME/run
 
 
-home_path, db_path, run_path, archive_path = wrftamer_paths()
+home_path, db_path, run_path, archive_path, disc = wrftamer_paths()
 
 
 def reassociate(proj_old, proj_new, exp_name: str):
@@ -50,7 +50,7 @@ def reassociate(proj_old, proj_new, exp_name: str):
 
     df = proj_old.provide_all_info(exp_name)
 
-    name, time, comment, start, end, du, rt, archived = tuple(df.to_numpy()[0])
+    name, time, comment, start, end, du, rt, status = tuple(df.to_numpy()[0])
 
     proj_new.add_exp(exp_name, comment=comment, start=start, end=end, time=time, verbose=False)
 
@@ -138,13 +138,9 @@ class project:
             os.mkdir(self.tamer_path)
 
             df = pd.DataFrame(columns=['index', 'Name', 'time', 'comment', 'start', 'end', 'disk use', 'runtime',
-                                       'archived'])
+                                       'status'])
             df.set_index('index')
             df.to_excel(self.tamer_path / 'List_of_Experiments.xlsx')
-
-        # copy namelist.template and configure_template to project folder for easy reference and transparancy.
-        # TODO: I may want to remove this default behaviour?
-        #  And instead, put the templates on the Website?
 
         namelist_template = os.path.split(os.path.realpath(__file__))[0] + '/resources/namelist.template'
         wrftamer_conf = os.path.split(os.path.realpath(__file__))[0] + '/resources/configure_template.yaml'
@@ -152,6 +148,7 @@ class project:
         newfile = self.proj_path / 'namelist.template'
         new_conf = self.proj_path / 'configure_template.yaml'
 
+        # copy namelist.template and configure_template to project folder for easy reference and transparancy.
         shutil.copyfile(namelist_template, newfile)
         shutil.copyfile(wrftamer_conf, new_conf)
 
@@ -282,7 +279,7 @@ class project:
         # if this failes, then the project does not exist or is damaged -> FileNotFoundError
         df = pd.read_excel(self.filename, index_col='index',
                            usecols=['index', 'Name', 'time', 'comment', 'start', 'end', 'disk use', 'runtime',
-                                    'archived'])
+                                    'status'])
 
         # Check if name is unique, otherwise cannot add an experiment of the same name
         if exp_name in df.Name.values:
@@ -296,7 +293,7 @@ class project:
         du = np.nan
         rt = np.nan
 
-        new_line = [exp_name, time, comment, start, end, du, rt, False]
+        new_line = [exp_name, time, comment, start, end, du, rt, 'added']
 
         df.loc[len(df)] = new_line
         df.to_excel(self.filename)
@@ -322,7 +319,7 @@ class project:
         # if this failes, then the project does not exist or is damaged -> FileNotFoundError
         df = pd.read_excel(self.filename, index_col='index',
                            usecols=['index', 'Name', 'time', 'comment', 'start', 'end', 'disk use', 'runtime',
-                                    'archived'])
+                                    'status'])
 
         if exp_name in df.Name.values:
 
@@ -362,7 +359,7 @@ class project:
         # if this failes, then the project does not exist or is damaged -> FileNotFoundError
         df = pd.read_excel(self.filename, index_col='index',
                            usecols=['index', 'Name', 'time', 'comment', 'start', 'end', 'disk use', 'runtime',
-                                    'archived'])
+                                    'status'])
 
         if old_exp_name not in df.Name.values:
             raise FileNotFoundError
@@ -393,7 +390,7 @@ class project:
 
         df = pd.read_excel(self.filename, index_col='index',
                            usecols=['index', 'Name', 'time', 'comment', 'start', 'end', 'disk use', 'runtime',
-                                    'archived'])
+                                    'status'])
         df = df[np.isfinite(df.index)]
         df.to_excel(self.filename)
 
@@ -405,7 +402,7 @@ class project:
 
         df = pd.read_excel(self.filename, index_col='index',
                            usecols=['index', 'Name', 'time', 'comment', 'start', 'end', 'disk use', 'runtime',
-                                    'archived'])
+                                    'status'])
 
         exp_list = df.Name.to_list()
 
@@ -418,9 +415,9 @@ class project:
 
             time = df.time[idx]
             comment = df.comment[idx]
-            archived = exp.is_archived
+            status = df.status[idx]
 
-            new_line = [exp.name, time, comment, start, end, du, rt, archived]
+            new_line = [exp.name, time, comment, start, end, du, rt, status]
             df.loc[idx] = new_line
 
         df.to_excel(self.filename)
@@ -428,7 +425,7 @@ class project:
     def provide_info(self, exp_name=None):
 
         df = pd.read_excel(self.filename, index_col='index',
-                           usecols=['index', 'Name', 'start', 'end', 'disk use', 'runtime', 'archived'])
+                           usecols=['index', 'Name', 'start', 'end', 'disk use', 'runtime', 'status'])
 
         select = [False for idx in range(len(df))]
         df['select'] = select
@@ -436,13 +433,17 @@ class project:
         if exp_name is not None:
             df = df[df.Name == exp_name]
 
+        # Change datatypes of start and end to string, since the GUI-Tabulator widget throws an error with timestamps!
+        df['start'] = df['start'].astype(str)
+        df['end'] = df['end'].astype(str)
+
         return df
 
     def provide_all_info(self, exp_name=None):
 
         df = pd.read_excel(self.filename, index_col='index',
                            usecols=['index', 'Name', 'time', 'comment', 'start', 'end', 'disk use', 'runtime',
-                                    'archived'])
+                                    'status'])
 
         if exp_name is not None:
             df = df[df.Name == exp_name]
@@ -453,7 +454,7 @@ class project:
 
         df = pd.read_excel(self.filename, index_col='index',
                            usecols=['index', 'Name', 'time', 'comment', 'start', 'end', 'disk use', 'runtime',
-                                    'archived'])
+                                    'status'])
 
         for exp_name in df['Name']:
             if (self.proj_path / exp_name).is_dir():

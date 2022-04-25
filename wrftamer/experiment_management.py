@@ -11,8 +11,9 @@ from wrftamer.utility import printProgressBar
 from wrftamer.process_tslist_files import merge_tslist_files, average_ts_files
 from wrftamer.wrftamer_paths import wrftamer_paths
 import wrftamer.wrftamer_functions as wtfun
+from wrftamer.wrfplotter_classes import Map
+import yaml
 
-# from wrftamer.wrf_timing import wrf_timing
 """
 A management tool for WRF Experiments
 A WRF Experiment is a directory with a certain structure of subfolders in which a WRF run is set up and run.
@@ -29,7 +30,7 @@ Date: 22.11.2021
 # ---------------------------------------------------------------------
 # These paths will be used by the tamer and can be changed in the cond environment
 
-home_path, db_path, run_path, archive_path = wrftamer_paths()
+home_path, db_path, run_path, archive_path, disc = wrftamer_paths()
 
 try:
     make_submit = bool(os.environ['WRFTAMER_make_submit'])
@@ -65,25 +66,24 @@ class experiment:
 
         # Check if file is archived. If the experiment has not yet been created, this will fail.
         try:
-            df = pd.read_excel(self.filename, index_col='index', usecols=['index', 'Name', 'archived'])
-            series = df[df.Name == exp_name].archived
-            if len(series) > 0:
-                self.is_archived = bool(int(series))
-            else:
-                self.is_archived = False
+            df = pd.read_excel(self.filename, index_col='index', usecols=['index', 'Name', 'status'])
+
+            try:
+                self.status = df[df.Name == exp_name].status.values[0]
+            except IndexError:
+                self.status = 'uncreated'
 
         except FileNotFoundError:
-            self.is_archived = False
+            self.status = 'project uncreated'
 
-        # TODO This causes trouble with split runs.
-        #  I need a way to deal with splitruns, special snowflake or not!
-        #  DLeuk, 17.01.2022
-
-        if self.is_archived:
+        if self.archive_path.is_dir():  # archived.
             self.workdir = self.archive_path
         else:
             self.workdir = self.exp_path
 
+        self.max_dom = self._get_maxdom_from_config()
+
+    # -------------------------------------------------------------------------------------------------------------------
     def create(self, configfile: str, namelisttemplate=None, verbose=True):
 
         """
@@ -113,6 +113,9 @@ class experiment:
         if make_submit:
             wtfun.make_submitfiles(self.exp_path, configfile)
 
+        self.status = 'created'
+        self._update_db_entry({'status': 'created'})
+
     def run_wps(self, verbose=True):
 
         # may require a check that all files needed are really there.
@@ -128,7 +131,7 @@ class experiment:
 
         new_exp_path = self.exp_path.parent / new_exp_name
 
-        if self.is_archived:
+        if self.status == 'archived':
             if verbose:
                 print('This run has already been archived and may not be copied.')
             return
@@ -151,7 +154,7 @@ class experiment:
         """
 
         This method is a clean way to remove a project. The project may already be archived.
-        Initialize this class with is_archived = True in this case
+        Initialize this class with status = archived in this case
 
         Args:
             verbose: Speak with user
@@ -176,7 +179,7 @@ class experiment:
             val = input("Proceed? Yes/[No]")
 
         if val in ['Yes']:
-            if self.is_archived:
+            if self.status == 'archived':
                 shutil.rmtree(self.archive_path)  # raises FileNotFoundError on failure
             else:
                 shutil.rmtree(self.exp_path)  # raises FileNotFoundError on failure
@@ -188,7 +191,7 @@ class experiment:
             print(f'Renaming Experiment {self.name} to {new_exp_name}')
             print("---------------------------------------")
 
-        if self.is_archived:
+        if self.status == 'archived':
             new_workdir = self.archive_path.parent / new_exp_name
         else:
             new_workdir = self.exp_path.parent / new_exp_name
@@ -196,7 +199,7 @@ class experiment:
         if os.path.isdir(new_workdir):
             raise FileExistsError
 
-        wtfun.rename_dirs(self.workdir, new_workdir, make_submit)  # make submit should be bool.
+        wtfun.rename_dirs(self.workdir, new_workdir, make_submit)
 
         self.name = new_exp_name
         self.exp_path = self.exp_path.parent / new_exp_name
@@ -224,7 +227,13 @@ class experiment:
         namelistfile = self.exp_path / 'wrf' / 'namelist.input'
         outfile = namelistfile
 
+        print(namelistfile)
+        print(restartfile)
+
         wtfun.update_namelist_for_rst(restartfile, namelistfile, outfile)
+
+        self.status = 'restarted'
+        self._update_db_entry({'status': 'restarted'})
 
     def move(self, verbose=True):
 
@@ -242,6 +251,9 @@ class experiment:
 
             wtfun.move_output(self.workdir)
 
+            self.status = 'moved'
+            self._update_db_entry({'status': 'moved'})
+
         else:
             if verbose:
                 print('No files to move')
@@ -250,12 +262,14 @@ class experiment:
 
         outdir = self.workdir / 'out'
         idir = (self.workdir / 'out').glob('tsfiles*')
+
         if not idir:
             if verbose:
                 print(f"the directory {self.workdir}/out/tsfiles*' does not exist")
             raise FileNotFoundError
 
-        merge_tslist_files(idir, outdir, location, domain)
+        Path(outdir / f'raw_tslist_{domain}')
+        merge_tslist_files(idir, outdir, location, domain, self.proj_name, self.name)
 
         # if tslists exists
         rawlist = list(outdir.glob('raw*'))
@@ -263,9 +277,11 @@ class experiment:
         total = len(rawlist)
         printProgressBar(0, total, prefix='Progress:', suffix='Complete', length=50)
         for i, rawfile in enumerate(rawlist):
-
             average_ts_files(str(rawfile), timeavg)
             printProgressBar(i + 1, total, prefix='Progress:', suffix='Complete', length=50)
+
+        self.status = 'post processed'
+        self._update_db_entry({'status': 'post processed'})
 
     def archive(self, keep_log=False, verbose=True):
 
@@ -313,16 +329,9 @@ class experiment:
             print(f"Target: {self.archive_path}")
             print("---------------------------------------")
 
-        self.exp_path.rename(self.archive_path)
-        self.is_archived = True
-
-        # update xls sheet.
-        df = pd.read_excel(self.filename, index_col='index', usecols=['index', 'Name', 'start', 'end', 'disk use',
-                                                                      'runtime', 'archived'])
-        line = df[df.Name == self.name]
-        new_line = [line.Name[0], line.start[0], line.end[0], line['disk use'][0], line.runtime[0], True]
-        df[df.Name == self.name] = new_line
-        df.to_excel(self.filename)
+        shutil.move(self.exp_path, self.archive_path)
+        self.status = 'archived'
+        self._update_db_entry({'status': 'archived'})
 
     def du(self, verbose=True):
 
@@ -434,3 +443,230 @@ class experiment:
             print(loc_list)
 
         return loc_list
+
+    def run_postprocessing_protocol(self, verbose=True, cfg=None):
+
+        if cfg is None:
+            configure_file = self.workdir / 'configure.yaml'
+
+            with open(configure_file) as f:
+                cfg = yaml.safe_load(f)
+
+        try:
+            ppp = cfg['pp_protocol']
+        except KeyError:
+            print('Cannot perform post processing protocol. No valid enty found in configure.yaml')
+            return
+
+        for item in ppp:
+            if item == 'move':
+                if ppp[item] == 1:
+                    self.move(verbose)
+
+            elif item == 'tslist_processing':
+                if ppp[item] == 0:
+                    pass
+                else:
+                    if ppp[item] == 1:
+                        # no options found. perform Raw processing of all files without any averaging.
+                        location = None
+                        domain = None
+                        timeavg = None
+                    else:
+                        # found some options
+                        try:
+                            location = ppp[item]['location']
+                        except KeyError:
+                            location = None
+                        try:
+                            domain = ppp[item]['domain']
+                        except KeyError:
+                            domain = None
+                        try:
+                            timeavg = ppp[item]['timeavg']
+                        except KeyError:
+                            timeavg = None
+
+                    self.process_tslist(location, domain, timeavg, verbose)
+
+            elif item == 'create_maps':
+
+                """
+                Warning: potentially, these are a LOT of maps, which may require a lot of space! 
+                Specifically: ntime * nvars * nlevs * ndomains
+                If I can speedup the read and plot process, I might be able to plot the data with
+                WRFplotter after all.
+                I want to be able ot click through my maps. 
+                """
+
+                # Insead of plotting everything, I may want to creat a smaller subset of my wrfoutput
+                # I.e. some map-data,
+                # And during post processing, all wrfout-data is read and only a small fraction
+                # (as specified) is cut out to reduce the time it takes to load the data.
+                # Right now, I have two bottlenecks:
+                # 1) Loading the data. With wrf-python, since it does not use dask but netCDF4, it is very slow.
+                # However, I need the nice features of WRF.
+
+                # 2) cartopy/basemap. Here, specifically highres coastline data with basemap is very slow (15 s!)
+                # Time check: Loading a single timeframe: ~2 s
+                # Time check: Loading 18 timeframes at a time: 18.8 s
+                # Cartopy plot: 7.27 s
+                # Basemap plot: 4.02 s (res='h')
+                # Basemap plot: 980 ms/4.02 s (res='c','h') (but c is really ugly.)
+
+                # Loading data of a whole (2day run/16 GB), single VAR and ml: ~6min
+                # Loading all data with xarray and concating: Kernel dies
+                # Using open_mfdataset (dask): 6.83 s
+                # Now, the problem is that my nice wrf-python routines do not work anymore and I am left
+                # with raw WRF output. This is a hard stop, since both cartopy and basemap are using attributes
+                # provided by wrf-python
+                # wrf-python is not able to run with dask, and I cannot change that.
+                #
+                # Options:
+                # Write own code that interpolates and calculates diagnostics (like wrf-python)
+                # - this will take forever and is prone to errors! I may be able to do it with
+                # limited functionality.
+                # - Subsample data, i.e, extract required variables and levels, put into single file and store
+                # as netcdf. Then, load should be MUCH faster.
+                # Plotting MAY be much fast as well, if I have to calculate the basemape only once and just replace
+                # the field(s) plotted.
+
+                if ppp[item] == 0:
+                    pass
+                else:
+                    if ppp[item] == 1:
+                        # Only perform standard map plotting (i.e., ml=5, var=WSP, poi=None
+                        list_of_mls = [5]
+                        list_of_vars = ['WSP']
+                        list_of_doms = ['d01']
+                        poi = None
+                        store = True
+
+                    else:
+                        # found some options
+                        try:
+                            list_of_doms = ppp[item]['list_of_domains']
+                        except KeyError:
+                            list_of_doms = ['d01']
+                        try:
+                            list_of_mls = ppp[item]['list_of_model_levels']
+                        except KeyError:
+                            list_of_mls = [5]
+                        try:
+                            list_of_vars = ppp[item]['list_of_variables']
+                        except KeyError:
+                            list_of_vars = ['WSP']
+                        try:
+                            poi_file = ppp[item]['poi_file']
+                            poi = pd.read_csv(poi_file, delimiter=';')  # points of interest
+                        except KeyError:
+                            poi = None
+                        try:
+                            store = bool(ppp[item]['store'])
+                        except:
+                            store = True
+
+                    plot_path = self.exp_path / 'plot'
+                    intermediate_path = self.exp_path / 'out'
+                    fmt = 'png'
+
+                    cls = Map(plot_path=plot_path, intermediate_path=intermediate_path, fmt=fmt)
+
+                    for dom in list_of_doms:
+                        inpath = self.exp_path / 'out'
+                        filenames = list(sorted(inpath.glob(f'wrfout_{dom}*')))
+                        for filename in filenames:
+                            for ml in list_of_mls:
+                                for var in list_of_vars:
+                                    cls.extract_data_from_wrfout(filename, dom, var, ml, select_time=-1)
+
+                                    if store:
+                                        cls.store_intermediate()
+                                    else:
+                                        cls.plot(map_t='Cartopy', store=True, poi=poi)
+
+        self.status = 'post processed'
+        self._update_db_entry({'status': 'post processed'})
+
+    # -------------------------------------------------------------------------------------------------------------------
+    def _update_db_entry(self, updates: dict):
+        """
+        A small helper function to update the data base entries. may go to another file at some point.
+        """
+
+        df = pd.read_excel(self.filename, index_col='index', usecols=['index', 'Name', 'time', 'comment',
+                                                                      'start', 'end', 'disk use', 'runtime',
+                                                                      'status'])
+
+        line = df[df.Name == self.name]
+
+        new_line = []
+        for item in ['Name', 'time', 'comment', 'start', 'end', 'disk use', 'runtime', 'status']:
+
+            if item in updates:
+                new_line.append(updates[item])
+            else:
+                new_line.append(line[item].values[0])
+
+        df[df.Name == self.name] = new_line
+        df.to_excel(self.filename)
+
+    def _determine_status(self):
+
+        self.status = 'unknown'
+
+        if self.exp_path.exists():
+            self.status = 'created'
+
+            list1 = np.sort(list((self.workdir / 'wrf/').glob('rsl.error*')))
+            list2 = np.sort(list((self.workdir / 'log/').glob('rsl.error*')))
+
+            if len(list1) > 0 and len(list2) == 0:
+                rsl_file = list1[0]
+                with open(rsl_file, 'r') as f:
+                    lines = f.readlines()
+                    if 'SUCCESS COMPLETE WRF' in lines[-1]:
+                        self.status = 'run complete'
+                    else:
+                        self.status = 'running or failed'
+
+            elif len(list1) == 0 and len(list2) > 0:
+                rsl_file = list2[0]
+                with open(rsl_file, 'r') as f:
+                    lines = f.readlines()
+                    if 'SUCCESS COMPLETE WRF' in lines[-1]:
+                        self.status = 'moved'
+                    else:
+                        self.status = 'moved prematurely?'
+            elif len(list1) > 0 and len(list2) > 0:
+                self.status = 'rerunning?'
+
+        if not (self.workdir / 'out').exists():
+            self.status = 'damaged'
+        else:
+            if len(list((self.workdir / 'out').iterdir())) > 0:
+                self.status = 'moved'
+
+            if len(list((self.workdir / 'out').glob('*.nc'))) > 0:
+                self.status = 'postprocessed'
+
+        if self.archive_path.exists():
+            self.status = 'archived'
+
+        self._update_db_entry({'status': self.status})
+
+    def _get_maxdom_from_config(self):
+
+        configure_file = self.workdir / 'configure.yaml'
+        if configure_file.is_file() is False:
+            return None
+
+        with open(configure_file) as f:
+            cfg = yaml.safe_load(f)
+
+        try:
+            max_dom = cfg['namelist_vars']['max_dom']
+        except KeyError:
+            max_dom = 1
+
+        return max_dom

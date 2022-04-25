@@ -4,24 +4,17 @@ import pandas as pd
 import datetime as dt
 import xarray as xr
 import numpy as np
-import yaml
 import os
 import itertools
+from wrftamer.wrfplotter_classes import assign_cf_attributes_tslist
 
 
-def make_new_index(df, startdate):
-    """
-    This function makes a new index for the dataframe, by taking the starttime into account.
-    Args:
-        df: dataframe with time as index: Hours since startdate
-        startdate: datetime.object from start of simulation
-    Returns:
-        Dataframe with index time (seconds since 1970-01-01)
-    """
+def uv_to_FFDD(u, v):
+    ff = np.sqrt(u ** 2 + v ** 2)
+    dd = 180. / np.pi * np.arctan2(-u, -v)
+    dd = np.mod(dd, 360)
 
-    df.index = np.round(df.index * 3600 + startdate.timestamp()).astype(int)
-    df.index.name = None
-    return df
+    return ff, dd
 
 
 def read_files(fiile, var_element, version: str):
@@ -40,12 +33,25 @@ def read_files(fiile, var_element, version: str):
 
     with open(fiile, "r") as myfile:
         head = myfile.readline().rstrip("\n")  # contains information like station height, station name, startdate
-        # startdate = dt.datetime.strptime(head.split(" ")[-1], "%Y-%m-%d_%H:%M:%S")
-        startdate = dt.datetime.strptime(head.split(" ")[-1] + '-+0000',
-                                         "%Y-%m-%d_%H:%M:%S-%z")  # this adds the timezone info. DLeuk, 30.08.2021
+        # this adds the timezone info. DLeuk, 30.08.2021
+        startdate = dt.datetime.strptime(head.split(" ")[-1] + '-+0000', "%Y-%m-%d_%H:%M:%S-%z")
         data = pd.read_csv(myfile, sep=r"\s+", header=None, index_col=0, usecols=use_cols, names=names)
 
-        return make_new_index(data, startdate)
+        # Make a new index for the dataframe, by taking the starttime into account.
+
+        seconds = np.round(data.index * 3600 + startdate.timestamp()).astype(int)
+        # I am converting the index to datetime64, since xarray will do this anyway when writing to a netcdf
+        # This way, it is cleaner and I can use the same cf_table.
+        seconds = seconds.to_numpy()
+        seconds = seconds.astype('datetime64[s]')
+        data.index = seconds
+        data.index.name = None
+
+        # olc code:
+        # data.index = np.round(data.index * 3600 + startdate.timestamp()).astype(int)
+        # data.index.name = None
+
+        return data
 
 
 def read_headinfo(tsfile1):
@@ -69,95 +75,109 @@ def read_headinfo(tsfile1):
         return {"hgt": hgt, "lat": lat, "lon": lon}, version
 
 
-def assign_attributes(xxarray):
-    mypath = os.path.split(os.path.realpath(__file__))[
-                 0] + '/../wrftamer/resources/write_ncdf.yaml'
-    with open(mypath, "r") as f:
-        dict_from_yaml = yaml.safe_load(f)
-
-    for v in xxarray.variables:
-        xxarray[v].attrs["standard_name"] = dict_from_yaml[v].get("standard_name")
-        xxarray[v].attrs["units"] = dict_from_yaml[v].get("units")
-        if dict_from_yaml[v].get("long_name"):
-            xxarray[v].attrs["long_name"] = dict_from_yaml[v]["long_name"]
-        if dict_from_yaml[v].get("calendar"):
-            xxarray[v].attrs["calendar"] = dict_from_yaml[v]["calendar"]
-
-    return xxarray
-
-
-def merge_tslist_files(indir, outdir, location, domain):
+def merge_tslist_files(indir, outdir, location, domain, proj_name, exp_name, institution='-'):
     """
-        This function will take all ts-files and merge all variables belonging to one station and one domain into a ncdf.
+        This function will take all ts-files and merge all variables belonging one domain into a ncdf.
+        This is done for all stations (locations). These files are concated together.
+
         Args:
             indir: The input directory is the folder in which the ts-files are located
             or a list of folders, i.e. /parent/folder* . Files in the indir have the format: {Location}.{domain}.{variables}
             outdir: The output directory is the folder in which the ncdf files are written out.
             location: Name of the file, i.e. specified in tslists
             domain: Domain to process.
-        Returns: Ncdf written out to outdir
+            proj_name: name of the project. May be None. For metadata
+            exp_name: name of the experiment. For metadata
+            institution: for metadata.
+
+        Returns: None.
+        Ncdf is written to outdir
     """
 
+    cf_table = os.path.split(os.path.realpath(__file__))[0] + '/../wrftamer/resources/cf_table_wrfdata.yaml'
+
     indir = list(indir) if not isinstance(indir, list) else indir  # check if indir is one folder or a list of folders
-    ts_files = [glob.glob(f'{dir}/*') for dir in indir]  # find all files in given folder
+    ts_files = [glob.glob(f'{directory}/*') for directory in indir]  # find all files in given folder
     ts_files = list(itertools.chain(*ts_files))  # put these files into a list
     loclist = [f.split("/")[-1].split(".")[0] for f in ts_files] if location is None else [location]
+    loclist = list(set(loclist))
     domainlist = [f.split("/")[-1].split(".")[1] for f in ts_files] if domain is None else [domain]
+    domainlist = list(set(domainlist))
+
     varlist = ['UU', 'VV', 'PH', 'WW', 'TH', 'TS', 'PR', 'QV']
 
     # initialize empty dictionary to write data to
     all_xxr = {}
     attrs_dict = {}
-    for loc_element in list(set(loclist)):
+    for loc in loclist:
         # read one file for header information
-        fi = str(indir[0]) + f'/{loc_element}.d01.UU'
-        attrs_dict[f'{loc_element}'], version = read_headinfo(fi)
+        fi = str(indir[0]) + f'/{loc}.d01.UU'
+        attrs_dict[f'{loc}'], version = read_headinfo(fi)
 
-        for dom_element in list(set(domainlist)):
-            all_xxr[f'{loc_element}.{dom_element}'] = {
+        for dom in domainlist:
+            all_xxr[f'{loc}.{dom}'] = {
                 'UU': None, 'VV': None, "PH": None, "WW": None, "TH": None, "QV": None, "PR": None, "U10": None,
                 "V10": None, "PSFC": None, "GLW": None, "GSW": None, "HFX": None, "LH": None, "TSK": None
             }
 
             # now read all files belonging to the same loc+dom and write into the dictionary
             for var_element in varlist:
-                all_files = [f'{dir}/{loc_element}.{dom_element}.{var_element}' for dir in indir]
+                all_files = [f'{directory}/{loc}.{dom}.{var_element}' for directory in indir]
                 data_df = pd.concat([read_files(i, var_element, version) for i in all_files])
                 data_df = data_df[~data_df.index.duplicated(keep='first')].sort_index()
-                all_xxr[f'{loc_element}.{dom_element}'][var_element] = data_df
+                all_xxr[f'{loc}.{dom}'][var_element] = data_df
                 if var_element == "TS":  # for surface file: variables are written into columns
                     for col in data_df.columns:
-                        all_xxr[f'{loc_element}.{dom_element}'][col] = data_df[col]
-                    all_xxr[f'{loc_element}.{dom_element}'].pop("TS")  # drop the TS, because it has been splitted
+                        all_xxr[f'{loc}.{dom}'][col] = data_df[col]
+
+                    all_xxr[f'{loc}.{dom}'].pop("TS")  # drop the TS, because it has been splitted
 
     # writing out ncdf for all combinations of location and domain.
-    for loc in list(set(loclist)):
-        for dom in list(set(domainlist)):
-            # remove TS key from dict
-            all_xxr[f'{loc}.{dom}'].pop("TS", None)
-            # do calculations for wind.
-            if all_xxr[f'{loc}.{dom}']['UU'] is not None and all_xxr[f'{loc}.{dom}']['VV'] is not None:
-                all_xxr[f'{loc}.{dom}']['WSP'] = np.sqrt(
-                    all_xxr[f'{loc}.{dom}'].get('UU', np.nan) ** 2 + all_xxr[f'{loc}.{dom}'].get('VV',
-                                                                                                 np.nan) ** 2)
-            if all_xxr[f'{loc}.{dom}']['U10'] is not None:
-                all_xxr[f'{loc}.{dom}']['WSP10'] = np.sqrt(
-                    all_xxr[f'{loc}.{dom}'].get('U10', np.nan) ** 2 + all_xxr[f'{loc}.{dom}'].get('V10',
-                                                                                                  np.nan) ** 2)
-            xxa = xr.Dataset(all_xxr[f'{loc}.{dom}'])
-            xxa = xxa.rename({"UU": "U", "VV": "V", "PH": "Z", "PR": "PRES",
-                              "WW": "W", "TH": "PT",
-                              "dim_0": "time", "dim_1": "zdim"})
-            # xxa['time'] = pd.to_datetime(xxa['time'].values, unit='s')
-            # assign attributes to ncdf
-            xxa = assign_attributes(xxa)
-            xxa.attrs['description'] = 'raw ts-list data'
-            xxa.attrs['domain'] = dom
-            xxa.attrs['lat'] = attrs_dict[f'{loc}']['lat']
-            xxa.attrs['lon'] = attrs_dict[f'{loc}']['lon']
-            xxa.attrs['hgt'] = attrs_dict[f'{loc}']['hgt']
 
-            xxa.to_netcdf(f'{outdir}/raw_tslist_{loc}_{dom}.nc', mode='w')
+    for dom in domainlist:
+
+        metadata = dict()
+        metadata['Conventions'] = 'CF-1.8'
+        metadata['featureType'] = 'timeSeriesProfile'
+
+        metadata['title'] = 'time series extracted from model'
+        metadata['institution'] = institution
+        metadata['source'] = 'WRF-Model'
+        metadata['references'] = f'Project {proj_name}, Experiment {exp_name}, domain {dom}'
+        metadata['comment'] = 'raw data'
+
+        all_xxa = []
+        for loc in loclist:
+
+            metadata['station_name'] = loc
+            metadata['lat'] = float(attrs_dict[f'{loc}']['lat'])
+            metadata['lon'] = float(attrs_dict[f'{loc}']['lon'])
+            metadata['station_elevation'] = float(attrs_dict[f'{loc}']['hgt'])
+
+            xxa = xr.Dataset(all_xxr[f'{loc}.{dom}'])
+            if 'UU' in xxa and 'VV' in xxa:
+                ff, dd = uv_to_FFDD(xxa['UU'], xxa['VV'])
+                xxa = xxa.assign({'WSP': ff})
+                xxa = xxa.assign({'DIR': dd})
+
+            if 'U10' in xxa and 'V10' in xxa:
+                ff10, dd10 = uv_to_FFDD(xxa['U10'], xxa['V10'])
+                xxa = xxa.assign({'WSP10': ff10})
+                xxa = xxa.assign({'DIR10': dd10})
+
+            xxa = xxa.rename({"UU": "U", "VV": "V", "PH": "ALT", "PR": "PRES",
+                              "WW": "W", "TH": "PT",
+                              "dim_0": "time", "dim_1": "model_level"})
+
+            xxa = assign_cf_attributes_tslist(xxa, metadata, cf_table)
+            all_xxa.append(xxa)
+
+        all_data = xr.concat(all_xxa, dim='station_name')
+        all_data = all_data.set_index({'station_name': 'station_name'})
+        all_data = all_data.set_coords(['lat', 'lon', 'station_elevation', 'station_name'])
+
+        all_data.to_netcdf(f'{outdir}/raw_tslist_{dom}.nc', mode='w')
+
     return
 
 
@@ -178,15 +198,12 @@ def average_ts_files(infile, timeavg):
 
     if len(timeavg) > 0:
         for time in timeavg:
-            xxa = xr.load_dataset(infile)
-            xxa['time'] = pd.to_datetime(xxa['time'].values, unit='s')
+            xxa = xr.open_dataset(infile)  # lazy load. might be faster
             xxatme = xxa.resample(time=f'{time}Min', label='left', closed='right').mean(keep_attrs=True)
             xxatme.attrs = xxa.attrs
-            xxatme.attrs['description'] = f'{time}-minute averaged data'
-            xxatme['time'] = xxatme['time'].astype("M8[s]").astype(int) / 1e9  # this deletes all attributes from time
-            xxatme = assign_attributes(xxatme)  # this line needs to follow after the one before
-            print(infile)
-            print(time)
+            xxatme.attrs['comment'] = f'{time}-minute averaged data'
+            xxatme.time.attrs = {'standard_name': 'time', 'long_name': 'time'}
             xxatme.to_netcdf(infile.replace("raw", f"Ave{time}Min"), mode='w')
+            xxa.close()
 
     return
