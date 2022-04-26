@@ -22,15 +22,14 @@ This repository has been tested with python 3.7.12
 - openpyxl
   
 ## Installation
-It can be installed with 
+It can be installed using pip
 ```bash
-python setup.py install
+pip install wrftamer
 ```
-If you do so, don't forget to reinstall after any changes.
-During development, a better way is to install using editable mode with pip:
-```bash
-pip install -e .
-```
+
+**Info:** the pip installer for cartopy does not work (as of 26.04.2022). It is required to install cartopy using conda or mamba before wrftamer can be installed.
+
+
 
 ## First Steps and documentation
 
