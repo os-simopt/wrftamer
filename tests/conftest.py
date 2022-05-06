@@ -16,6 +16,10 @@ def base_test_env():
     test_env = Path(
         os.path.split(os.path.realpath(__file__))[0] + "/resources/test_environment"
     )
+
+    if test_env.is_dir():
+        shutil.rmtree(test_env)
+
     os.mkdir(test_env)
 
     os.environ["WRFTAMER_HOME_PATH"] = str(test_env / "wrftamer")
@@ -23,6 +27,7 @@ def base_test_env():
     os.environ["WRFTAMER_ARCHIVE_PATH"] = str(test_env / "wrftamer/archive/")
     os.environ["WRFTAMER_PLOT_PATH"] = str(test_env / "wrftamer/plots/")
     os.environ["OBSERVATIONS_PATH"] = str(test_env.parent / "observations_data/")
+    os.environ["WRFTAMER_make_submit"] = 'True'
 
     yield test_env
 
