@@ -12,27 +12,26 @@ def wrftamer_paths():
     """
 
     try:
-        home_path = Path(os.environ['WRFTAMER_HOME_PATH'])
-        db_path = home_path / 'db'
+        home_path = Path(os.environ["WRFTAMER_HOME_PATH"])
+        db_path = home_path / "db"
     except KeyError:
-        home_path = Path(os.environ['HOME']) / 'wrftamer'
-        db_path = Path(os.environ['HOME']) / 'wrftamer/db'
+        home_path = Path(os.environ["HOME"]) / "wrftamer"
+        db_path = Path(os.environ["HOME"]) / "wrftamer/db"
 
     try:
-        run_path = Path(os.environ['WRFTAMER_RUN_PATH'])
+        run_path = Path(os.environ["WRFTAMER_RUN_PATH"])
     except KeyError:
-        run_path = Path(os.environ['HOME']) / 'wrftamer/run'
+        run_path = Path(os.environ["HOME"]) / "wrftamer/run"
 
     try:
-        archive_path = Path(os.environ['WRFTAMER_ARCHIVE_PATH'])
+        archive_path = Path(os.environ["WRFTAMER_ARCHIVE_PATH"])
     except KeyError:
-        archive_path = Path(os.environ['HOME']) / 'wrftamer/archive'
+        archive_path = Path(os.environ["HOME"]) / "wrftamer/archive"
 
     try:
-        plot_path = Path(os.environ['WRFTAMER_PLOT_PATH'])
+        plot_path = Path(os.environ["WRFTAMER_PLOT_PATH"])
     except KeyError:
-        plot_path = Path(os.environ['HOME']) / 'wrftamer/plots'
-
+        plot_path = Path(os.environ["HOME"]) / "wrftamer/plots"
 
     # I may add more paths later on. These include:
     # $HOME/wrftamer/src/wrf_essentials
@@ -41,10 +40,32 @@ def wrftamer_paths():
     # This way, everything would be together at a single place.
     # Of course, the user may always set their own paths.
 
-    os.makedirs(home_path, exist_ok=True)
-    os.makedirs(db_path, exist_ok=True)
-    os.makedirs(run_path, exist_ok=True)
-    os.makedirs(archive_path, exist_ok=True)
-    os.makedirs(plot_path, exist_ok=True)
+    try:
+        os.makedirs(home_path, exist_ok=True)
+        os.makedirs(db_path, exist_ok=True)
+        os.makedirs(run_path, exist_ok=True)
+        os.makedirs(archive_path, exist_ok=True)
+        os.makedirs(plot_path, exist_ok=True)
+    except PermissionError:
+        print(
+            "Error: You do not have write permission for at least one of the WRFTAMER paths you specified."
+        )
+        print("Please specify different paths or change user rights")
+        print("Your paths:")
+        print(home_path)
+        print(db_path)
+        print(run_path)
+        print(archive_path)
+        print(plot_path)
+        raise PermissionError
 
     return home_path, db_path, run_path, archive_path, plot_path
+
+
+def get_make_submit():
+    try:
+        make_submit = bool(os.environ["WRFTAMER_make_submit"])
+    except KeyError:
+        make_submit = False
+
+    return make_submit

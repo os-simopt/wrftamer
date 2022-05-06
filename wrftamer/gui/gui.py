@@ -5,14 +5,11 @@ from wrftamer.gui.exp_tab import exp_tab
 from wrftamer.gui.about_tab import about_tab
 from wrftamer.gui.wrfplotter_tab import wrfplotter_tab
 
-pn.extension('tabulator')
-tabulator_formatters = {
-    'select': {'type': 'tickCross'}
-}
+pn.extension("tabulator")
+tabulator_formatters = {"select": {"type": "tickCross"}}
 
 
 class GUI:
-
     def __init__(self):
         self.project = proj_tab()
         self.experiment = exp_tab(self.project.mc_proj)
@@ -20,7 +17,12 @@ class GUI:
         self.wp = wrfplotter_tab()
 
     def view(self):
-        all_tabs = pn.Tabs(self.project.view(), self.experiment.view(), self.wp.view(), self.about.view())
+        all_tabs = pn.Tabs(
+            self.project.view(),
+            self.experiment.view(),
+            self.wp.view(),
+            self.about.view(),
+        )
 
         return all_tabs
 

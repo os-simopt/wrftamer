@@ -34,7 +34,7 @@ def link_grib(driving_data: PosixPath, exp_path: PosixPath, SUFFIX_LEN=3):
     TARGET_TPL = "GRIBFILE."
     inpath = driving_data
 
-    char_list = [f'{65 + i:c}' for i in range(26)]
+    char_list = [f"{65 + i:c}" for i in range(26)]
 
     files = sorted(inpath.rglob("*.grib?"))
 
@@ -43,9 +43,9 @@ def link_grib(driving_data: PosixPath, exp_path: PosixPath, SUFFIX_LEN=3):
         sys.exit(1)
 
     # remove GRIBFILES if they exist.
-    fileList = glob.glob(f'{exp_path}/wrf/{TARGET_TPL}*')
-    for filePath in fileList:
-        os.remove(filePath)
+    filelist = glob.glob(f"{exp_path}/wrf/{TARGET_TPL}*")
+    for filepath in filelist:
+        os.remove(filepath)
 
     for fname, suffix in zip(files, product(char_list, repeat=SUFFIX_LEN)):
-        Path(f'{exp_path}/wrf/' + TARGET_TPL + "".join(suffix)).symlink_to(fname)
+        Path(f"{exp_path}/wrf/" + TARGET_TPL + "".join(suffix)).symlink_to(fname)

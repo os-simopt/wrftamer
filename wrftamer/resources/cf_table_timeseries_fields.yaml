@@ -24,6 +24,12 @@ t:
     standard_name: air_temperature
     long_name: temperature
     units: K
+
+pt:
+    standard_name: air_potential_temperature
+    long_name: potential temperature
+    units: K
+
 wsp:
     standard_name: wind_speed
     long_name: horizontal wind speed

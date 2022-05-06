@@ -2,8 +2,7 @@ import os
 import re
 import panel as pn
 
-from wrftamer.experiment_management import experiment
-from wrftamer.project_management import project, list_unassociated_exp
+from wrftamer.main import project, list_unassociated_exp
 from wrftamer.gui.gui_base import gui_base
 
 
@@ -21,47 +20,74 @@ class exp_tab(gui_base):
 
         self.list_of_experiments = list_unassociated_exp(verbose=False)
 
-        self.mc_exp = pn.widgets.MultiChoice(name='Choose Experiment', value=[''], options=self.list_of_experiments,
-                                             height=75)
+        self.mc_exp = pn.widgets.MultiChoice(
+            name="Choose Experiment",
+            value=[""],
+            options=self.list_of_experiments,
+            height=75,
+        )
 
-        self.exp_name_box = pn.widgets.TextInput(name='New Experiment Name', value='')
+        self.exp_name_box = pn.widgets.TextInput(name="New Experiment Name", value="")
 
-        self.b_create = pn.widgets.Button(name='Create Experiment', button_type='success')
-        self.b_rename = pn.widgets.Button(name='Rename Experiment', button_type='warning')
-        self.b_delete = pn.widgets.Button(name='Remove Experiment', button_type='danger')
-        self.b_copy = pn.widgets.Button(name='Copy Experiment', button_type='primary')
-        self.b_post = pn.widgets.Button(name='Postprocessing', button_type='primary')
-        self.b_archive = pn.widgets.Button(name='Archive Experiment', button_type='primary')
+        self.b_create = pn.widgets.Button(
+            name="Create Experiment", button_type="success"
+        )
+        self.b_rename = pn.widgets.Button(
+            name="Rename Experiment", button_type="warning"
+        )
+        self.b_delete = pn.widgets.Button(
+            name="Remove Experiment", button_type="danger"
+        )
+        self.b_copy = pn.widgets.Button(name="Copy Experiment", button_type="primary")
+        self.b_post = pn.widgets.Button(name="Postprocessing", button_type="primary")
+        self.b_archive = pn.widgets.Button(
+            name="Archive Experiment", button_type="primary"
+        )
 
-        self.del_warn = pn.widgets.StaticText(name='Warning',
-                                              value='This will delete all data of this experiment. Click again to '
-                                                    'proceed.',
-                                              background='#ffcc00')
+        self.del_warn = pn.widgets.StaticText(
+            name="Warning",
+            value="This will delete all data of this experiment. Click again to "
+            "proceed.",
+            background="#ffcc00",
+        )
         self.del_warn.visible = False
 
-        self.msg_procesing = pn.widgets.StaticText(name='Processing', value='Please wait for a moment.',
-                                                   background='#ffcc00')
+        self.msg_procesing = pn.widgets.StaticText(
+            name="Processing", value="Please wait for a moment.", background="#ffcc00"
+        )
         self.msg_procesing.visible = False
 
-        self.b_cancel = pn.widgets.Button(name='Cancel', button_type='warning', visible=False)
+        self.b_cancel = pn.widgets.Button(
+            name="Cancel", button_type="warning", visible=False
+        )
 
         ################################################################################################
         # mainpage
-        self.header = pn.widgets.StaticText(value='Select Configure File', background='#ffffff')
-        self.file_input = pn.widgets.FileInput(name='Select Configure File', accept='.yaml', multiple=False)
+        self.header = pn.widgets.StaticText(
+            value="Select Configure File", background="#ffffff"
+        )
+        self.file_input = pn.widgets.FileInput(
+            name="Select Configure File", accept=".yaml", multiple=False
+        )
 
-        self.comment_box = pn.widgets.TextInput(name='Comment', value='',
-                                                placeholder='Add a brief description of your experiment here')
+        self.comment_box = pn.widgets.TextInput(
+            name="Comment",
+            value="",
+            placeholder="Add a brief description of your experiment here",
+        )
 
-        default_message = 'To create an experiment, first create an configure.yaml file and select it. You may select' \
-                          'an existing conf file and edit it here. Per default, the name of the configure.yaml' \
-                          'file is used for the experiment name, but you may edit the name if you desire a different' \
-                          'name. Then, click "create experiment" to create a new experiment. You may also ' \
-                          'copy-paste the content of a configure.yaml file into this textbox. In any case, a new ' \
-                          'configure.yaml file will be stored in your experiment folder.'
+        default_message = (
+            "To create an experiment, first create an configure.yaml file and select it. You may select"
+            "an existing conf file and edit it here. Per default, the name of the configure.yaml"
+            "file is used for the experiment name, but you may edit the name if you desire a different"
+            'name. Then, click "create experiment" to create a new experiment. You may also '
+            "copy-paste the content of a configure.yaml file into this textbox. In any case, a new "
+            "configure.yaml file will be stored in your experiment folder."
+        )
 
-        self.textfield = pn.widgets.input.TextAreaInput(name='Configure File', placeholder=default_message, height=800,
-                                                        width=800)
+        self.textfield = pn.widgets.input.TextAreaInput(
+            name="Configure File", placeholder=default_message, height=800, width=800
+        )
 
         ################################################################################################
 
@@ -78,26 +104,28 @@ class exp_tab(gui_base):
             old_options = self.mc_exp.options.copy()
 
             if self.file_input.value is None:
-                print('Please select a configure file first')
+                print("Please select a configure file first")
                 return
             else:
                 # Now, I store the contents of either the file_input or the textfield (has priority) as a temporary
                 # file. This file will be deleted later on. I need this file since the create.sh script is written
                 # this way. It requires a file as input.
 
-                configfile = self.db_path / '.temporary_configfile'
-                fid = open(configfile, 'w')
-                if self.textfield.value == '':
+                configfile = self.db_path / ".temporary_configfile"
+                fid = open(configfile, "w")
+                if self.textfield.value == "":
                     fid.write(self.file_input.value.decode())
                 else:
                     fid.write(self.textfield.value)
                 fid.close()
 
-            if not re.match(r'^[A-Za-z0-9_-]+$', exp_name):
-                print('Only alphanumeric values, underscore and dash are allowed in the experiment name')
+            if not re.match(r"^[A-Za-z0-9_-]+$", exp_name):
+                print(
+                    "Only alphanumeric values, underscore and dash are allowed in the experiment name"
+                )
                 return
             elif exp_name in old_options:
-                print('An experiment with this name already exists!')
+                print("An experiment with this name already exists!")
                 return
             else:
                 old_options.append(exp_name)
@@ -107,16 +135,20 @@ class exp_tab(gui_base):
                 # Do the actual Experiment creation.
                 ########################################
 
-                proj = project(proj_name)  # works even if proj_name is None > unassociated experiment
-                exp = experiment(proj_name, exp_name)
+                # works even if proj_name is None > unassociated experiment
+                proj = project(proj_name)
                 try:
-                    start, end = exp.start_end(verbose=False)
-                    proj.add_exp(exp_name, self.comment_box.value, start, end)
-                    exp.create(configfile, namelisttemplate=None,
-                               verbose=False)  # as of now, only allow the default namelist template.
+                    proj.exp_create(
+                        exp_name,
+                        self.comment_box.value,
+                        configfile,
+                        namelisttemplate=None,
+                        verbose=False,
+                    )
+
                 except FileExistsError:
-                    print('An experiment with this name already exists. Use a different name or remove the directory '
-                          'first.')
+                    print("An experiment with this name already exists.")
+                    print("Use a different name or remove the directory first.")
 
                 os.remove(configfile)  # this was just a temporary file.
 
@@ -131,15 +163,15 @@ class exp_tab(gui_base):
             choice = self.mc_exp.value
             new_name = self.exp_name_box.value
 
-            if len(choice) != 1 or new_name == '':
-                print('Number of Experiments selected is not 1 or no new name set')
+            if len(choice) != 1 or new_name == "":
+                print("Number of Experiments selected is not 1 or no new name set")
             else:
                 exp_name = choice[0]
 
                 old_options = self.mc_exp.options.copy()
 
                 if new_name in old_options:
-                    print('A project with this name already exists')
+                    print("A project with this name already exists")
                 else:
                     old_options.remove(exp_name)
                     old_options.append(new_name)
@@ -151,15 +183,12 @@ class exp_tab(gui_base):
                     # Do the actual Experiment renaming
                     ########################################
                     proj = project(proj_name)
-                    exp = experiment(proj_name, exp_name)
-
                     try:
-                        proj.rename_exp(exp_name, new_name, verbose=False)
-                        exp.rename(new_name)
+                        proj.exp_rename(exp_name, new_name, verbose=False)
                     except FileExistsError:
-                        print('An experiment with the new name already exists.')
+                        print("An experiment with the new name already exists.")
                     except FileNotFoundError:
-                        print('This experiment does not exist.')
+                        print("This experiment does not exist.")
 
         # noinspection PyUnusedLocal
         def remove_exp(event):
@@ -176,7 +205,7 @@ class exp_tab(gui_base):
                 exp_name = choice[0]
 
                 if not self.del_warn.visible:
-                    self.b_delete.name = 'Confirm Deletion'
+                    self.b_delete.name = "Confirm Deletion"
                     self.del_warn.visible = True
                     self.b_cancel.visible = True
                 else:
@@ -190,16 +219,14 @@ class exp_tab(gui_base):
                     # Do the actual Experiment removal.
                     ########################################
                     proj = project(proj_name)
-                    exp = experiment(proj_name, exp_name)
 
                     try:
-                        proj.remove_exp(exp_name, force=True, verbose=False)
-                        exp.remove(force=True)
+                        proj.exp_remove(exp_name, force=True, verbose=False)
                     except FileNotFoundError:
-                        print('This experiment does not exist and cannot be removed')
+                        print("This experiment does not exist and cannot be removed")
 
                     # reset
-                    self.b_delete.name = 'Remove Experiment'
+                    self.b_delete.name = "Remove Experiment"
                     self.del_warn.visible = False
                     self.b_cancel.visible = False
 
@@ -218,11 +245,13 @@ class exp_tab(gui_base):
                 exp_name = choice[0]
                 new_exp_name = self.exp_name_box.value
 
-                if not re.match(r'^[A-Za-z0-9_-]+$', new_exp_name):
-                    print('Only alphanumeric values, underscore and dash are allowed in the experiment name')
+                if not re.match(r"^[A-Za-z0-9_-]+$", new_exp_name):
+                    print(
+                        "Only alphanumeric values, underscore and dash are allowed in the experiment name"
+                    )
                     return
                 elif new_exp_name in old_options:
-                    print('An experiment with this name already exists!')
+                    print("An experiment with this name already exists!")
                 else:
                     old_options.append(self.exp_name_box.value)
                     self.mc_exp.options = old_options
@@ -231,16 +260,18 @@ class exp_tab(gui_base):
                     ########################################
 
                     proj = project(proj_name)
-                    exp = experiment(proj_name, exp_name)
 
                     try:
-                        start, end = exp.start_end(verbose=False)
-                        proj.add_exp(new_exp_name, self.comment_box.value, start, end)
-                        exp.copy(new_exp_name)
+                        proj.exp_copy(
+                            exp_name,
+                            new_exp_name,
+                            self.comment_box.value,
+                            verbose=False,
+                        )
                     except FileExistsError:
-                        print('An experiment with the new name alreay exists.')
+                        print("An experiment with the new name alreay exists.")
                     except FileNotFoundError:
-                        print('This experiment does not exist.')
+                        print("This experiment does not exist.")
 
         # noinspection PyUnusedLocal
         def postprocess_exp(event):
@@ -261,9 +292,9 @@ class exp_tab(gui_base):
 
                 self.msg_procesing.visible = True
                 for exp_name in choices:
-                    print('Processing:', exp_name)
-                    exp = experiment(proj_name, exp_name)
-                    exp.run_postprocessing_protocol(verbose=False)
+                    print("Processing:", exp_name)
+                    proj = project(proj_name)
+                    proj.exp_run_postprocessing_protocol(exp_name, verbose=False)
 
                 self.msg_procesing.visible = False
 
@@ -286,26 +317,28 @@ class exp_tab(gui_base):
                 self.msg_procesing.visible = True
 
                 for exp_name in choices:
-                    print('Archiving:', exp_name)
-                    exp = experiment(proj_name, exp_name)
-                    exp.archive(keep_log=bool(keep_log))
+                    print("Archiving:", exp_name)
+                    proj = project(proj_name)
+                    proj.exp_archive(exp_name, keep_log=bool(keep_log), verbose=False)
 
                 self.msg_procesing.visible = False
 
         # noinspection PyUnusedLocal
         def _reset_warning(event):
             # reset
-            self.b_delete.name = 'Remove Experiment'
+            self.b_delete.name = "Remove Experiment"
             self.del_warn.visible = False
             self.b_cancel.visible = False
 
         # noinspection PyUnusedLocal
-        @pn.depends(self.file_input.param.filename, watch=True)  # do not use para.value as a trigger here.
+        @pn.depends(
+            self.file_input.param.filename, watch=True
+        )  # do not use para.value as a trigger here.
         # Reason: value is set before filename. That would cause the second line to fail.
         def _update_textfield(selection):
 
             self.textfield.value = self.file_input.value.decode()
-            self.exp_name_box.value = self.file_input.filename.split('.')[0]
+            self.exp_name_box.value = self.file_input.filename.split(".")[0]
             # By default, use the filename as the experiment name. The user may change this manually
 
         @pn.depends(mc_proj.param.value, watch=True)
@@ -334,10 +367,21 @@ class exp_tab(gui_base):
     ################################################################################################
     def view(self):
 
-        menu = pn.Column(self.mc_exp, self.exp_name_box, self.b_create, self.b_rename, self.b_delete, self.del_warn,
-                         self.b_cancel, self.b_copy, self.b_post, self.b_archive, name='Experiment')
+        menu = pn.Column(
+            self.mc_exp,
+            self.exp_name_box,
+            self.b_create,
+            self.b_rename,
+            self.b_delete,
+            self.del_warn,
+            self.b_cancel,
+            self.b_copy,
+            self.b_post,
+            self.b_archive,
+            name="Experiment",
+        )
         main = pn.Column(self.header, self.file_input, self.comment_box, self.textfield)
 
-        exp_row = pn.Row(menu, main, name='Experiment')
+        exp_row = pn.Row(menu, main, name="Experiment")
 
         return exp_row

@@ -116,8 +116,6 @@ dir10:
     "wrf_name": "potential temperature"
     "units": "K"
 
-
-
 "psfc":
     "standard_name": "surface_air_pressure"
     "long_name": "air pressure at surface"
