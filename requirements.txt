@@ -5,7 +5,6 @@ panel~=0.12.6
 pyyaml~=5.4.1
 numpy~=1.19.2
 xarray~=0.16.2
-cartopy~=0.20.1
 shapely~=1.8.0
 netcdf4~=1.5.8
 python-crontab~=2.5.1
