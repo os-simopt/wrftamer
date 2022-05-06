@@ -22,15 +22,21 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+    - name: Set up Python Virt Env
+      run: python -m venv venv   
     - name: Set up Python
       uses: actions/setup-python@v3
       with:
         python-version: '3.x'
     - name: Install dependencies
       run: |
-        conda install -c conda-forge pandas setuptools panel pyyaml numpy xarray==0.20.1 shapely netcdf4 python-crontab click matplotlib holoviews==1.14.6 hvplot windrose cartopy==0.20.2
+        source venv/bin/activate
+        conda install -c conda-forge mamba
+        mamba install -c pandas setuptools panel pyyaml numpy xarray==0.20.1 shapely netcdf4 python-crontab click matplotlib holoviews==1.14.6 hvplot windrose cartopy==0.20.2
+        pip install -e .
     - name: Test with pytest
       run: |
+        source venv/bin/activate
         pip install pytest
         pip install coverage
         coverage run -m pytest tests
