@@ -6,10 +6,6 @@ from pathlib import Path
 from wrftamer.gui.gui_base import gui_base
 from wrftamer.main import project, list_projects, list_unassociated_exp
 
-# from wrftamer.project_management import project, list_projects, list_unassociated_exp
-# from wrftamer.experiment_management import experiment
-
-
 from wrftamer.gui.wrfplotter_utility import (
     get_available_obs,
     get_available_doms,

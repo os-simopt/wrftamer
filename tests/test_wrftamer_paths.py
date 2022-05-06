@@ -49,6 +49,9 @@ def test_no_access_paths():
 
 
 def test_get_make_submit():
+
+    os.environ["WRFTAMER_make_submit"] = 'True'
+
     get_make_submit()
 
     del os.environ["WRFTAMER_make_submit"]

@@ -1,0 +1,36 @@
+paths:
+  wrf_executables: 'path/to/executables'
+  wrf_essentials: 'path/to/essentials'
+  wrf_nonessentials: 'path/to/nonessentials'
+  driving_data: "path/to/driving/data"
+
+# change these values can be changed if you desire a different test domain.
+# tests other than the "long" tests ignore this information anyway.
+namelist_vars:
+  interval_seconds        : 3600
+  dtbeg                   : 2020-07-28 00:00:00
+  dtend                   : 2020-07-28 03:00:00
+  grid_id                 : 1,2
+  parent_id               : 0,1
+  e_we                    : 250,100
+  e_sn                    : 199,100
+  max_dom                 : 2
+  i_parent_start          : 1,25
+  j_parent_start          : 1,25
+  parent_grid_ratio       : 1,3
+  parent_time_step_ratio  : 1,3
+  num_metgrid_soil_levels : 4
+  restart_interval        : 60
+  dx                      : 733.33
+  dy                      : 733.33
+  e_vert                  : 50, 50
+  p_top_requested         : 12044.726684995803,
+  time_step               : 3
+  num_metgrid_levels      : 66
+
+link_grib:
+  suffix_len: 4
+
+submit_file:
+  Nodes: 8
+  time : '6:00:00'
