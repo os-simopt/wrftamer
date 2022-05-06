@@ -8,7 +8,7 @@ xarray~=0.16.2
 shapely~=1.8.0
 netcdf4~=1.5.8
 python-crontab~=2.5.1
-click~=7.1.2
+click~=8.1.2
 matplotlib
 holoviews~=1.14.6
 hvplot~=0.7.3
