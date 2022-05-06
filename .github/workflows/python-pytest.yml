@@ -28,7 +28,7 @@ jobs:
         python-version: '3.x'
     - name: Install dependencies
       run: |
-        conda install pandas setuptools panel pyyaml numpy xarray shapely netcdf4 python-crontab click matplotlib holoviews==1.14.6 hvplot windrose cartopy==0.20.2
+        conda install -c conda-forge pandas setuptools panel pyyaml numpy xarray shapely netcdf4 python-crontab click matplotlib holoviews==1.14.6 hvplot windrose cartopy==0.20.2
     - name: Test with pytest
       run: |
         pip install pytest
