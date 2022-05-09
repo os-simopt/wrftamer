@@ -14,5 +14,4 @@ matplotlib
 holoviews~=1.14.6
 hvplot~=0.7.3
 windrose~=1.6.8
-wrf-python==1.3.1
 openpyxl~=3.0.9
