@@ -16,10 +16,9 @@ on:
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   # This workflow contains a single job called "build"
-  build:
-    # The type of runner that the job will run on
+  test:
+    name: Run tests & display coverage
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v3
     - name: Set up Python
@@ -34,9 +33,56 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install -e .
-    - name: Test with pytest
+    - name: run pytest
       run: |
+        source venv/bin/activate
         pip install pytest
         pip install coverage
         coverage run -m pytest tests
         coverage html
+        coverage xml    
+    - name: Display coverage
+      id: coverage_comment
+      uses: ewjoachim/python-coverage-comment-action@v2
+      with:
+        GITHUB_TOKEN: ${{ github.token }}
+
+        # Only necessary in the "workflow_run" workflow.
+        GITHUB_PR_RUN_ID: ${{ inputs.GITHUB_PR_RUN_ID }}
+
+        # If the coverage percentage is above or equal to this value, the badge will be green.
+        MINIMUM_GREEN: 100
+
+        # Same with orange. Below is red.
+        MINIMUM_ORANGE: 70
+
+        # If true, will run `coverage combine` before reading the `.coverage` file.
+        MERGE_COVERAGE_FILES: false
+
+        # If true, produces more output. Useful for debugging.
+        VERBOSE: false
+
+        # Name of the json file containing badge informations stored in the repo wiki.
+        # You typically don't have to change this unless you're already using this name for something else.
+        BADGE_FILENAME: python-coverage-comment-action-badge.json
+
+        # Name of the artifact in which the body of the comment to post on the PR is stored.
+        # You typically don't have to change this unless you're already using this name for something else.
+        COMMENT_ARTIFACT_NAME: python-coverage-comment-action
+
+        # Name of the file in which the body of the comment to post on the PR is stored.
+        # You typically don't have to change this unless you're already using this name for something else.
+        COMMENT_FILENAME: python-coverage-comment-action.txt
+        
+        
+    - name: Store Pull Request comment to be posted
+      uses: actions/upload-artifact@v2
+      if: steps.coverage_comment.outputs.COMMENT_FILE_WRITTEN == 'true'
+      with:
+        # If you use a different name, update COMMENT_ARTIFACT_NAME accordingly
+        name: python-coverage-comment-action
+        # If you use a different name, update COMMENT_FILENAME accordingly
+        path: python-coverage-comment-action.txt
+        
+        
+        
