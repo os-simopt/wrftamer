@@ -1,3 +1,5 @@
+![Coverage badge](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/wiki/ewjoachim/python-coverage-comment-action-example/python-coverage-comment-action-badge.json)
+
 # WRFtamer
 WRFtamer is a tool to organize WRF simulations. This includes organizing experiments into projects, creating simulations, running WPS, postprocessing data and archiving completed runs. This tool also provides an overview on how long a simulation runs and how much disk space it takes. 
 The programm can be used from the command line and using a graphical user interface (GUI).
