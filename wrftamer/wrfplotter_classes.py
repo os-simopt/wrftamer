@@ -43,9 +43,7 @@ class Map:
             self.fmt = "png"
 
     # ----------------------------------------------------------------------
-    def extract_data_from_wrfout(
-        self, filename: PosixPath, dom: str, var: str, ml: int, select_time=-1
-    ) -> None:
+    def extract_data_from_wrfout(self, filename: PosixPath, dom: str, var: str, ml: int, select_time=-1) -> None:
         """
 
         This function is basically a wrapper to the wrf.getvar function. It loads the required data and
@@ -83,9 +81,7 @@ class Map:
             ]
             data.attrs["model_level"] = ml
         elif var == "WSP":
-            data = wrf.getvar(
-                fid, "uvmet_wspd_wdir", units="m s-1", timeidx=idx, squeeze=False
-            )[0][:, ml, :, :]
+            data = wrf.getvar(fid, "uvmet_wspd_wdir", units="m s-1", timeidx=idx, squeeze=False)[0][:, ml, :, :]
             data.name = "WSP"
             data = data.drop_vars("wspd_wdir")
             data.attrs["description"] = "earth rotated wspd"
@@ -114,9 +110,7 @@ class Map:
             data.attrs["units"] = "m s-1"
             data.attrs["model_level"] = "sfc"
         elif var == "DIR10":
-            data = wrf.getvar(
-                fid, "wspd_wdir10", units="m s-1", timeidx=idx, squeeze=False
-            )[1][:, :, :]
+            data = wrf.getvar(fid, "wspd_wdir10", units="m s-1", timeidx=idx, squeeze=False)[1][:, :, :]
             data.name = "DIR10"
             data = data.drop_vars("wspd_wdir")
             data.attrs["description"] = "earth rotated wdir at 10 m"
