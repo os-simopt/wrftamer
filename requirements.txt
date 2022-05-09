@@ -1,9 +1,9 @@
+numpy~=1.21.0
 pytest~=6.2.2
 pandas~=1.3.5
 setuptools~=52.0.0
 panel~=0.12.6
 pyyaml~=5.4.1
-numpy~=1.21.0
 xarray~=0.16.2
 dask
 shapely~=1.8.0
@@ -14,5 +14,4 @@ matplotlib
 holoviews~=1.14.6
 hvplot~=0.7.3
 windrose~=1.6.8
-wrf-python==1.3.1
 openpyxl~=3.0.9
