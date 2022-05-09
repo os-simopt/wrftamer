@@ -40,7 +40,7 @@ def test_nonexisting_project(base_test_env):
 
     # adding an experiment to a project that does not exist should work (since the project is created on the fly!)
     configfile = (
-        os.path.split(os.path.realpath(__file__))[0] + "/resources/configure_test.yaml"
+            os.path.split(os.path.realpath(__file__))[0] + "/resources/configure_test.yaml"
     )
     test.exp_create("Some_Random_Exp_Name", "Some_Random_Comment", configfile)
     test.remove(force=True, verbose=False)
@@ -82,9 +82,9 @@ def test_project(testprojects):
 
     # check that testproject variables have been renamed (tests further down depend on this)
     if (
-        testproject1.name == proj_name2
-        and Path(testproject1.proj_path).stem == proj_name2
-        and Path(testproject1.tamer_path).stem == proj_name2
+            testproject1.name == proj_name2
+            and Path(testproject1.proj_path).stem == proj_name2
+            and Path(testproject1.tamer_path).stem == proj_name2
     ):
         pass
     else:
@@ -150,7 +150,7 @@ def test_reassociate(testprojects):
     exp_name2 = "TEST2"
     exp_name3 = "TEST3"
     configfile = (
-        os.path.split(os.path.realpath(__file__))[0] + "/resources/configure_test.yaml"
+            os.path.split(os.path.realpath(__file__))[0] + "/resources/configure_test.yaml"
     )
 
     # ------------------------------------------------------
@@ -184,18 +184,18 @@ def test_reassociate(testprojects):
 # -----------------------------------------------------------------------
 # Tests for experiment with and without project
 # -----------------------------------------------------------------------
+@pytest.mark.config_req
+def test_experiment_creation_thoroughly(testprojects):
+    """
+    Also checks if all files linked and created are really there.
+    """
 
+    testproject1 = testprojects[0]
 
-def experiment_checks(proj_name1, exp_name1):
-    exp_name2 = "TEST2"
-    exp_name3 = "TEST3"
-    # configfile = os.path.split(os.path.realpath(__file__))[0] + '/resources/configure_test.yaml'
-    configfile = (
-        os.path.split(os.path.realpath(__file__))[0]
-        + "/resources/my_configure_test.yaml"
-    )
-    # TODO: I need a thorrow and not so thorrow test, otherwise this will constantly fail with the
-    #  simple configure_test.
+    proj_name1 = testproject1.name
+    exp_name1 = "TEST1"
+
+    configfile = os.path.split(os.path.realpath(__file__))[0] + "/resources/my_configure_test.yaml"
 
     proj = project(proj_name1)
     proj.exp_create(exp_name1, "some comment", configfile)
@@ -271,7 +271,7 @@ def experiment_checks(proj_name1, exp_name1):
     missing = []
     for link in expected_links:
         if not os.path.exists(exp_path / f"wrf/{link}") or not os.path.islink(
-            exp_path / f"wrf/{link}"
+                exp_path / f"wrf/{link}"
         ):
             missing.append(link)
 
@@ -280,6 +280,15 @@ def experiment_checks(proj_name1, exp_name1):
         for item in missing:
             print(item)
         raise FileNotFoundError
+
+
+def experiment_checks(proj_name1, exp_name1):
+    exp_name2 = "TEST2"
+    exp_name3 = "TEST3"
+    configfile = os.path.split(os.path.realpath(__file__))[0] + '/resources/configure_test.yaml'
+
+    proj = project(proj_name1)
+    proj.exp_create(exp_name1, "some comment", configfile)
 
     # ------------------------------------------------------
     # creating the same experiment twice should fail
@@ -480,7 +489,7 @@ def test_remove_with_correct_input1(base_test_env, monkeypatch):
     # ------------------------------------------------------
     # adding an exp to a project should work fine.
     configfile = (
-        os.path.split(os.path.realpath(__file__))[0] + "/resources/configure_test.yaml"
+            os.path.split(os.path.realpath(__file__))[0] + "/resources/configure_test.yaml"
     )
     testproject.exp_create(exp_name1, "First Experiment", configfile, verbose=True)
 
@@ -499,7 +508,7 @@ def test_remove_with_correct_input2(base_test_env, monkeypatch):
     # ------------------------------------------------------
     # adding an exp to a project should work fine.
     configfile = (
-        os.path.split(os.path.realpath(__file__))[0] + "/resources/configure_test.yaml"
+            os.path.split(os.path.realpath(__file__))[0] + "/resources/configure_test.yaml"
     )
     testproject.exp_create(exp_name1, "First Experiment", configfile, verbose=True)
 
@@ -534,14 +543,14 @@ def test_broken_db(test_env2):
     # Creating a new exp should raise an error.
     with pytest.raises(FileExistsError):
         configfile = (
-            os.path.split(os.path.realpath(__file__))[0]
-            + "/resources/configure_test.yaml"
+                os.path.split(os.path.realpath(__file__))[0]
+                + "/resources/configure_test.yaml"
         )
         test_proj.exp_create(exp_name1, "First Experiment", configfile, verbose=True)
 
     # Create an experiment that can be copied.
     configfile = (
-        os.path.split(os.path.realpath(__file__))[0] + "/resources/configure_test.yaml"
+            os.path.split(os.path.realpath(__file__))[0] + "/resources/configure_test.yaml"
     )
     test_proj.exp_create("Another_Exp", "Second Experiment", configfile, verbose=True)
 
@@ -589,7 +598,6 @@ def test_broken_db(test_env2):
 
     with pytest.raises(FileNotFoundError):
         test_proj.exp_rename("Manual_Test", "OtherName2")
-
 
 # @pytest.mark.long
 # def test_run_wps(testproject_exp):

@@ -1,4 +1,3 @@
-import pytest
 import os
 from wrftamer.wrftamer_paths import wrftamer_paths, get_make_submit
 import shutil
@@ -36,16 +35,6 @@ def test_default_paths():
     shutil.rmtree(run_path)
     shutil.rmtree(db_path)
     shutil.rmtree(home_path)
-
-
-def test_no_access_paths():
-    os.environ["WRFTAMER_HOME_PATH"] = wtres_path + "/no_access/wrftamer"
-    os.environ["WRFTAMER_RUN_PATH"] = wtres_path + "/no_access/wrftamer/run/"
-    os.environ["WRFTAMER_ARCHIVE_PATH"] = wtres_path + "/no_access/wrftamer/archive/"
-    os.environ["WRFTAMER_PLOT_PATH"] = wtres_path + "/no_access/wrftamer/plots/"
-
-    with pytest.raises(PermissionError):
-        wrftamer_paths()
 
 
 def test_get_make_submit():
