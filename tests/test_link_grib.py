@@ -22,4 +22,4 @@ def test_link_grib2(link_environment):
     driving_data, exp_path = link_environment
 
     with pytest.raises(SystemExit):
-        link_grib(driving_data, exp_path, SUFFIX_LEN=1)
+        link_grib(driving_data, exp_path, SUFFIX_LEN=0)
