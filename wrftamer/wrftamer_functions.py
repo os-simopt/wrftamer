@@ -3,13 +3,12 @@ import shutil
 import datetime as dt
 import yaml
 import pandas as pd
-from pathlib import Path
+from pathlib import Path, PosixPath
+import re
+import subprocess
 from wrftamer.initialize_wrf_namelist import initialize_wrf_namelist
 from wrftamer.link_grib import link_grib
 from wrftamer.wrftamer_paths import wrftamer_paths
-import re
-import subprocess
-from pathlib import PosixPath
 
 """
 Here, I translated the old shell scripts to python scripts.

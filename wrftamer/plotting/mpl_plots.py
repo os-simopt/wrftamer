@@ -3,10 +3,17 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 from matplotlib.dates import DateFormatter
 from windrose import WindroseAxes
-import cartopy.crs as crs
-from cartopy.feature import NaturalEarthFeature
-from wrf import get_cartopy, cartopy_xlim, cartopy_ylim
 import xarray as xr
+
+try:
+    # Taken from mpl_plots
+    import cartopy.crs as crs
+    from cartopy.feature import NaturalEarthFeature
+    from wrf import get_cartopy, cartopy_xlim, cartopy_ylim
+
+    enable_maps = True
+except ModuleNotFoundError:
+    enable_maps = False
 
 
 ########################################################################################################################
@@ -358,6 +365,10 @@ def Obs_vs_Mod(data, sty=None, col=None, label=None, **kwargs):
 
 # ----------------------------------------------------------------------------------------------------------------------
 def Map_Cartopy(data: xr.DataArray, hgt=None, ivg=None, pcmesh=False, **kwargs):
+    if not enable_maps:
+        print('You must install Cartopy to use this feature.')
+        return
+
     font_size = kwargs.get("font_size", 10)
     clim = kwargs.get("clim", (0, 1))
     xlabel = kwargs.get("xlabel", "")
@@ -476,7 +487,7 @@ def Map_Cartopy(data: xr.DataArray, hgt=None, ivg=None, pcmesh=False, **kwargs):
 
 # ----------------------------------------------------------------------------------------------------------------------
 def Availability(
-    Avail: np.ndarray, zz: float, var: str, year: str, savename=None
+        Avail: np.ndarray, zz: float, var: str, year: str, savename=None
 ) -> None:
     """
     Plot data availability

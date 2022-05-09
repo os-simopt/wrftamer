@@ -203,6 +203,3 @@ def test_hv_not_implemented():
 
     plot_infos = {"plottype": "Map", "var": "WSP"}  # will just inform user
     create_hv_plot(plot_infos, map_data=None)
-
-    with pytest.raises(AttributeError):  # wrong data to plot.
-        create_hv_plot(plot_infos, map_data=data)

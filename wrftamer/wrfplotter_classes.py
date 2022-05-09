@@ -87,7 +87,7 @@ class Map:
                 fid, "uvmet_wspd_wdir", units="m s-1", timeidx=idx, squeeze=False
             )[0][:, ml, :, :]
             data.name = "WSP"
-            data = data.drop("wspd_wdir")
+            data = data.drop_vars("wspd_wdir")
             data.attrs["description"] = "earth rotated wspd"
             data.attrs["units"] = "m s-1"
             data.attrs["model_level"] = ml
@@ -96,7 +96,7 @@ class Map:
                 fid, "uvmet_wspd_wdir", units="m s-1", timeidx=idx, squeeze=False
             )[1][:, ml, :, :]
             data.name = "DIR"
-            data = data.drop("wspd_wdir")
+            data = data.drop_vars("wspd_wdir")
             data.attrs["description"] = "earth rotated wdir"
             data.attrs["units"] = "degrees"
             data.attrs["model_level"] = ml
@@ -110,7 +110,7 @@ class Map:
                 fid, "wspd_wdir10", units="m s-1", timeidx=idx, squeeze=False
             )[0][:, :, :]
             data.name = "WSP10"
-            data = data.drop("wspd_wdir")
+            data = data.drop_vars("wspd_wdir")
             data.attrs["units"] = "m s-1"
             data.attrs["model_level"] = "sfc"
         elif var == "DIR10":
@@ -118,7 +118,7 @@ class Map:
                 fid, "wspd_wdir10", units="m s-1", timeidx=idx, squeeze=False
             )[1][:, :, :]
             data.name = "DIR10"
-            data = data.drop("wspd_wdir")
+            data = data.drop_vars("wspd_wdir")
             data.attrs["description"] = "earth rotated wdir at 10 m"
             data.attrs["units"] = "degrees"
             data.attrs["model_level"] = "sfc"
@@ -304,8 +304,9 @@ class Map:
                     )
 
                 if map_t == "Cartopy":
-                    figure.savefig(savename, dpi=400)
-                    plt.close(figure)
+                    if figure is not None:
+                        figure.savefig(savename, dpi=400)
+                        plt.close(figure)
                 else:
                     print("hvplot cannot be stored this way...")
                     raise NotImplementedError

@@ -588,18 +588,18 @@ class wrfplotter_tab(gui_base):
             watch=True,
         )  # I guess this watcher makes my gui somewhat slow?
         def _update_plot(
-            active,
-            proj_list,
-            exp_list,
-            dom,
-            loc,
-            obs,
-            dev,
-            ave,
-            var,
-            lev,
-            ttp,
-            static_plots,
+                active,
+                proj_list,
+                exp_list,
+                dom,
+                loc,
+                obs,
+                dev,
+                ave,
+                var,
+                lev,
+                ttp,
+                static_plots,
         ):  #
             self.prepare_data()  #
             self.create_plot(active, static_plots)  #
@@ -741,9 +741,7 @@ class wrfplotter_tab(gui_base):
             # Map for single point in time.
             elif static_plots and plottype == "Map":
                 poi = None  # FIXME
-                self.figure = self.map_cls.plot(
-                    "Cartopy", store=False, poi=poi, **self.gui_status
-                )
+                self.figure = self.map_cls.plot("Cartopy", store=False, poi=poi, **self.gui_status)
 
             elif not static_plots and plottype == "Map":
                 try:
@@ -755,9 +753,7 @@ class wrfplotter_tab(gui_base):
                     # poi = pd.read_csv(poi_file, delimiter=';')
 
                     poi = None  # FIXME
-                    self.figure = self.map_cls.plot(
-                        "hvplot", store=False, poi=poi, **self.gui_status
-                    )
+                    self.figure = self.map_cls.plot("hvplot", store=False, poi=poi, **self.gui_status)
                 except Exception as e:
                     self.figure = error_message(e)
 

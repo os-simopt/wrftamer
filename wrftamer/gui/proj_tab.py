@@ -52,10 +52,8 @@ class proj_tab(gui_base):
         )
 
         proj = project(None)
-        df = proj.provide_info()
-        self.info_df = pn.widgets.Tabulator(
-            df, formatters=tabulator_formatters, height=600
-        )
+        df = proj.exp_provide_info()
+        self.info_df = pn.widgets.Tabulator(df, formatters=tabulator_formatters, height=600)
 
         self.b_create.on_click(self.create_proj)
         self.b_rename.on_click(self.rename_proj)
@@ -79,7 +77,7 @@ class proj_tab(gui_base):
                 self.info_panel.name = "Experiments not associated with any project"
                 self.info_panel.value = str(len(exp_list))
 
-            df = proj.provide_info()
+            df = proj.exp_provide_info()
             self.info_df.value = df
 
     # noinspection PyUnusedLocal
