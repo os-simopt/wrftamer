@@ -8,7 +8,7 @@ def test_link_grib1(link_environment):
 
     link_grib(driving_data, exp_path, SUFFIX_LEN=3)
 
-    if len(list((exp_path / "wrf").glob("GRIBFILE*"))) != 100:
+    if len(list((exp_path / "wrf").glob("GRIBFILE*"))) != 10:
         raise ValueError
     for item in (exp_path / "wrf").glob("GRIBFILE*"):
         if not item.is_symlink():
