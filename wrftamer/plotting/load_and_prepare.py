@@ -350,7 +350,7 @@ def prep_zt_data(mod_data, infos: dict) -> xr.Dataset:
 
     data2plot["ALT"] = new_z
     data2plot = data2plot.swap_dims({"model_level": "ALT"})
-    data2plot = data2plot.drop("model_level")
+    data2plot = data2plot.drop_vars("model_level")
 
     return data2plot[var]
 

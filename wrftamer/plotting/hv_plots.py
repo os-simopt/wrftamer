@@ -2,7 +2,13 @@ import panel as pn
 import holoviews as hv
 import hvplot.xarray
 import hvplot.pandas
-import cartopy.crs as crs
+
+try:
+    import cartopy.crs as crs
+    enable_maps = True
+except ModuleNotFoundError:
+    enable_maps = False
+
 from wrftamer.Statistics import Statistics
 
 
@@ -34,8 +40,8 @@ def create_hv_plot(infos: dict, data=None, map_data=None):
                 if var == "DIR":
                     figure = (
                         data[item]
-                        .dropna()
-                        .hvplot.scatter(
+                            .dropna()
+                            .hvplot.scatter(
                             xlim=tlim,
                             ylim=ylim,
                             size=size,
@@ -46,8 +52,8 @@ def create_hv_plot(infos: dict, data=None, map_data=None):
                 else:
                     figure = (
                         data[item]
-                        .dropna()
-                        .hvplot(xlim=tlim, ylim=ylim, xlabel=xlabel, ylabel=ylabel)
+                            .dropna()
+                            .hvplot(xlim=tlim, ylim=ylim, xlabel=xlabel, ylabel=ylabel)
                     )
             else:
                 if var == "DIR":
@@ -191,6 +197,10 @@ def create_hv_plot(infos: dict, data=None, map_data=None):
 
 
 def Map_hvplots(map_data, **infos):
+    if not enable_maps:
+        print('You must install Cartopy to use this feature.')
+        return
+
     if map_data is None:
         print("Must provide map_data")
         return None, None

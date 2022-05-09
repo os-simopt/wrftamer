@@ -19,7 +19,6 @@ requirements:
     - pip
     - python >=3.9
   run:
-    - cartopy >=0.18.0
     - click
     - holoviews
     - hvplot
@@ -32,9 +31,9 @@ requirements:
     - python-crontab
     - pyyaml
     - setuptools >=30.3.0
-    - shapely >=1.7.1
     - windrose >=1.6.8
     - wrf-python >=1.3.1
+    - openpyxl
     - xarray
 
 test:
