@@ -1,4 +1,4 @@
-![Coverage badge](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/wiki/ewjoachim/python-coverage-comment-action-example/python-coverage-comment-action-badge.json)
+![Coverage badge](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/wiki/os-simopt/wrftamer/python-coverage-comment-action-badge.json)
 
 [![pytest](https://github.com/os-simopt/wrftamer/actions/workflows/python-pytest.yml/badge.svg)](https://github.com/os-simopt/wrftamer/actions/workflows/python-pytest.yml)
 
