@@ -1,4 +1,4 @@
-![Coverage badge](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/wiki/os-simopt/wrftamer/python-coverage-comment-action-badge.json) [![pytest](https://github.com/os-simopt/wrftamer/actions/workflows/python-pytest.yml/badge.svg)](https://github.com/os-simopt/wrftamer/actions/workflows/python-pytest.yml)
+![Coverage badge](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/wiki/os-simopt/wrftamer/python-coverage-comment-action-badge.json) [![pytest](https://github.com/os-simopt/wrftamer/actions/workflows/python-pytest.yml/badge.svg)](https://github.com/os-simopt/wrftamer/actions/workflows/python-pytest.yml) ![License badge](/github/license/:user/:repo)
 
 # WRFtamer
 WRFtamer is a tool to organize WRF simulations. This includes organizing experiments into projects, creating simulations, running WPS, postprocessing data and archiving completed runs. This tool also provides an overview on how long a simulation runs and how much disk space it takes. 
