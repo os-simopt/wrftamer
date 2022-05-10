@@ -1,4 +1,15 @@
 
+[V1.1.X] - 2022-05-10
+
+New: pytests, code coverage and continous integration have been added to the Github repository.
+
+Changed:
+The package Cartopy is now and optional dependency of the repository and no longer a strict requirement. As a result,
+map plotting tools will not work without cartopy.
+
+This is due to the fact that the pip installation of cartopy fails due to dependency issues, which causes the continous
+integration process
+
 [V1.1] - 2022-02-21
 
 Added

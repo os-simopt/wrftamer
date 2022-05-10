@@ -47,15 +47,8 @@ def wrftamer_paths():
         os.makedirs(archive_path, exist_ok=True)
         os.makedirs(plot_path, exist_ok=True)
     except PermissionError:
-        print("Error: You do not have write permission for at least one of the WRFTAMER paths you specified.")
-        print("Please specify different paths or change user rights")
-        print("Your paths:")
-        print(home_path)
-        print(db_path)
-        print(run_path)
-        print(archive_path)
-        print(plot_path)
-        raise PermissionError
+        raise PermissionError("Error: You do not have write permission for at least one of the WRFTAMER paths you "
+                              "specified.")
 
     return home_path, db_path, run_path, archive_path, plot_path
 
