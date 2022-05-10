@@ -1,0 +1,11 @@
+.idea/*
+**/.ipynb_checkpoints/
+wrftamer.egg-info/*
+__pycache__
+
+/docs/site
+/debug
+/dist
+/build
+/reports
+/.pytest_cache
