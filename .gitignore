@@ -9,3 +9,6 @@ __pycache__
 /build
 /reports
 /.pytest_cache
+
+.coverage
+coverage.xml
