@@ -11,3 +11,4 @@ tests/resources/observations_data/Testset2/Testset2_20200101_20210101.nc filter=
 tests/resources/observations_data/Nonconform/Nonconform_20200101_20210101.nc filter=lfs diff=lfs merge=lfs -text
 tests/resources/model_data/Ave10Min_tslist_d01.nc filter=lfs diff=lfs merge=lfs -text
 tests/resources/model_data/raw_tslist_d01.nc filter=lfs diff=lfs merge=lfs -text
+tests/resources/dummy_data/wrfout_d01_2020-05-17_00:00:00 filter=lfs diff=lfs merge=lfs -text
