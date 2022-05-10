@@ -40,12 +40,12 @@ jobs:
         git describe --tags --dirty --always
     - name: LFS
       run: |
-      curl -L https://github.com/github/git-lfs/releases/download/v1.4.1/git-lfs-linux-amd64-1.4.1.tar.gz | tar xz
-      pushd git-lfs-1.4.1
-      ./install.sh
-      popd
-      rm -rf git-lfs-1.4.1
-      git lfs pull
+        curl -L https://github.com/github/git-lfs/releases/download/v1.4.1/git-lfs-linux-amd64-1.4.1.tar.gz | tar xz
+        pushd git-lfs-1.4.1
+        ./install.sh
+        popd
+        rm -rf git-lfs-1.4.1
+        git lfs pull
     - name: Show Status2
       run: |
         git status
