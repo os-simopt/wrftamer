@@ -12,6 +12,9 @@ on:
   release:
     types: [published]
 
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
 permissions:
   contents: read
 
@@ -31,23 +34,26 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install build
+    - name: Show Status
+      run: |       
         git status
         git describe --tags --dirty --always
         
         pwd
-        
-        git restore ./tests/resources/model_data/Ave10Min_tslist_d01.nc
-        git restore ./tests/resources/model_data/raw_tslist_d01.nc
-        git restore ./tests/resources/observations_data/Nonconform/Nonconform_20200101_20210101.nc
-        git restore ./tests/resources/observations_data/Testset/Testset_20200101_20210101.nc
-        git restore ./tests/resources/observations_data/Testset2/Testset2_20200101_20210101.nc
-        git restore ./tests/resources/testres1.nc
-        git restore ./tests/resources/testres2.nc
-        git restore ./tests/resources/testres3.nc
-        git restore ./tests/resources/testres4.nc
-        git restore ./tests/resources/testset1.nc
-        git restore ./tests/resources/testset2.nc
-        git restore ./tests/resources/testset3.nc
+        ls
+                
+        git restore ../tests/resources/model_data/Ave10Min_tslist_d01.nc
+        git restore ../tests/resources/model_data/raw_tslist_d01.nc
+        git restore ../tests/resources/observations_data/Nonconform/Nonconform_20200101_20210101.nc
+        git restore ../tests/resources/observations_data/Testset/Testset_20200101_20210101.nc
+        git restore ../tests/resources/observations_data/Testset2/Testset2_20200101_20210101.nc
+        git restore ../tests/resources/testres1.nc
+        git restore ../tests/resources/testres2.nc
+        git restore ../tests/resources/testres3.nc
+        git restore ../tests/resources/testres4.nc
+        git restore ../tests/resources/testset1.nc
+        git restore ../tests/resources/testset2.nc
+        git restore ../tests/resources/testset3.nc
 
         git status
         git describe --tags --dirty --always
