@@ -8,28 +8,24 @@ WRFtamer is designed to run WRF with em_real. Is is able to create sumbit-script
 ## Requirements
 This repository has been tested with python 3.7.12
 ### External python modules
-- click
-- numpy
-- pathlib
-- netCDF4
-- pandas
-- tqdm
-- matplotlib
-- pyyaml
-- xarray
-- cartopy
-- shapely
-- pytest
-- panel 
-- openpyxl
-  
+See requirements.txt
+ 
 ## Installation
 It can be installed using pip
 ```bash
 pip install wrftamer
 ```
+or conda
 
-**Info:** the pip installer for cartopy does not work (as of 26.04.2022). It is required to install cartopy using conda or mamba before wrftamer can be installed.
+```bash
+conda install -c os-simopt wrftamer
+```
+
+### Optional python modules
+The Cartopy package is required to display maps of your data. If you want to use these features, you need to install this package manually.
+
+**Info:** The pip installer for cartopy does not work (as of 26.04.2022).
+It is required to install cartopy using conda or mamba before wrftamer can be installed.
 
 
 
@@ -40,20 +36,6 @@ To get started with WRFtamer, got to
 
 The full documentation is available [here](https://wrftamer.readthedocs.io/en/latest/)
 
-=======
-
-## Repo Structure
-```bash
-├── bash # shell scripts for some of the options
-├── scripts # main file with all options
-├── tests # test script for this repository
-├── resources # all resources that are used by the tests
-├── wrftamer # python scripts for some of the options
-├── resources # templates for the namelist and the config-file 
-├── documentation  # documentaion using mkdocs 
-```
-## Conventions
-Python programs should fulfill pep8 standard.
 ## Owners
 Martin Felder, Linda Menger, Daniel Leukauf
 ## Licence
