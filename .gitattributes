@@ -1,2 +1,13 @@
 wrftamer/_version.py export-subst
-*.nc filter=lfs diff=lfs merge=lfs -text
+tests/resources/testres1.nc filter=lfs diff=lfs merge=lfs -text
+tests/resources/testres2.nc filter=lfs diff=lfs merge=lfs -text
+tests/resources/testres3.nc filter=lfs diff=lfs merge=lfs -text
+tests/resources/testres4.nc filter=lfs diff=lfs merge=lfs -text
+tests/resources/testset1.nc filter=lfs diff=lfs merge=lfs -text
+tests/resources/testset2.nc filter=lfs diff=lfs merge=lfs -text
+tests/resources/testset3.nc filter=lfs diff=lfs merge=lfs -text
+tests/resources/observations_data/Testset/Testset_20200101_20210101.nc filter=lfs diff=lfs merge=lfs -text
+tests/resources/observations_data/Testset2/Testset2_20200101_20210101.nc filter=lfs diff=lfs merge=lfs -text
+tests/resources/observations_data/Nonconform/Nonconform_20200101_20210101.nc filter=lfs diff=lfs merge=lfs -text
+tests/resources/model_data/Ave10Min_tslist_d01.nc filter=lfs diff=lfs merge=lfs -text
+tests/resources/model_data/raw_tslist_d01.nc filter=lfs diff=lfs merge=lfs -text
