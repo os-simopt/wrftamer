@@ -6,7 +6,7 @@
 # separate terms of service, privacy policy, and support
 # documentation.
 
-name: Upload Python Package
+name: PyPi
 
 on:
   release:
@@ -34,18 +34,20 @@ jobs:
         git status
         git describe --tags --dirty --always
         
-        git restore tests/resources/model_data/Ave10Min_tslist_d01.nc
-        git restore tests/resources/model_data/raw_tslist_d01.nc
-        git restore tests/resources/observations_data/Nonconform/Nonconform_20200101_20210101.nc
-        git restore tests/resources/observations_data/Testset/Testset_20200101_20210101.nc
-        git restore tests/resources/observations_data/Testset2/Testset2_20200101_20210101.nc
-        git restore tests/resources/testres1.nc
-        git restore tests/resources/testres2.nc
-        git restore tests/resources/testres3.nc
-        git restore tests/resources/testres4.nc
-        git restore tests/resources/testset1.nc
-        git restore tests/resources/testset2.nc
-        git restore tests/resources/testset3.nc
+        pwd
+        
+        git restore ./tests/resources/model_data/Ave10Min_tslist_d01.nc
+        git restore ./tests/resources/model_data/raw_tslist_d01.nc
+        git restore ./tests/resources/observations_data/Nonconform/Nonconform_20200101_20210101.nc
+        git restore ./tests/resources/observations_data/Testset/Testset_20200101_20210101.nc
+        git restore ./tests/resources/observations_data/Testset2/Testset2_20200101_20210101.nc
+        git restore ./tests/resources/testres1.nc
+        git restore ./tests/resources/testres2.nc
+        git restore ./tests/resources/testres3.nc
+        git restore ./tests/resources/testres4.nc
+        git restore ./tests/resources/testset1.nc
+        git restore ./tests/resources/testset2.nc
+        git restore ./tests/resources/testset3.nc
 
         git status
         git describe --tags --dirty --always
