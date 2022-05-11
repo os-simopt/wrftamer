@@ -13,3 +13,16 @@ __pycache__
 .coverage
 coverage.xml
 
+/tests/resources/model_data/Ave10Min_tslist_d01.nc
+/tests/resources/model_data/raw_tslist_d01.nc
+/tests/resources/observations_data/Nonconform/Nonconform_20200101_20210101.nc
+/tests/resources/observations_data/Testset/Testset_20200101_20210101.nc
+/tests/resources/observations_data/Testset2/Testset2_20200101_20210101.nc
+/tests/resources/testres1.nc
+/tests/resources/testres2.nc
+/tests/resources/testres3.nc
+/tests/resources/testres4.nc
+/tests/resources/testset1.nc
+/tests/resources/testset2.nc
+/tests/resources/testset3.nc
+
