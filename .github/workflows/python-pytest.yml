@@ -32,6 +32,10 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install -e .
+        
+    - name: Pull LFS files
+      run: |
+        git lfs pull
 
     - name: Lanuch tests and generate report
       run: |
@@ -46,18 +50,16 @@ jobs:
         GITHUB_TOKEN: ${{ github.token }}
 
         # Only necessary in the "workflow_run" workflow.
-        GITHUB_PR_RUN_ID: ${{ inputs.GITHUB_PR_RUN_ID }}
+        #GITHUB_PR_RUN_ID: ${{ inputs.GITHUB_PR_RUN_ID }}
 
         # If the coverage percentage is above or equal to this value, the badge will be green.
-        MINIMUM_GREEN: 100
-
         # Same with orange. Below is red.
+        MINIMUM_GREEN: 90
         MINIMUM_ORANGE: 70
 
         # If true, will run `coverage combine` before reading the `.coverage` file.
         MERGE_COVERAGE_FILES: false
 
-        # If true, produces more output. Useful for debugging.
         VERBOSE: true
 
         # Name of the json file containing badge informations stored in the repo wiki.
