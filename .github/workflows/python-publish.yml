@@ -36,6 +36,7 @@ jobs:
         pip install build
     - name: Show Status
       run: |       
+        set -e
         git fetch --tags # checkout action does not get these
         git status
         git describe --tags --dirty --always
