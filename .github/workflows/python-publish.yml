@@ -34,28 +34,14 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install build
-    - name: Show Status
-      run: |       
-        python show_version.py
-        git fetch --prune --unshallow --tags # checkout action does not get these
-        #git fetch --tags # checkout action does not get these
-        git status
-        git describe --tags --dirty --always
-        git tag
-        #git tag 1.1.20
-        #git tag 
-        #git push --follow-tags        
-        #git tag
-        python show_version.py
-        
     - name: LFS
       run: |
         git lfs pull
-    - name: Show Status2
-      run: |
-        git status
+    - name: Fetch tags and show version
+      run: |       
+        git fetch --prune --unshallow --tags # checkout action does not get these
         git describe --tags --dirty --always
-        git tag
+        python show_version.py
     - name: Build package
       run: python -m build
     - name: Publish package
