@@ -41,7 +41,7 @@ jobs:
         git status
         git describe --tags --dirty --always
         git tag
-        git tag 1.1.17
+        git tag 1.1.18
         git tag 
         git push --follow-tags        
         git tag
