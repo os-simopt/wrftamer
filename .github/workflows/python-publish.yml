@@ -38,6 +38,7 @@ jobs:
       run: |       
         git status
         git describe --tags --dirty --always
+        git tags
     - name: LFS
       run: |
         git lfs pull
@@ -45,6 +46,7 @@ jobs:
       run: |
         git status
         git describe --tags --dirty --always
+        git tags
     - name: Build package
       run: python -m build
     - name: Publish package
