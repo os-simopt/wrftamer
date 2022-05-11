@@ -19,4 +19,3 @@ jobs:
         AnacondaToken: ${{ secrets.ANACONDA_TOKEN }}
         platforms: 'all'
         override: true
-        dry_run: true
