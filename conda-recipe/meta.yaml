@@ -8,11 +8,7 @@ package:
 source:
   path: ..
 
-#source:
-#  git_url: https://github.com/os-simopt/wrftamer.git
-
 build:
-  noarch: python
   script: {{ PYTHON }} -m pip install . -vv
   number: 0
 
