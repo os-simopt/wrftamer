@@ -77,8 +77,8 @@ class Map:
             data.attrs["model_level"] = ml
         elif var == "PT":
             data = wrf.getvar(fid, "theta", units="K", timeidx=idx, squeeze=False)[
-                :, ml, :, :
-            ]
+                   :, ml, :, :
+                   ]
             data.attrs["model_level"] = ml
         elif var == "WSP":
             data = wrf.getvar(fid, "uvmet_wspd_wdir", units="m s-1", timeidx=idx, squeeze=False)[0][:, ml, :, :]
@@ -118,8 +118,8 @@ class Map:
             data.attrs["model_level"] = "sfc"
         elif var in ["PRES", "P"]:
             data = wrf.getvar(fid, "p", units="Pa", timeidx=idx, squeeze=False)[
-                :, ml, :, :
-            ]
+                   :, ml, :, :
+                   ]
             data.attrs["model_level"] = ml
         # These lines should work in principle. However, I do not have testdata at the ready, so remove these lines.
         # elif var in ["QV", "QVAPOR"]:
@@ -201,13 +201,13 @@ class Map:
 
         if self.data.model_level == "sfc":
             savename = (
-                self.intermediate_path
-                / f"Interm_{self.data.dom}_{self.data.name}_{timestring}.nc"
+                    self.intermediate_path
+                    / f"Interm_{self.data.dom}_{self.data.name}_{timestring}.nc"
             )
         else:
             savename = (
-                self.intermediate_path
-                / f"Interm_{self.data.dom}_{self.data.name}_{timestring}_ml{self.data.model_level}.nc"
+                    self.intermediate_path
+                    / f"Interm_{self.data.dom}_{self.data.name}_{timestring}_ml{self.data.model_level}.nc"
             )
 
         self.data.to_netcdf(savename)
@@ -243,8 +243,8 @@ class Map:
             savename = self.intermediate_path / f"Interm_{dom}_{var}_{timestring}.nc"
         else:
             savename = (
-                self.intermediate_path
-                / f"Interm_{dom}_{var}_{timestring}_ml{model_level}.nc"
+                    self.intermediate_path
+                    / f"Interm_{dom}_{var}_{timestring}_ml{model_level}.nc"
             )
 
         if timestring == "*":
@@ -293,8 +293,8 @@ class Map:
                     savename = f"{self.plot_path}/Map_{self.data.dom}_{self.data.name}_{timestring}.{self.fmt}"
                 else:
                     savename = (
-                        f"{self.plot_path}/Map_{self.data.dom}_"
-                        + f"{self.data.name}_{timestring}_ml{self.data.model_level}.{self.fmt}"
+                            f"{self.plot_path}/Map_{self.data.dom}_"
+                            + f"{self.data.name}_{timestring}_ml{self.data.model_level}.{self.fmt}"
                     )
 
                 if map_t == "Cartopy":
@@ -326,7 +326,7 @@ class Map:
 
 # some helperfunctions
 def get_list_of_filenames(
-    name_of_dataset: str, dtstart: dt.datetime, dtend: dt.datetime
+        name_of_dataset: str, dtstart: dt.datetime, dtend: dt.datetime
 ):
     # this is for reading...
 
@@ -373,13 +373,13 @@ def get_list_of_filenames(
     except ValueError:
         idx2 = 0
 
-    filenames = list_of_files[idx1 : idx2 + 1]
+    filenames = list_of_files[idx1: idx2 + 1]
 
     return filenames
 
 
 def get_list_of_filenames2(
-    name_of_dataset: str, dtstart: dt.datetime, dtend: dt.datetime
+        name_of_dataset: str, dtstart: dt.datetime, dtend: dt.datetime
 ):
     # this is for writing...
     # TODO: combine the two routines.
@@ -393,12 +393,42 @@ def get_list_of_filenames2(
     return filepath / filename
 
 
+def get_max_timerange(name_of_dataset):
+    filepath = Path(os.environ["OBSERVATIONS_PATH"]) / f"{name_of_dataset}/"
+    list_of_files = list(filepath.glob(f"{name_of_dataset}*.nc"))
+    list_of_files.sort()
+
+    list_of_starts = [
+        item.stem.replace(name_of_dataset, "").split("_")[1] for item in list_of_files
+    ]
+    list_of_ends = [
+        item.stem.replace(name_of_dataset, "").split("_")[2] for item in list_of_files
+    ]
+
+    starts = np.asarray([dt.datetime.strptime(item, "%Y%m%d") for item in list_of_starts])
+    ends = np.asarray([dt.datetime.strptime(item, "%Y%m%d") for item in list_of_ends])
+
+    try:
+        start = starts[0]
+    except IndexError:
+        start = dt.datetime(1970, 1, 1)
+
+    try:
+        end = ends[-1]
+    except IndexError:
+        end = dt.datetime(2070, 1, 1)
+
+    tvec = list(pd.date_range(start, end, periods=10))
+
+    return tvec
+
+
 def assign_cf_attributes_tslist(
-    data: xr.Dataset,
-    metadata: dict,
-    cf_table: Union[str, bytes, os.PathLike],
-    old_attrs=None,
-    verbose=False,
+        data: xr.Dataset,
+        metadata: dict,
+        cf_table: Union[str, bytes, os.PathLike],
+        old_attrs=None,
+        verbose=False,
 ):
     """
     Required metadata:
@@ -621,9 +651,9 @@ class Timeseries:
             raise TypeError
 
         if (
-            isinstance(data, xr.Dataset)
-            or isinstance(data, xr.DataArray)
-            or data is None
+                isinstance(data, xr.Dataset)
+                or isinstance(data, xr.DataArray)
+                or data is None
         ):
             self.data = data
         else:
@@ -636,13 +666,13 @@ class Timeseries:
     #  Getters
     # ----------------------------------------------------------------------
     def read_cfconform_data(
-        self,
-        dtstart: dt.datetime,
-        dtend: dt.datetime,
-        metadata=None,
-        calc_pt=False,
-        verbose=False,
-        use_dask=False,
+            self,
+            dtstart: dt.datetime,
+            dtend: dt.datetime,
+            metadata=None,
+            calc_pt=False,
+            verbose=False,
+            use_dask=False,
     ):
         """
         Read timeseries data that is already conform with this class, i.e. get_list_of_filenames can find the data
@@ -695,14 +725,14 @@ class Timeseries:
         self.data = data
 
     def read_non_conform_ncdata(
-        self,
-        filenames: Union[str, list, PosixPath, os.PathLike],
-        concat_dim: str,
-        meta_table: pd.DataFrame,
-        translator=None,
-        metadata=None,
-        old_attrs=None,
-        verbose=False,
+            self,
+            filenames: Union[str, list, PosixPath, os.PathLike],
+            concat_dim: str,
+            meta_table: pd.DataFrame,
+            translator=None,
+            metadata=None,
+            old_attrs=None,
+            verbose=False,
     ):
         """
         Reads netcdf data that are not conform with this class and puts everything into a dataset
@@ -744,8 +774,8 @@ class Timeseries:
             metadata["station_elevation"] = meta_table.iloc[idx].elev
 
             cf_table = (
-                os.path.split(os.path.realpath(__file__))[0]
-                + "/resources/cf_table_timeseries_fields.yaml"
+                    os.path.split(os.path.realpath(__file__))[0]
+                    + "/resources/cf_table_timeseries_fields.yaml"
             )
             data = assign_cf_attributes_tslist(
                 data, metadata, cf_table, old_attrs, verbose
@@ -765,7 +795,7 @@ class Timeseries:
     #  Writers
     # ----------------------------------------------------------------------
     def write_cfconform_data(
-        self, overwrite=False, concat_dim="station_name", verbose=False
+            self, overwrite=False, concat_dim="station_name", verbose=False
     ):
         """
         Write data to
@@ -809,7 +839,7 @@ class Timeseries:
     # ----------------------------------------------------------------------
 
     def plot_Availability(
-        self, var: str, station_name: str, year: str, zz: float, savename
+            self, var: str, station_name: str, year: str, zz: float, savename
     ):
 
         """
@@ -852,7 +882,7 @@ class Timeseries:
                 tmp_dtvec = tmp_dtvec[mask]
                 if len(tmp_dtvec) > 0:
                     Avail[mon - 1, day - 1] = (
-                        1 - sum(np.isnan(tmp_data)) / len(tmp_data)
-                    ) * 100.0
+                                                      1 - sum(np.isnan(tmp_data)) / len(tmp_data)
+                                              ) * 100.0
 
         Availability(Avail, zz, var, year, savename)

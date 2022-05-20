@@ -5,6 +5,7 @@ import hvplot.pandas
 
 try:
     import cartopy.crs as crs
+
     enable_maps = True
 except ModuleNotFoundError:
     enable_maps = False
@@ -31,7 +32,7 @@ def create_hv_plot(infos: dict, data=None, map_data=None):
     title = infos.get("title", "")
 
     if plottype == "Timeseries":
-        stats = Statistics(data)
+        stats = Statistics(data, **infos)
 
         size = 5
 
@@ -47,27 +48,43 @@ def create_hv_plot(infos: dict, data=None, map_data=None):
                             size=size,
                             xlabel=xlabel,
                             ylabel=ylabel,
+                            title=title,
                         )
                     )
                 else:
                     figure = (
                         data[item]
                             .dropna()
-                            .hvplot(xlim=tlim, ylim=ylim, xlabel=xlabel, ylabel=ylabel)
+                            .hvplot(xlim=tlim, ylim=ylim, xlabel=xlabel, ylabel=ylabel, title=title)
                     )
             else:
                 if var == "DIR":
                     figure = figure * data[item].dropna().hvplot.scatter(
-                        xlim=tlim, ylim=ylim, size=size, xlabel=xlabel, ylabel=ylabel
+                        xlim=tlim, ylim=ylim, size=size, xlabel=xlabel, ylabel=ylabel, title=title
                     )
                 else:
                     figure = figure * data[item].dropna().hvplot(
-                        xlim=tlim, ylim=ylim, xlabel=xlabel, ylabel=ylabel
+                        xlim=tlim, ylim=ylim, xlabel=xlabel, ylabel=ylabel, title=title
                     )
 
         if len(data.columns) > 1:
             figure.opts(legend_position="bottom_right")
 
+        figure = pn.Column(figure, stats)
+
+    elif plottype == 'Histogram':
+        stats = Statistics(data, **infos)
+
+        size = 5
+        # width = 400
+        # height = 600
+
+        figure = data.hvplot.hist(
+            size=size,
+            xlabel=xlabel,
+            ylabel=ylabel,
+            title=title,
+        )
         figure = pn.Column(figure, stats)
 
     elif plottype == "Profiles":
@@ -90,6 +107,7 @@ def create_hv_plot(infos: dict, data=None, map_data=None):
                         width=width,
                         height=height,
                         label=item.columns[1],
+                        title=title,
                     )
                 else:
                     figure = item.hvplot(
@@ -103,6 +121,7 @@ def create_hv_plot(infos: dict, data=None, map_data=None):
                         width=width,
                         height=height,
                         label=item.columns[1],
+                        title=title,
                     )
             else:
                 if var == "DIR":
@@ -117,6 +136,7 @@ def create_hv_plot(infos: dict, data=None, map_data=None):
                         width=width,
                         height=height,
                         label=item.columns[1],
+                        title=title,
                     )
                 else:
                     figure = figure * item.hvplot(
@@ -130,6 +150,7 @@ def create_hv_plot(infos: dict, data=None, map_data=None):
                         width=width,
                         height=height,
                         label=item.columns[1],
+                        title=title,
                     )
 
         if len(data) > 1:
@@ -141,7 +162,7 @@ def create_hv_plot(infos: dict, data=None, map_data=None):
         mods = infos["Expvec"]
         obs = infos["Obsvec"][0]
 
-        stats = Statistics(data)
+        stats = Statistics(data, **infos)
 
         # For the plot.
         size = 5
@@ -160,6 +181,7 @@ def create_hv_plot(infos: dict, data=None, map_data=None):
                 label=mod,
                 xlabel=xlabel,
                 ylabel=ylabel,
+                title=title,
             )
 
         figure.opts(legend_position="bottom_right")
@@ -231,9 +253,8 @@ def Map_hvplots(map_data, **infos):
     stand_lon = map_data.projection.stand_lon
     moad_cen_lat = map_data.projection.moad_cen_lat
 
-    mycrs = crs.LambertConformal(
-        central_longitude=stand_lon, central_latitude=moad_cen_lat
-    )  # Not 100% sure
+    # Not 100% sure
+    mycrs = crs.LambertConformal(central_longitude=stand_lon, central_latitude=moad_cen_lat)
 
     figure = map_data.hvplot.contourf(
         x="XLONG",
@@ -253,8 +274,6 @@ def Map_hvplots(map_data, **infos):
     )
 
     if points_to_mark is not None and "lat" in points_to_mark:
-        figure = figure * points_to_mark.hvplot.points(
-            x="lon", y="lat", projection=mycrs, frame_width=400
-        )
+        figure = figure * points_to_mark.hvplot.points(x="lon", y="lat", projection=mycrs, frame_width=400)
 
     return figure

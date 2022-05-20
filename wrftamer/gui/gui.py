@@ -21,18 +21,15 @@ class GUI:
             self.project.view(),
             self.experiment.view(),
             self.wp.view(),
-            self.about.view(),
+            self.about.view()
         )
 
         return all_tabs
 
 
 a = GUI()
-a.view().servable("wrftamer")
+a.view().servable("WRFtamer")
 
-# TODO: what happens if no observations exists? What are the levels then?
-# TODO: add windroses
-# TODO: add histogramm plots.
-# TODO: add etalevel program
-# TODO: add domänenübersicht.
-# TODO: most likely, I need to improve the docs on Preparing obs.
+# TODO (for Next Version):
+# - add etalevel program
+# - add domänenübersicht.

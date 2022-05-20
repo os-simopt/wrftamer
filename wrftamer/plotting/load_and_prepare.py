@@ -16,6 +16,9 @@ def load_obs_data(obs_data: dict, obs: str, dataset: str, **kwargs):
 
     from wrftamer.wrfplotter_classes import Timeseries
 
+    if obs == '' or dataset is None:
+        return
+
     try:
         dtstart, dtend = kwargs["obs_load_from_to"]
     except KeyError:
@@ -89,6 +92,9 @@ def load_mod_data(mod_data: dict, exp_name: str, verbose=False, **kwargs):
 def load_all_obs_data(dataset, **kwargs):
     from wrftamer.wrfplotter_classes import Timeseries
 
+    if dataset is None:
+        return
+
     try:
         dtstart, dtend = kwargs["obs_load_from_to"]
     except KeyError:
@@ -156,9 +162,7 @@ def load_all_mod_data(**kwargs):
 ########################################################################################################################
 #                                                Data Preparation
 ########################################################################################################################
-def get_limits_and_labels(
-    plottype: str, var: str, data=None, map_data=None, units=None, description=None
-):
+def get_limits_and_labels(plottype: str, var: str, data=None, map_data=None, units=None, description=None):
     infos = dict()
     infos["plottype"] = plottype
     infos["var"] = var
@@ -186,6 +190,22 @@ def get_limits_and_labels(
 
         infos["xlabel"] = "time (UTC)"
         infos["ylabel"] = f"{description} ({units})"
+        infos["title"] = ""
+        infos["font_size"] = 15
+
+    elif plottype == 'Histogram':
+        infos["xlabel"] = f"{description} ({units})"
+        infos["ylabel"] = f"Count"
+        infos["title"] = ""
+        infos["font_size"] = 15
+
+    elif plottype == 'Windrose':
+
+        wsp_data, dir_data = data
+        infos["wspmax"] = np.ceil(wsp_data.max().max())
+
+        infos["xlabel"] = ""
+        infos["ylabel"] = ""
         infos["title"] = ""
         infos["font_size"] = 15
 
@@ -247,16 +267,7 @@ def get_limits_and_labels(
     return infos
 
 
-# TODO: these preperation data routines have some hardcoded stuff and is strongly dependent the FINO station.
-#  Need to make variable selection dynamic; need to define variable name convention
-#  Need to improve these readers.
-#  Also, is it really nessecary to load everything into these dicts?
-#  The prep routines should be able to extract data on demand just as easily.
-
-
-def prep_profile_data(
-    obs_data, mod_data, infos: dict, verbose=False
-) -> (list, str, str):
+def prep_profile_data(obs_data, mod_data, infos: dict, verbose=False) -> (list, str, str):
     """
     Takes the data coming from my classes, selects the right data and puts everyting in a list.
     In this proj_name, I cannot concat everything into a single dataframe, because the the Z-vectors are different.
@@ -264,8 +275,6 @@ def prep_profile_data(
     obs_data: dict of observations
     mod_data: dict of model data
     """
-
-    # TODO: Needs some cleanup. See TODO for timeseries.
 
     anemometer = infos["anemometer"]
     var = infos["var"]
@@ -295,10 +304,10 @@ def prep_profile_data(
             if var in key and "std" not in key:
                 if device == "":
                     if (
-                        "CUP" not in key
-                        and "USA" not in key
-                        and "VANE" not in key
-                        and key.startswith(var + "_")
+                            "CUP" not in key
+                            and "USA" not in key
+                            and "VANE" not in key
+                            and key.startswith(var + "_")
                     ):
                         zvec.append(float(key.split("_")[1]))
                         data.append(myobs[key].values[0])
@@ -355,9 +364,7 @@ def prep_zt_data(mod_data, infos: dict) -> xr.Dataset:
     return data2plot[var]
 
 
-def prep_ts_data(
-    obs_data, mod_data, infos: dict, verbose=False
-) -> (pd.DataFrame, str, str):
+def prep_ts_data(obs_data, mod_data, infos: dict, verbose=False) -> (pd.DataFrame, str, str):
     """
     Takes the data coming from my classes, selects the right data and concats
     everything into a single dataframe for easy plotting with hvplot.
@@ -372,16 +379,10 @@ def prep_ts_data(
     anemometer: device used for observation
     """
 
-    # TODO:
-    #  Need some cleanup with regards to description, units and what happens if I have only obs or only mods.
-    #  Collect all units, and check if they are consistent; write a description which equals the one from dataset
-    #  if no additional data is here, otherwise something like "var???"
-
     anemometer = infos["anemometer"]
     loc = infos["loc"]
     expvec = infos["Expvec"]
     obsvec = infos["Obsvec"]
-
     var = infos["var"]
     lev = infos["lev"]
 
@@ -400,27 +401,24 @@ def prep_ts_data(
     else:
         device = ""
 
+    if var == 'PRES':
+        description = "air pressure"
+        var = f'P_{lev}'
+    else:
+        description = var
+
     all_df = []
 
     for obs in obsvec:
-        myobs = obs_data[obs].to_dataframe()
         try:
-            if obs in [
-                "FINO1",
-                "Testset",
-            ]:  # TODO: this is rather specific! Must find a way to generalize!
-                if var == "PRES":
-                    tmp = myobs[f"P_{lev}"]
-                    # will be overwritten if mod data exists
-                    units = obs_data[obs][f"P_{lev}"].units
-                    description = "air pressure"
-                else:
-                    tmp = myobs[f"{var}{device}_{lev}"]
-                    # will be overwritten if mod data exists
-                    units = obs_data[obs][f"{var}{device}_{lev}"].units
-                    description = var
-            else:  # AV01-12
-                tmp = myobs[var]  # WSP, DIR, POW, GEN_SPD
+            myobs = obs_data[obs].to_dataframe()
+
+            try:  # Two different naming conventions exist right now. In the future, reduces to one.
+                tmp = myobs[var]
+                units = obs_data[obs][var].units
+            except KeyError:
+                tmp = myobs[f"{var}{device}_{lev}"]
+                units = obs_data[obs][f"{var}{device}_{lev}"].units
 
             tmp = tmp.rename(obs)
 
@@ -437,14 +435,12 @@ def prep_ts_data(
 
     for exp in expvec:
         try:
+
             mymod = mod_data[exp][loc]
-
-            # interpolate data to desired level
-            #  TODO: this may fail for DIR- write a proper function somewhere and call!
-
             units = mymod[var].units
             description = mymod[var].standard_name
 
+            # interpolate all data to desired level
             zvec = mymod.ALT[0, :].values
             idx = (np.abs(zvec - float(lev))).argmin()
             xa1 = mymod.isel(model_level=idx)
@@ -452,6 +448,12 @@ def prep_ts_data(
             w1 = abs(zvec[idx] - float(lev)) / abs(zvec[idx + 1] - zvec[idx])
             w2 = abs(zvec[idx + 1] - float(lev)) / abs(zvec[idx + 1] - zvec[idx])
             mymod = xa1 * w2 + xa2 * w1
+
+            if 'DIR' in mymod and 'U' in mymod and 'V' in mymod:
+                dd = 180.0 / np.pi * np.arctan2(-mymod['U'].values, -mymod['V'].values)
+                dd = np.mod(dd, 360)
+                mymod['DIR'].values = dd
+
             mymod = mymod.to_dataframe()
 
             tmp = mymod[var]
@@ -473,13 +475,57 @@ def prep_ts_data(
         )
         data2plot = data2plot.set_index("time")
 
-    data2plot.variable = var
-    data2plot.level = lev
-    data2plot.anemometer = anemometer
-
-    data2plot.proj_name = infos["proj_name"]
-    data2plot.location = loc
-    data2plot.Expvec = expvec
-    data2plot.Obsvec = obsvec
-
     return data2plot, units, description
+
+
+def prep_windrose_data(obs_data, mod_data, infos: dict, verbose=False) -> ((pd.DataFrame, pd.DataFrame), str, str):
+    """
+    Takes the data coming from my classes, selects the right data and concats
+    everything into a single dataframe for easy plotting with hvplot.
+
+    obs_data: dict of observations
+    mod_data: dict of model data
+    expvec: list of experiments to plot
+    obsvec: list of observations to plot
+    loc: location of the time series
+    var: variable to plot
+    lev: level at which the varialbe is valid
+    anemometer: device used for observation
+    """
+
+    infos2 = infos.copy()
+    infos2['var'] = 'DIR'
+
+    anemometer = infos["anemometer"]
+    if anemometer == 'Sonic':
+        device2 = '_USA'
+    else:
+        device2 = '_VANE'
+
+    obsvec = infos["Obsvec"]
+    obs = obsvec[0]
+    lev = infos["lev"]  # this is for WSP
+
+    if len(obs_data) > 0:
+        # get lev2, which is the closest level to WSP.
+        possible_levs2 = []
+        varnames = list(obs_data[obs].variables)
+        for var in varnames:
+            if var.startswith(f'DIR{device2}'):
+                possible_levs2.append(int(var.split('_')[-1]))
+
+        try:  # Capture fail if varname is not of the form DIR_{device}_{level}
+            idx = np.argmin(abs(np.asarray(possible_levs2) - int(lev)))
+            lev2 = str(possible_levs2[idx])
+        except ValueError:
+            lev2 = lev
+
+        infos2['lev'] = lev2
+
+    wsp_data, disc, disc = prep_ts_data(obs_data, mod_data, infos, verbose=verbose)
+    dir_data, disc, disc = prep_ts_data(obs_data, mod_data, infos2, verbose=verbose)
+
+    units = 'm s-1, degree'
+    description = 'wind speed and wind direction'
+
+    return (wsp_data, dir_data), units, description

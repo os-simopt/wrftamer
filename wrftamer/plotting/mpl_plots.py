@@ -4,6 +4,7 @@ import matplotlib as mpl
 from matplotlib.dates import DateFormatter
 from windrose import WindroseAxes
 import xarray as xr
+import panel as pn
 
 try:
     # Taken from mpl_plots
@@ -40,6 +41,19 @@ def create_mpl_plot(data, infos: dict):
 
     elif plottype == "Timeseries":
         figure = TimeSeries(data, col=cols, sty=stys, **infos)
+
+    elif plottype == 'Histogram':
+        figure = Histogram(data, **infos)
+
+    elif plottype == 'Windrose':
+        wsp_data, dir_data = data
+        figs = Windrose(wsp_data, dir_data, **infos)
+        if len(figs) == 2:
+            figure = pn.Row(figs[0], figs[1])
+        elif len(figs) == 1:
+            figure = figs[0]
+        else:
+            figure = None
 
     elif plottype == "zt-Plot":
         figure = zt(data, **infos)
@@ -114,7 +128,7 @@ def CrossSection(dat_CS, xmat_CS, zmat_CS, xvec_CS, hgt_CS, PT_CS, hgt_ivg_CS, u
 """
 
 
-# -----------------------------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 def Profile(data: list, col=None, sty=None, **kwargs):
     """
     # Update 4.3.2022
@@ -161,7 +175,7 @@ def Profile(data: list, col=None, sty=None, **kwargs):
     return figure
 
 
-# -----------------------------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 def TimeSeries(data, col=None, sty=None, label=None, **kwargs):
     """
     This function plots multiple time series in a single plots.
@@ -198,7 +212,7 @@ def TimeSeries(data, col=None, sty=None, label=None, **kwargs):
 
     factor = 0.75
     figure, ax = plt.subplots(
-        1, 1, figsize=(5.5 * factor, 4.5 * factor), facecolor="w", edgecolor="k"
+        1, 1, figsize=(10.1 * factor, 4.5 * factor), facecolor="w", edgecolor="k"
     )
 
     list_of_keys = list(data.keys())
@@ -232,7 +246,7 @@ def TimeSeries(data, col=None, sty=None, label=None, **kwargs):
     return figure
 
 
-# -----------------------------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 def zt(data, **kwargs):
     font_size = kwargs.get("font_size", 10)
     clim = kwargs.get("clim", (0, 1))
@@ -269,45 +283,65 @@ def zt(data, **kwargs):
     return figure
 
 
-"""
-def Windrose(dirvec: np.ndarray, wspvec: np.ndarray, wspmax=10.0, savename=None, title=None) -> None:
-    '''
-    Create a windrose plot. NaN are removed if present. cmap: Hot
-    Args:
-        dirvec: vector of wind dir data
-        wspvec: vector of wind speed data
-        wspmax: greatest displayed wsp bin
-        savename: name of the file for storage. If None: just display plot.
-        title: title of the plot
+# ----------------------------------------------------------------------------------------------------------------------
+def Windrose(wsp_data, dir_data, wspmax=None, **kwargs):
+    list_of_figs = []
 
-    Returns: None
+    font_size = kwargs.get("font_size", 10)
 
-    DLeuk, 09.02.2021
+    mpl.rcParams.update({"font.size": font_size})
 
-    '''
+    for idx in range(0, wsp_data.ndim):
 
-    # remove nans from the data, for this is problematic
-    mask = np.isnan(dirvec) | np.isnan(wspvec)
-    dirvec = dirvec[~mask]
-    wspvec = wspvec[~mask]
+        tmp_ax = WindroseAxes.from_ax()
 
-    num = np.ceil(wspmax / 10.0)
-    bins = np.arange(0, wspmax + num, num)
+        wspvec = wsp_data[wsp_data.columns[idx]].values
+        dirvec = dir_data[wsp_data.columns[idx]].values
 
-    ax = WindroseAxes.from_ax()
+        # remove nans from the data, for this is problematic
+        mask = np.isnan(dirvec) | np.isnan(wspvec)
+        dirvec = dirvec[~mask]
+        wspvec = wspvec[~mask]
 
-    ax.contourf(dirvec, wspvec, bins=bins, cmap=mpl.cm.hot, normed=True, nsector=32)
-    ax.contour(dirvec, wspvec, bins=bins, colors="black", normed=True, nsector=32)
-    ax.set_xticklabels(["E", "NE", "N", "NW", "W", "SW", "S", "SE"])
-    ax.set_legend()
+        if wspmax is None:
+            wspmax = max(wspvec)
 
-    if isinstance(title, str):
-        plt.title(title)
+        num = np.ceil(wspmax / 10.0)
+        bins = np.arange(0, wspmax + num, num)
 
-    if isinstance(savename, str):
-        plt.savefig(savename, bbox_inches="tight", dpi=400)
-        plt.close()
-"""
+        tmp_ax.contourf(dirvec, wspvec, bins=bins, cmap=mpl.cm.hot, normed=True, nsector=32)
+        tmp_ax.contour(dirvec, wspvec, bins=bins, colors="black", normed=True, nsector=32)
+        tmp_ax.set_xticklabels(["E", "NE", "N", "NW", "W", "SW", "S", "SE"])
+
+        if idx == 0:
+            tmp_ax.set_legend()
+
+        fig = tmp_ax.figure
+        fig.set_size_inches((6, 6))
+        fig.set_dpi(400)
+        list_of_figs.append(fig)
+
+    return list_of_figs
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+def Histogram(data, **kwargs):
+    font_size = kwargs.get("font_size", 10)
+    xlabel = kwargs.get("xlabel", "")
+    ylabel = kwargs.get("ylabel", "")
+
+    mpl.rcParams.update({"font.size": font_size})
+
+    factor = 0.75
+    figure, ax = plt.subplots(1, 1, figsize=(10.1 * factor, 4.5 * factor), facecolor="w", edgecolor="k")
+
+    plt.hist(data, stacked=True, bins=30)
+    plt.legend(data.columns)
+
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+
+    return figure
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -320,7 +354,7 @@ def Obs_vs_Mod(data, sty=None, col=None, label=None, **kwargs):
 
     mpl.rcParams.update({"font.size": font_size})
 
-    factor = 0.75
+    factor = 1.25
     figure, ax = plt.subplots(
         1, 1, figsize=(5.5 * factor, 5.5 * factor), facecolor="w", edgecolor="k"
     )
@@ -385,9 +419,7 @@ def Map_Cartopy(data: xr.DataArray, hgt=None, ivg=None, pcmesh=False, **kwargs):
 
     mpl.rcParams.update({"font.size": font_size})
 
-    fig = plt.figure(
-        num=None, figsize=(5.5 * factor, 4.5 * factor), facecolor="w", edgecolor="k"
-    )
+    fig = plt.figure(num=None, figsize=(5.5 * factor, 4.5 * factor), facecolor="w", edgecolor="k")
 
     cart_proj = get_cartopy(hgt)
     ax = plt.axes(projection=cart_proj)
@@ -422,9 +454,7 @@ def Map_Cartopy(data: xr.DataArray, hgt=None, ivg=None, pcmesh=False, **kwargs):
 
     # Colorbar
     plt.clim(clim)
-    plt.colorbar(
-        cs, ax=ax, orientation="vertical", pad=0.02, ticks=myticks, shrink=0.83
-    )
+    plt.colorbar(cs, ax=ax, orientation="vertical", pad=0.02, ticks=myticks, shrink=0.83)
 
     # Topography overlay.
     if hgt is not None:
@@ -451,7 +481,7 @@ def Map_Cartopy(data: xr.DataArray, hgt=None, ivg=None, pcmesh=False, **kwargs):
         )
 
     # Marking the position of points of interest
-    if points_to_mark is not None:  # TODO: This needs some cleanup
+    if points_to_mark is not None:
         for index in points_to_mark.index:
             plt.plot(
                 points_to_mark.lon[index],
@@ -486,9 +516,7 @@ def Map_Cartopy(data: xr.DataArray, hgt=None, ivg=None, pcmesh=False, **kwargs):
 
 
 # ----------------------------------------------------------------------------------------------------------------------
-def Availability(
-        Avail: np.ndarray, zz: float, var: str, year: str, savename=None
-) -> None:
+def Availability(Avail: np.ndarray, zz: float, var: str, year: str, savename=None) -> None:
     """
     Plot data availability
     Args:

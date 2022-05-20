@@ -25,7 +25,7 @@ conda install -c os-simopt wrftamer
 The Cartopy package is required to display maps of your data. If you want to use these features, you need to install this package manually.
 
 **Info:** The pip installer for cartopy does not work (as of 26.04.2022).
-It is required to install cartopy using conda or mamba before wrftamer can be installed.
+It is required to install cartopy and geoviews>=1.9.5 using conda or mamba before the map tools can be used.
 
 
 

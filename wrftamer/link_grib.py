@@ -8,7 +8,7 @@ from pathlib import Path, PosixPath
 
 doc = """
 A simple replacement for link_grib.sh. Links all grib files in the driving_data
- directory to the exp_path/wrf/ directory
+ directory to the exp_tab/wrf/ directory
 """
 
 

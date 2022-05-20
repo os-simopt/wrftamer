@@ -1,12 +1,11 @@
 import os
 import re
 import panel as pn
-
 from wrftamer.main import project, list_unassociated_exp
-from wrftamer.gui.gui_base import gui_base
+from wrftamer.gui.gui_base import path_base
 
 
-class exp_tab(gui_base):
+class exp_tab(path_base):
     """
     Manual tests of gui sucessful (WRFTamer Version 1.1)
     """
@@ -20,6 +19,7 @@ class exp_tab(gui_base):
 
         self.list_of_experiments = list_unassociated_exp(verbose=False)
 
+        self.mc_proj = mc_proj
         self.mc_exp = pn.widgets.MultiChoice(
             name="Choose Experiment",
             value=[""],
@@ -29,46 +29,31 @@ class exp_tab(gui_base):
 
         self.exp_name_box = pn.widgets.TextInput(name="New Experiment Name", value="")
 
-        self.b_create = pn.widgets.Button(
-            name="Create Experiment", button_type="success"
-        )
-        self.b_rename = pn.widgets.Button(
-            name="Rename Experiment", button_type="warning"
-        )
-        self.b_delete = pn.widgets.Button(
-            name="Remove Experiment", button_type="danger"
-        )
+        self.b_create = pn.widgets.Button(name="Create Experiment", button_type="success")
+        self.b_rename = pn.widgets.Button(name="Rename Experiment", button_type="warning")
+        self.b_delete = pn.widgets.Button(name="Remove Experiment", button_type="danger")
         self.b_copy = pn.widgets.Button(name="Copy Experiment", button_type="primary")
         self.b_post = pn.widgets.Button(name="Postprocessing", button_type="primary")
-        self.b_archive = pn.widgets.Button(
-            name="Archive Experiment", button_type="primary"
-        )
+        self.b_archive = pn.widgets.Button(name="Archive Experiment", button_type="primary")
 
         self.del_warn = pn.widgets.StaticText(
             name="Warning",
             value="This will delete all data of this experiment. Click again to "
-            "proceed.",
+                  "proceed.",
             background="#ffcc00",
         )
         self.del_warn.visible = False
 
-        self.msg_procesing = pn.widgets.StaticText(
-            name="Processing", value="Please wait for a moment.", background="#ffcc00"
-        )
+        self.msg_procesing = pn.widgets.StaticText(name="Processing", value="Please wait for a moment.",
+                                                   background="#ffcc00")
         self.msg_procesing.visible = False
 
-        self.b_cancel = pn.widgets.Button(
-            name="Cancel", button_type="warning", visible=False
-        )
+        self.b_cancel = pn.widgets.Button(name="Cancel", button_type="warning", visible=False)
 
         ################################################################################################
         # mainpage
-        self.header = pn.widgets.StaticText(
-            value="Select Configure File", background="#ffffff"
-        )
-        self.file_input = pn.widgets.FileInput(
-            name="Select Configure File", accept=".yaml", multiple=False
-        )
+        self.header = pn.widgets.StaticText(value="Select Configure File", background="#ffffff")
+        self.file_input = pn.widgets.FileInput(name="Select Configure File", accept=".yaml", multiple=False)
 
         self.comment_box = pn.widgets.TextInput(
             name="Comment",
@@ -93,12 +78,7 @@ class exp_tab(gui_base):
 
         # noinspection PyUnusedLocal
         def create_exp(event):
-
-            try:
-                proj_name = mc_proj.value[0]
-            except IndexError:
-                proj_name = None
-
+            proj_name = self.mc_proj.value
             exp_name = self.exp_name_box.value
 
             old_options = self.mc_exp.options.copy()
@@ -154,12 +134,7 @@ class exp_tab(gui_base):
 
         # noinspection PyUnusedLocal
         def rename_exp(event):
-
-            try:
-                proj_name = mc_proj.value[0]
-            except IndexError:
-                proj_name = None
-
+            proj_name = self.mc_proj.value
             choice = self.mc_exp.value
             new_name = self.exp_name_box.value
 
@@ -193,11 +168,7 @@ class exp_tab(gui_base):
         # noinspection PyUnusedLocal
         def remove_exp(event):
 
-            try:
-                proj_name = mc_proj.value[0]
-            except IndexError:
-                proj_name = None
-
+            proj_name = self.mc_proj.value
             choice = self.mc_exp.value
 
             if len(choice) == 1:
@@ -233,11 +204,7 @@ class exp_tab(gui_base):
         # noinspection PyUnusedLocal
         def copy_exp(event):
 
-            try:
-                proj_name = mc_proj.value[0]
-            except IndexError:
-                proj_name = None
-
+            proj_name = self.mc_proj.value
             choice = self.mc_exp.value
             if len(choice) == 1:
                 old_options = self.mc_exp.options.copy()
@@ -275,12 +242,7 @@ class exp_tab(gui_base):
 
         # noinspection PyUnusedLocal
         def postprocess_exp(event):
-
-            try:
-                proj_name = mc_proj.value[0]
-            except IndexError:
-                proj_name = None
-
+            proj_name = self.mc_proj.value
             choices = self.mc_exp.value
             if len(choices) > 0:
                 ########################################
@@ -302,11 +264,7 @@ class exp_tab(gui_base):
         def archive_exp(event):
 
             keep_log = True  # I may want to add a switch later on?
-
-            try:
-                proj_name = mc_proj.value[0]
-            except IndexError:
-                proj_name = None
+            proj_name = self.mc_proj.value
 
             choices = self.mc_exp.value
             if len(choices) > 0:
@@ -341,18 +299,11 @@ class exp_tab(gui_base):
             self.exp_name_box.value = self.file_input.filename.split(".")[0]
             # By default, use the filename as the experiment name. The user may change this manually
 
-        @pn.depends(mc_proj.param.value, watch=True)
-        def _update_exp_list(selection):
-            if len(selection) == 1:
-                proj_name = selection[0]
-                proj = project(proj_name)
-
-                new_options = proj.list_exp(verbose=False)
-
-                self.mc_exp.options = new_options
-
-            else:
-                self.mc_exp.options = list_unassociated_exp(verbose=False)
+        @pn.depends(self.mc_proj.param.value, watch=True)
+        def _update_exp_list(proj_name):
+            proj = project(proj_name)
+            new_options = proj.list_exp(verbose=False)
+            self.mc_exp.options = new_options
 
         self.b_create.on_click(create_exp)
         self.b_rename.on_click(rename_exp)
@@ -381,7 +332,6 @@ class exp_tab(gui_base):
             name="Experiment",
         )
         main = pn.Column(self.header, self.file_input, self.comment_box, self.textfield)
-
         exp_row = pn.Row(menu, main, name="Experiment")
 
         return exp_row

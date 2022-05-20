@@ -88,21 +88,55 @@ as default default directories are defined or variables are not used if they are
 | WRFTAMER_make_submit  | False                  |
 | OBSERVATIONS_PATH     | N/A                    |
 | WRFTAMER_DEFAULT_POI_FILE | N/A                |
+| WRFTAMER_DEFAULT_LEVS_PER_VAR_FILE | N/A                |
 
-- The envirnomental variable OBSERVATIONS_PATH must point to the  directory with the observations you want to display
-with WRFplotter. See [WRFplotter](wrfplotter.md#preparing-your-observations).
+### OBSERVATIONS_PATH
 
-- WRFTAMER_DEFAULT_POI_FILE is used to add points of interest to your map plots It must point to a csv file with the 
-  following structure:
+must be set abd point to the directory with the observations you want to display with WRFplotter. See
+[WRFplotter](wrfplotter.md#preparing-your-observations).
+
+### WRFTAMER_DEFAULT_POI_FILE
+should point to a csv-file, containing locations you want to indicate in your map plots. The following structure is 
+expected:
   
 ```text
-Name;lat;lon
-Station1; 54.015; 8.545
-Station2; 53.154; 9.123
+Name,lat,lon
+Station1, 54.015, 8.545
+Station2, 53.154, 9.123
 ...
 ```
 
 It will be used by map plots of WRFplotter. If this variable is not set, no points will be plotted.
+
+### WRFTAMER_DEFAULT_LEVS_PER_VAR_FILE
+should point to a yaml-file. It is used to tell wrfplotter at which levels the observations can be found. Typically,
+these vary for different parameters, for which reason this information must be provided by the used. 
+
+The expected structure of the yaml-file (used as default):
+  
+```yaml
+timeseries-like:
+    WSP_Analog: ["41", "51", "61", "71", "81", "91", "102"]
+    DIR_Analog: ["34", "51", "71", "91"]
+    WSP_Sonic: ["42", "62", "82"]
+    DIR_Sonic: ["42", "62", "82"]
+    PT: ["34", "42", "52", "72", "101"]
+    T: ["34", "42", "52", "72", "101"]
+    PRES": ["21", "92"]
+map-like:
+    WSP: ["5"]
+    DIR: ["5"]
+    PT: ["5"]
+    PRES: ["5"]
+    PSFC: ["0"]
+    U: ["5"]
+    V: ["5"]
+    W: ["5"]
+    HFX: ["0"]
+    GRDFLX: ["0"]
+    LH: ["0"]
+    HGT: ["0"]
+```
 
 ### Setting environmental variables with conda
 
@@ -118,6 +152,7 @@ set env WRFTAMER_ARCHIVE_PATH <your/desired/path/>
 set env WRFTAMER_make_submit <False or True>
 set env OBSERVATIONS_PATH <your/desired/path/>
 set env WRFTAMER_DEFAULT_POI_FILE </absolute/path/to/poi_file.csv>
+set env WRFTAMER_DEFAULT_LEVS_PER_VAR_FILE </absolute/path/to/levs_per_var_file.yaml>
 ```
 
 In the file
@@ -130,6 +165,7 @@ unset env WRFTAMER_ARCHIVE_PATH
 unset env WRFTAMER_make_submit
 unset env OBSERVATIONS_PATH
 unset env WRFTAMER_DEFAULT_POI_FILE
+unset env WRFTAMER_DEFAULT_LEVS_PER_VAR_FILE
 ```
 
 This way, these variables are set each time you load your conda environment and are unset on deactivation.

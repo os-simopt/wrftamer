@@ -50,7 +50,8 @@ def _StatCalc_dir(obs, mod):
 
 
 ##########################################################################
-def Statistics(input_dataframe: pd.DataFrame) -> pd.DataFrame:
+def Statistics(input_dataframe: pd.DataFrame, proj_name: str, loc: str, var: str, lev: str,
+               anemometer: str, Expvec: list, Obsvec: list, **kwargs) -> pd.DataFrame:
     """
     The new Statistics Function. It takes the same data as the obs_vs_mod plot
     and calculates statistics. Attention! Assumes that the first column is the OBS!
@@ -62,18 +63,12 @@ def Statistics(input_dataframe: pd.DataFrame) -> pd.DataFrame:
     DLeuk, 30.09.2021
     """
 
-    # Metadata bound to dataframe.
-    proj_name = input_dataframe.proj_name
-    loc = input_dataframe.location
-    var = input_dataframe.variable
-    lev = input_dataframe.level
-    Obs_device = input_dataframe.anemometer
-    Expvec = input_dataframe.Expvec
-    Obsvec = input_dataframe.Obsvec
-
     # Calculation
     obsname = Obsvec[0]
     modnames = Expvec
+
+    if obsname == '':
+        return
 
     Stats = np.zeros([6, len(modnames)])
 
@@ -89,7 +84,7 @@ def Statistics(input_dataframe: pd.DataFrame) -> pd.DataFrame:
     d = {
         "Mod": Expvec,
         "Obs": [loc for x in range(len(modnames))],
-        "Device": [Obs_device for x in range(len(modnames))],
+        "Device": [anemometer for x in range(len(modnames))],
         "Variable": [var for x in range(len(modnames))],
         "zlev": lev,
         "BIAS": Stats[0, :],
@@ -104,7 +99,7 @@ def Statistics(input_dataframe: pd.DataFrame) -> pd.DataFrame:
 
     # Here is metadata that typically does not vary.
     Stats.case = proj_name
-    Stats.device = Obs_device
+    Stats.device = anemometer
 
     return Stats
 

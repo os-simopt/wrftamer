@@ -3,7 +3,9 @@ import panel.widgets as pnw
 import datetime as dt
 import pandas as pd
 from pathlib import Path
-from wrftamer.gui.gui_base import gui_base
+from io import StringIO
+
+from wrftamer.gui.gui_base import path_base
 from wrftamer.main import project, list_projects, list_unassociated_exp
 
 from wrftamer.gui.wrfplotter_utility import (
@@ -14,14 +16,16 @@ from wrftamer.gui.wrfplotter_utility import (
     error_message,
     error_message2,
     get_newfilename_from_old,
+    get_available_tvec,
 )
 
-from wrftamer.wrfplotter_classes import Map
+from wrftamer.wrfplotter_classes import Map, get_max_timerange
 from wrftamer.plotting.load_and_prepare import load_obs_data, load_mod_data
 from wrftamer.plotting.load_and_prepare import (
     prep_profile_data,
     prep_ts_data,
     prep_zt_data,
+    prep_windrose_data,
     get_limits_and_labels,
 )
 from wrftamer.plotting.hv_plots import create_hv_plot
@@ -45,7 +49,7 @@ def create_plot_panel(plottypes_avil):
     return panel
 
 
-class wrfplotter_tab(gui_base):
+class wrfplotter_tab(path_base):
     """
     Manual tests of gui sucessful (WRFTamer Version 1.1)
     """
@@ -65,55 +69,41 @@ class wrfplotter_tab(gui_base):
             "Map",
             "MapSequence",
         ]
-        self.dict_of_vars_per_plottype = (
-            get_vars_per_plottype()
-        )  # prefefined. Not dynamically
-        self.dict_of_levs_per_plottype_and_var = (
-            get_lev_per_plottype_and_var()
-        )  # prefefined. Not dynamically
+
+        # prefefined, not dynamically should be reasonable though
+        self.dict_of_vars_per_plottype = (get_vars_per_plottype())
+        # from env_var
+        self.dict_of_levs_per_plottype_and_var = get_lev_per_plottype_and_var(self.levs_per_var_file)
 
         # add to self?
         list_of_projects = list_projects(verbose=False)
         list_of_experiments = list_unassociated_exp(verbose=False)
-        list_of_ave_windows = ["raw", "5 min Ave", "10 min Ave", "30 min Ave"]
+        list_of_ave_windows = ["raw", "5 min Ave", "10 min Ave"]  # FUTURE: make dynamically.
+
+        proj_dict = {'': None}
+        for item in list_of_projects:
+            proj_dict[item] = item
 
         # Menu 1
-        self.mc_proj = pn.widgets.MultiChoice(
-            name="Choose Project",
-            max_items=1,
-            value=[],
-            options=list_of_projects,
-            height=75,
-        )
+        self.mc_proj = pn.widgets.Select(name="Choose Project", options=proj_dict)
         self.mc_exp = pn.widgets.MultiChoice(
             name="Choose Experiment",
             value=[""],
             options=list_of_experiments,
-            height=200,
+            height=75,
         )
-
         self.sel_dom = pn.widgets.Select(name="Domain", options=[])
         self.sel_loc = pn.widgets.Select(name="Model data at", options=[])
-        self.sel_obs = pn.widgets.Select(
-            name="Observation at", options=self.list_of_obs
-        )
+        self.sel_obs = pn.widgets.Select(name="Observation at", options=self.list_of_obs)
         self.but_dev = pn.widgets.Button(name="Sonic", button_type="default")
         self.sel_ave = pn.widgets.Select(name="Averaging", options=list_of_ave_windows)
 
-        # this is just a random default. Must pick reasonable values for each proj_name!
-        time_values = (dt.datetime(2020, 5, 1, 0, 0), dt.datetime(2020, 5, 6, 0, 0))
-        # is updated at exp_selection.
-        # question: what happens if I have multiple exps with different time limits?
-        self.time_to_plot = pn.widgets.DatetimeInput(
-            name="Datetime Input", value=time_values[0]
-        )
+        self.time_to_plot = pn.widgets.Select(name="time to plot", options=[])
+        self.time_to_plot.disabled = True
         self.chk_static = pn.widgets.Checkbox(name="Static Plots")
 
         self.but_load = pn.widgets.Button(name="Load Data", button_type="default")
-        self.progress = pn.indicators.Progress(
-            name="Progress", value=0, width=300, visible=False
-        )
-        self.progress.visible = False
+        self.progress = pn.indicators.Progress(name="Progress", value=0, width=300, visible=False)
 
         # Menu2
         self.sel_var = pn.widgets.Select(
@@ -135,14 +125,11 @@ class wrfplotter_tab(gui_base):
         )
         self.but_store_fig.disabled = True
 
-        self.alert1 = pn.pane.Alert(
-            "Time series data should be reloaded", alert_type="danger"
-        )
+        self.alert1 = pn.pane.Alert("Project, domain, device, or ave window has changed. Reloaded timeseried data.",
+                                    alert_type="danger")
         self.alert1.visible = False
 
-        self.alert2 = pn.pane.Alert(
-            "Map data may have to be reloaded", alert_type="warning"
-        )
+        self.alert2 = pn.pane.Alert("Parameters for map data have changed. Reload for map plots.", alert_type="warning")
         self.alert2.visible = False
 
         # Map Menu
@@ -150,16 +137,15 @@ class wrfplotter_tab(gui_base):
         self.but_right = pn.widgets.Button(name="\u25b6", width=50)
         self.png_pane = pn.pane.PNG(None, width=500)
 
+        # point of interest
+        self.poi = pd.read_csv(self.poi_file, index_col='Name')
+
         # Manual Settings
         title = pn.widgets.TextInput(placeholder="title")
         xlabel = pn.widgets.TextInput(placeholder="xlabel")
         ylabel = pn.widgets.TextInput(placeholder="ylabel")
-        font_size = pn.widgets.IntSlider(
-            name="Font Size", value=15, start=10, end=25, step=1
-        )
-        xlim_a = pn.widgets.RangeSlider(
-            name="xlim", start=0, end=50, value=(0, 50), step=0.01
-        )
+        font_size = pn.widgets.IntSlider(name="Font Size", value=15, start=10, end=25, step=1)
+        xlim_a = pn.widgets.RangeSlider(name="xlim", start=0, end=50, value=(0, 50), step=0.01)
         xlim_b = pn.widgets.DateRangeSlider(
             name="xlim (time)",
             start=dt.datetime(2020, 1, 1),
@@ -167,17 +153,11 @@ class wrfplotter_tab(gui_base):
             value=(dt.datetime(2020, 1, 1), dt.datetime(2021, 1, 10)),
         )
         xlim_b.visible = False
-        ylim = pn.widgets.RangeSlider(
-            name="ylim", start=0, end=50, value=(0, 50), step=0.01
-        )
-        clim = pn.widgets.RangeSlider(
-            name="clim", start=0, end=100, value=(0, 50), step=0.01
-        )
+        ylim = pn.widgets.RangeSlider(name="ylim", start=0, end=50, value=(0, 50), step=0.01)
+        clim = pn.widgets.RangeSlider(name="clim", start=0, end=100, value=(0, 50), step=0.01)
         clim.visible = False
-        default_poi = "lat; lon\n 50.45; 9.8 \n 45.1,7.5 \n"
-        poi_data = pn.widgets.input.TextAreaInput(
-            name="points of interest", placeholder=default_poi, height=100
-        )
+        default_poi = "lat, lon\n 50.45, 9.8 \n 45.1,7.5 \n"
+        poi_data = pn.widgets.input.TextAreaInput(name="points of interest", placeholder=default_poi, height=100)
         self.but_render = pn.widgets.Button(name="Render Plot", button_type="success")
         self.card_ms = pn.Card(
             title,
@@ -193,8 +173,6 @@ class wrfplotter_tab(gui_base):
             title="Manual Settings",
         )
         self.card_ms.collapsed = True
-        # TODO: write update function for the card_ms
-        # TODO: modify reder_plot need manual values sent to plot routine.
 
         # wrfplotter variables
         self.stats = None
@@ -231,43 +209,38 @@ class wrfplotter_tab(gui_base):
             var = self.gui_status["var"]
             lev = self.gui_status["lev"]
 
-            if plottype in ["Timeseries", "Profiles", "Obs vs Mod", "zt-Plot"]:
+            if plottype in ["Timeseries", "Profiles", "Windrose", "Histogram", "Obs vs Mod", "zt-Plot"]:
 
                 self.progress.visible = True
 
                 # --------------------------------------
                 #                Obs
                 # --------------------------------------
-                self.obs_data = (
-                    dict()
-                )  # to make sure that no nonesens is kept in memory
+                # to make sure that no nonesens is kept in memory
+                self.obs_data = dict()
                 self.progress.bar_color = "info"
-
                 for idx, obs in enumerate(self.list_of_obs):
-                    dataset = self.dataset_dict[obs]
-                    load_obs_data(self.obs_data, obs, dataset, **self.gui_status)
+                    if idx > 0:  # idx 0 is alyways None (no Obs selected)
+                        dataset = self.dataset_dict[obs]
+                        load_obs_data(self.obs_data, obs, dataset, **self.gui_status)
                     progress_value = int(100 * (idx + 1) / len(self.list_of_obs))
                     self.progress.value = progress_value
 
                 # --------------------------------------
                 #                Mod
                 # --------------------------------------
-                self.mod_data = (
-                    dict()
-                )  # to make sure that no nonesens is kept in memory
+                # to make sure that no nonesens is kept in memory
+                self.mod_data = dict()
                 self.progress.bar_color = "primary"
                 self.progress.value = 0
 
-                if proj_name is None:
-                    self.mod_data = None
-                else:
-                    proj = project(proj_name)
-                    list_of_exps = proj.list_exp(verbose=False)
+                proj = project(proj_name)
+                list_of_exps = proj.list_exp(verbose=False)
 
-                    for idx, exp_name in enumerate(list_of_exps):
-                        load_mod_data(self.mod_data, exp_name, **self.gui_status)
-                        progress_value = int(100 * (idx + 1) / len(list_of_exps))
-                        self.progress.value = progress_value
+                for idx, exp_name in enumerate(list_of_exps):
+                    load_mod_data(self.mod_data, exp_name, verbose=True, **self.gui_status)
+                    progress_value = int(100 * (idx + 1) / len(list_of_exps))
+                    self.progress.value = progress_value
 
                 self.progress.visible = False
                 self.but_load.button_type = "success"
@@ -288,9 +261,6 @@ class wrfplotter_tab(gui_base):
 
                     self.map_cls = Map(intermediate_path=i_path)
                     self.map_cls.load_intermediate(dom, var, lev, "*")
-
-                    # TODO: Temporary fix for units. -> rerun intermediate files.
-                    self.map_cls.data.attrs["units"] = "m s-1"
 
                     self.alert2.visible = False
                 except Exception as e:
@@ -351,6 +321,14 @@ class wrfplotter_tab(gui_base):
 
             if self.gui_status["get_limits"] == "manual":
                 # Update Infos from Manual Settings
+
+                txtstr = self.card_ms[8].value
+
+                try:
+                    poi_df = pd.read_csv(StringIO(txtstr), index_col='Name')
+                except pd.errors.EmptyDataError:
+                    poi_df = None
+
                 self.infos.update(
                     {
                         "title": self.card_ms[0].value,
@@ -364,12 +342,9 @@ class wrfplotter_tab(gui_base):
                         ),
                         "ylim": self.card_ms[6].value,
                         "clim": self.card_ms[7].value,
-                        "poi": None,
+                        "poi": poi_df,
                     }
                 )
-
-                # I guess I need to read the poi file? Set to None for now.
-                # self.card_ms[7].value
 
             self.create_plot(self.plot_panel.active, self.chk_static.value)
 
@@ -393,10 +368,7 @@ class wrfplotter_tab(gui_base):
 
         infos = dict()
 
-        try:
-            infos["proj_name"] = self.mc_proj.value[0]
-        except IndexError:
-            infos["proj_name"] = None
+        infos["proj_name"] = self.mc_proj.value
 
         try:
             infos["Expvec"] = self.mc_exp.value
@@ -405,15 +377,15 @@ class wrfplotter_tab(gui_base):
 
         infos["dom"] = self.sel_dom.value
         infos["loc"] = self.sel_loc.value
+        infos["var"] = self.sel_var.value
+        infos["lev"] = self.sel_lev.value
+
         infos["Obsvec"] = [self.sel_obs.value]  # may be a multiselector in the future.
         infos["anemometer"] = self.but_dev.name
 
         translate = {"raw": 0, "5 min Ave": 5, "10 min Ave": 10, "30 min Ave": 30}
         infos["AveChoice_WRF"] = translate[self.sel_ave.value]
         infos["AveChoice_OBS"] = translate[self.sel_ave.value]
-        infos["dom"] = self.sel_dom.value
-        infos["var"] = self.sel_var.value
-        infos["lev"] = self.sel_lev.value
 
         infos["time_to_plot"] = self.time_to_plot.value
 
@@ -447,10 +419,9 @@ class wrfplotter_tab(gui_base):
         """
 
         @pn.depends(self.mc_proj.param.value, self.mc_exp.param.value, watch=True)
-        def _update_sel_loc(proj_list, exp_list):
+        def _update_sel_loc(proj_name, exp_list):
 
             try:
-                proj_name = proj_list[0]
                 exp_name = exp_list[0]
 
                 proj = project(proj_name)
@@ -461,41 +432,41 @@ class wrfplotter_tab(gui_base):
             self.sel_loc.options = list_of_locs
 
         @pn.depends(self.mc_proj.param.value, watch=True)
-        def _update_sel_dom(proj_list):
+        def _update_sel_dom(proj_name):
 
-            proj_name = self.gui_status["proj_name"]
             list_of_doms = get_available_doms(proj_name)
             self.sel_dom.options = list_of_doms
 
         @pn.depends(self.mc_proj.param.value, watch=True)
-        def _update_exp_list(selection):
-            if len(selection) == 1:
-                proj_name = selection[0]
-                proj = project(proj_name)
+        def _update_exp_list(proj_name):
 
-                new_options = proj.list_exp(verbose=False)
-                self.mc_exp.options = new_options
+            proj = project(proj_name)
+            self.mc_exp.options = proj.list_exp(verbose=False)
 
-            else:
-                self.mc_exp.options = list_unassociated_exp(verbose=False)
-
-        @pn.depends(self.mc_exp.param.value, watch=True)
-        def _update_ttp(selection):  # time to plot
+        @pn.depends(self.mc_exp.param.value, self.sel_obs.param.value, watch=True)
+        def _update_ttp(exp_list, obs):  # time to plot
 
             proj_name = self.gui_status["proj_name"]
 
             try:
-                exp_name = selection[0]
-                # for now, always use the first one. In the future, select all and find min,max.
-
-                proj = project(proj_name)
-                time_values = proj.exp_start_end(exp_name, False)
-
-                self.time_to_plot.value = time_values[0]
+                exp_name = exp_list[0]
+                # FUTURE: Select all and find min, max of timerange.
+                tvec = get_available_tvec(proj_name, exp_name)
+                self.time_to_plot.options = tvec
             except IndexError:
-                pass
+                dataset = self.dataset_dict[obs]
+                tvec = get_max_timerange(dataset)
+                self.time_to_plot.options = tvec
 
         # noinspection PyUnusedLocal
+        @pn.depends(self.plot_panel.param.active, watch=True)
+        def _time_to_plot_avail(active):
+            plottype = self.plottypes_avil[active]
+            if plottype in ['Profiles', 'Map']:
+                self.time_to_plot.disabled = False
+            else:
+                self.time_to_plot.disabled = True
+
         @pn.depends(
             self.mc_proj.param.value,
             self.sel_dom.param.value,
@@ -503,7 +474,7 @@ class wrfplotter_tab(gui_base):
             self.sel_ave.param.value,
             watch=True,
         )
-        def _reload_watcher1(proj, dom, dev, ave):
+        def _reload_watcher1(proj_name, dom, dev, ave):
             # Watches for changes in relevant parameters and indicates that a reload is needed
             self.alert1.visible = True
 
@@ -516,15 +487,13 @@ class wrfplotter_tab(gui_base):
             self.sel_lev.param.value,
             watch=True,
         )
-        def _reload_watcher2(proj, exp_names, dom, var, lev):
+        def _reload_watcher2(proj_name, exp_names, dom, var, lev):
             # Watches for changes in relevant parameters and indicates that a reload is needed
             # This is for maps
             self.alert2.visible = True
 
         # udating widgets related to table and figure storing
-        @pn.depends(
-            self.plot_panel.param.active, self.chk_static.param.value, watch=True
-        )
+        @pn.depends(self.plot_panel.param.active, self.chk_static.param.value, watch=True)
         def _update_store(active, static_plots):
             if active in [0, 2]:
                 self.sel_store.disabled = False
@@ -551,21 +520,21 @@ class wrfplotter_tab(gui_base):
         )
         def _update_sel_lev(active, var, device):
 
-            if var in ["WSP", "DIR", "WSP and DIR", "WSP and PT"] and active in [0, 2]:
+            plottype = self.plottypes_avil[active]
+            plots_w_device = ['Timeseries', 'Obs vs Mod', 'Histogram', 'Windrose']
+            plots_wo_lev = ['Profiles', 'zt-Plot']
+
+            if var in ["WSP", "DIR", "WSP and DIR", "WSP and PT"] and plottype in plots_w_device:
                 tmp_var = var + "_" + device
             else:
                 tmp_var = var
 
-            plottype = self.plottypes_avil[active]
-
-            if active in [1, 3]:
+            if plottype in plots_wo_lev:
                 self.sel_lev.disabled = True
                 self.sel_lev.options = []
             else:
                 self.sel_lev.disabled = False
-                self.sel_lev.options = self.dict_of_levs_per_plottype_and_var[plottype][
-                    tmp_var
-                ]
+                self.sel_lev.options = self.dict_of_levs_per_plottype_and_var[plottype][tmp_var]
 
             if plottype in ["Map"]:
                 self.sel_lev.name = "level"
@@ -589,7 +558,7 @@ class wrfplotter_tab(gui_base):
         )  # I guess this watcher makes my gui somewhat slow?
         def _update_plot(
                 active,
-                proj_list,
+                proj_name,
                 exp_list,
                 dom,
                 loc,
@@ -611,48 +580,37 @@ class wrfplotter_tab(gui_base):
             var = self.gui_status["var"]
 
             if plottype == "Profiles":
-                self.data, units, description = prep_profile_data(
-                    self.obs_data, self.mod_data, self.gui_status
-                )
-                self.infos = get_limits_and_labels(
-                    plottype, var, self.data, units=units, description=description
-                )
+                self.data, units, description = prep_profile_data(self.obs_data, self.mod_data, self.gui_status)
+                self.infos = get_limits_and_labels(plottype, var, self.data, units=units, description=description)
 
-            elif plottype == "Obs vs Mod":
-                self.data, units, description = prep_ts_data(
-                    self.obs_data, self.mod_data, self.gui_status
-                )
-                self.infos = get_limits_and_labels(
-                    plottype, var, self.data, units=units, description=description
-                )
+            elif plottype in ["Timeseries", "Obs vs Mod", "Histogram"]:
+                self.data, units, description = prep_ts_data(self.obs_data, self.mod_data, self.gui_status)
+                self.infos = get_limits_and_labels(plottype, var, self.data, units=units, description=description)
 
-            elif plottype == "Timeseries":
-                self.data, units, description = prep_ts_data(
-                    self.obs_data, self.mod_data, self.gui_status
-                )
-                self.infos = get_limits_and_labels(
-                    plottype, var, self.data, units=units, description=description
-                )
+            elif plottype == "Windrose":
+                self.data, units, description = prep_windrose_data(self.obs_data, self.mod_data, self.gui_status)
+                self.infos = get_limits_and_labels(plottype, var, self.data, units=units, description=description)
 
             elif plottype == "zt-Plot":
                 self.data = prep_zt_data(self.mod_data, self.gui_status)
                 self.infos = get_limits_and_labels(plottype, var, self.data)
 
-            self.infos["Expvec"] = self.gui_status["Expvec"]
-            self.infos["Obsvec"] = self.gui_status["Obsvec"]
-            self.infos["proj_name"] = self.gui_status["proj_name"]
+            for tmp in ['Expvec', 'Obsvec', 'proj_name', 'loc', 'var', 'lev', 'anemometer']:
+                self.infos[tmp] = self.gui_status[tmp]
 
             # Set Values to manual settings menu
             self.card_ms[0].value = self.infos["title"]
             self.card_ms[1].value = self.infos["xlabel"]
             self.card_ms[2].value = self.infos["ylabel"]
             self.card_ms[3].value = self.infos["font_size"]
+
             if "xlim" in self.infos:
                 self.card_ms[4].start = self.infos["xlim"][0]
                 self.card_ms[4].end = self.infos["xlim"][1]
                 self.card_ms[4].visible = True
             else:
                 self.card_ms[4].visible = False
+
             if "tlim" in self.infos:
                 self.card_ms[5].start = self.infos["tlim"][0].to_pydatetime()
                 self.card_ms[5].end = self.infos["tlim"][1].to_pydatetime()
@@ -660,16 +618,17 @@ class wrfplotter_tab(gui_base):
             else:
                 self.card_ms[5].visible = False
 
-            self.card_ms[6].start = self.infos["ylim"][0]
-            self.card_ms[6].end = self.infos["ylim"][1]
+            if "ylim" in self.infos:
+                self.card_ms[6].start = self.infos["ylim"][0]
+                self.card_ms[6].end = self.infos["ylim"][1]
+            else:
+                self.card_ms[6].visible = False
 
             if "clim" in self.infos:
                 self.card_ms[7].value = tuple(self.infos["clim"])
                 self.card_ms[7].visible = True
             else:
                 self.card_ms[7].visible = False
-
-            # I can set default poi here.
 
         except:
             self.data = None
@@ -695,20 +654,25 @@ class wrfplotter_tab(gui_base):
             if static_plots and plottype in [
                 "Timeseries",
                 "Profiles",
+                "Histogram",
                 "Obs vs Mod",
                 "zt-Plot",
             ]:
                 self.figure = create_mpl_plot(data=self.data, infos=self.infos)
                 self.stats = None
+
+            elif plottype == 'Windrose':  # hvplot of windrose does not exist yet.
+                self.figure = create_mpl_plot(data=self.data, infos=self.infos)
+                self.stats = None
+
             elif not static_plots and plottype in [
                 "Timeseries",
                 "Profiles",
+                "Histogram",
                 "Obs vs Mod",
                 "zt-Plot",
             ]:
-                self.figure, self.stats = create_hv_plot(
-                    data=self.data, infos=self.infos
-                )
+                self.figure, self.stats = create_hv_plot(data=self.data, infos=self.infos)
 
             # Map Sequence
             elif static_plots and plottype == "MapSequence":
@@ -740,20 +704,11 @@ class wrfplotter_tab(gui_base):
 
             # Map for single point in time.
             elif static_plots and plottype == "Map":
-                poi = None  # FIXME
-                self.figure = self.map_cls.plot("Cartopy", store=False, poi=poi, **self.gui_status)
+                self.figure = self.map_cls.plot("Cartopy", store=False, poi=self.poi, **self.gui_status)
 
             elif not static_plots and plottype == "Map":
                 try:
-                    # poi_file = poi_text.value
-                    # if isinstance(poi_file, bytes):
-                    #    s = str(poi_file, 'utf-8')
-                    #    poi_file = StringIO(s)
-                    #
-                    # poi = pd.read_csv(poi_file, delimiter=';')
-
-                    poi = None  # FIXME
-                    self.figure = self.map_cls.plot("hvplot", store=False, poi=poi, **self.gui_status)
+                    self.figure = self.map_cls.plot("hvplot", store=False, poi=self.poi, **self.gui_status)
                 except Exception as e:
                     self.figure = error_message(e)
 
@@ -769,41 +724,6 @@ class wrfplotter_tab(gui_base):
 
         self.plot_panel[active] = tab
 
-        """
-        # This could be the future. Always call hvplots and just change the extension. However,
-        # I get a lot of ploblems since the plots I am creating are based on hvplot and 
-        # the extension switch only works with bokeh. In bokeh however, the plots must be created differently...
-        # So, no update for now.
-        
-        if plottype in ['Timeseries', 'Profiles', 'Obs vs Mod', 'zt-Plot']:
-            self.figure, self.stats = create_hv_plot(infos=self.infos, obs_data=self.obs_data, 
-                                                     mod_data=self.mod_data)
-
-        # Map Sequence
-        elif plottype == 'MapSequence':
-
-            try:
-                self.figure = self.map_cls.interactive.sel(Time=pnw.DiscreteSlider).plot()
-            except Exception as e:
-                self.figure = error_message(e)
-
-        # Map for single point in time.
-        elif plottype == 'Map':
-            try:
-
-                # poi_file = poi_text.value
-                # if isinstance(poi_file, bytes):
-                #    s = str(poi_file, 'utf-8')
-                #    poi_file = StringIO(s)
-                #
-                # poi = pd.read_csv(poi_file, delimiter=';')
-
-                poi = None  # FIXME
-                self.figure = self.map_cls.plot('hvplot', store=False, poi=poi)
-            except Exception as e:
-                self.figure = error_message(e)
-        """
-
     def view(self):
 
         menu1 = pn.Column(
@@ -818,6 +738,8 @@ class wrfplotter_tab(gui_base):
             self.chk_static,
             self.progress,
             self.but_load,
+            self.alert1,
+            self.alert2,
         )
         menu2 = pn.Row(
             pn.Column(
@@ -826,7 +748,7 @@ class wrfplotter_tab(gui_base):
             )
         )
 
-        side_menu = pn.Column(self.alert1, self.alert2, self.card_ms)
+        side_menu = self.card_ms
 
         wp = pn.Row(
             menu1, pn.Column(menu2, self.plot_panel), side_menu, name="WRFplotter"

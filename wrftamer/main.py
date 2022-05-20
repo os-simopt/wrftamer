@@ -32,6 +32,9 @@ def list_projects(verbose=True):
         if os.path.isdir(os.path.join(db_path, name))
     ]
 
+    if 'Unassociated_Experiments' in list_of_projects:
+        list_of_projects.remove('Unassociated_Experiments')
+
     if verbose:
         for item in list_of_projects:
             print(item)

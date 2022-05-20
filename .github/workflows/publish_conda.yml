@@ -66,15 +66,11 @@ jobs:
             fi
         }
 
-
-
         check_if_setup_file_exists
         go_to_build_dir
         check_if_meta_yaml_file_exists
         build_package      
-        
-        
-        
+
     - name: publish-to-conda
       run: |
         export INPUT_ANACONDATOKEN=${{ secrets.ANACONDA_TOKEN }}      

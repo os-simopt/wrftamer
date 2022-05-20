@@ -353,7 +353,7 @@ def cli_rename(exp_name, new_exp_name, proj_name=None):
     short_help="Restart the WRF Run",
     help="Restart the WRF Run from a given restart-file. "
     "It is assumed that the restart-file is located "
-    "in exp_path/out or exp_path/wrf. If not please "
+    "in exp_tab/out or exp_tab/wrf. If not please "
     "specify templatefile. "
     "If applicable: move tsfiles before.",
 )

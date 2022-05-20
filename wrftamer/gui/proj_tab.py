@@ -1,12 +1,12 @@
 import panel as pn
 import re
-from wrftamer.gui.gui_base import gui_base
+from wrftamer.gui.gui_base import path_base
 from wrftamer.main import project, list_projects, list_unassociated_exp, reassociate
 
 tabulator_formatters = {"select": {"type": "tickCross"}}
 
 
-class proj_tab(gui_base):
+class proj_tab(path_base):
     """
     Manual tests of gui sucessful (WRFTamer Version 1.1)
     """
@@ -14,25 +14,20 @@ class proj_tab(gui_base):
     def __init__(self):
         super(proj_tab, self).__init__()
 
-        list_of_projects = list_projects(verbose=False)
         list_of_experiments = list_unassociated_exp(verbose=False)
+        list_of_projects = list_projects(verbose=False)
+        proj_dict = {'': None}
+        for item in list_of_projects:
+            proj_dict[item] = item
 
-        self.mc_proj = pn.widgets.MultiChoice(
-            name="Choose Project",
-            max_items=1,
-            value=[],
-            options=list_of_projects,
-            height=75,
-        )
-
+        # Menu 1
+        self.mc_proj = pn.widgets.Select(name="Choose Project", options=proj_dict)
         self.textbox = pn.widgets.TextInput(name="New Project Name", value="")
 
         self.b_create = pn.widgets.Button(name="Create Project", button_type="success")
         self.b_rename = pn.widgets.Button(name="Rename Project", button_type="warning")
         self.b_delete = pn.widgets.Button(name="Remove Project", button_type="danger")
-        self.b_reassociate = pn.widgets.Button(
-            name="Reassociate Experiments", button_type="primary"
-        )
+        self.b_reassociate = pn.widgets.Button(name="Reassociate Experiments", button_type="primary")
 
         self.del_warn = pn.widgets.StaticText(
             name="Warning",
@@ -64,8 +59,18 @@ class proj_tab(gui_base):
         @pn.depends(self.mc_proj.param.value, watch=True)
         def _update_info(selection):
 
+            proj_name = selection
+            proj = project(proj_name)
+            exp_list = proj.list_exp(verbose=False)
+            if proj_name is not None:
+                self.info_panel.name = "Experiments associated with this project"
+            else:
+                self.info_panel.name = "Experiments not associated with any project"
+            self.info_panel.value = str(len(exp_list))
+
+            """
             if len(selection) > 0:
-                proj_name = selection[0]
+                proj_name = selection
                 proj = project(proj_name)
                 exp_list = proj.list_exp(verbose=False)
                 self.info_panel.name = "Experiments associated with this project"
@@ -76,6 +81,7 @@ class proj_tab(gui_base):
                 exp_list = list_unassociated_exp(verbose=False)
                 self.info_panel.name = "Experiments not associated with any project"
                 self.info_panel.value = str(len(exp_list))
+            """
 
             df = proj.exp_provide_info()
             self.info_df.value = df
@@ -83,21 +89,15 @@ class proj_tab(gui_base):
     # noinspection PyUnusedLocal
     def create_proj(self, event):
 
-        old_options = self.mc_proj.options.copy()
         proj_name = self.textbox.value
 
         if not re.match(r"^[A-Za-z0-9_-]+$", self.textbox.value):
-            print(
-                "Only alphanumeric values, underscore and dash are allowed in the project name"
-            )
+            print("Only alphanumeric values, underscore and dash are allowed in the project name")
             return
-        elif self.textbox.value in old_options:
+        elif self.textbox.value in self.mc_proj.options:
             print("A project with this name already exists!")
             return
         else:
-            old_options.append(self.textbox.value)
-            self.mc_proj.options = old_options
-
             ########################################
             # Do the actual project creation.
             ########################################
@@ -106,9 +106,7 @@ class proj_tab(gui_base):
             try:
                 proj.create()
             except FileExistsError:
-                print(
-                    "A project with this name already exists. Remove project or choose a different name"
-                )
+                print("A project with this name already exists. Remove project or choose a different name")
                 return
 
             if any(self.info_df.value.select):
@@ -118,19 +116,22 @@ class proj_tab(gui_base):
                 # list. Right now, I cannot reassociate an experiment from project1 to project2. Only from
                 # unassociated to associated.
 
-                try:
-                    proj_name_old = self.mc_proj.value[0]
-                except IndexError:
-                    proj_name_old = None
-
+                proj_name_old = self.mc_proj.value
                 proj_old = project(proj_name_old)
 
                 # first, remove from unassociated list:
                 for exp_name in self.info_df.value.Name[self.info_df.value.select]:
-                    reassociate(
-                        proj_old, proj, exp_name
-                    )  # this function changes all relevant paths, entries and
+                    # this function changes all relevant paths, entries and
+                    reassociate(proj_old, proj, exp_name)
                     # moves files.
+
+            # Change GUI widgets.
+            print('Changing GUI widgets')
+            old_options = self.mc_proj.options.copy()
+            old_options[self.textbox.value] = self.textbox.value
+            self.mc_proj.options = old_options
+            self.mc_proj.value = self.textbox.value
+            print('Done Changing GUI widgets')
 
     # noinspection PyUnusedLocal
     def rename_proj(self, event):
@@ -138,54 +139,50 @@ class proj_tab(gui_base):
         choice = self.mc_proj.value
         new_name = self.textbox.value
 
-        if len(choice) > 0 and new_name != "":
-            old_options = self.mc_proj.options.copy()
-
-            if new_name in old_options:
+        if choice is not None and new_name != "":
+            if new_name in self.mc_proj.options:
                 print("A project with this name already exists")
             else:
-                old_options.remove(choice[0])
-                old_options.append(new_name)
-
                 ########################################
                 # Do the actual project renaming
                 ########################################
-                proj = project(choice[0])
+                proj = project(choice)
                 proj.rename(new_name)
 
-                # Change widgets of gui
+                # Change widgets
+                old_options = self.mc_proj.options.copy()
+                del old_options[choice]
+                old_options[new_name] = new_name
                 self.mc_proj.options = old_options
-                self.mc_proj.value = [new_name]
+                self.mc_proj.value = new_name
 
     # noinspection PyUnusedLocal
     def remove_proj(self, event):
 
         choice = self.mc_proj.value
 
-        if len(choice) > 0:
+        if choice is not None:
 
             if not self.del_warn.visible:
                 self.b_delete.name = "Confirm Deletion"
                 self.del_warn.visible = True
                 self.b_cancel.visible = True
             else:
-                old_options = self.mc_proj.options.copy()
-                old_options.remove(choice[0])
-
-                self.mc_proj.value = []
-                self.mc_proj.options = old_options
-
                 ########################################
                 # Do the actual project removal.
                 ########################################
-                proj = project(choice[0])
+                proj = project(choice)
                 try:
                     proj.remove(force=True)
                 except FileNotFoundError:
-                    print(
-                        "The project or at least one of the directories does not exist."
-                    )
+                    print("The project or at least one of the directories does not exist.")
                     return
+
+                # Change widgets
+                old_options = self.mc_proj.options.copy()
+                del old_options[choice]
+                self.mc_proj.options = old_options
+                self.mc_proj.value = None
 
                 # reset GUI
                 self.b_delete.name = "Remove Project"
@@ -195,11 +192,7 @@ class proj_tab(gui_base):
     # noinspection PyUnusedLocal
     def reassociate_experiments(self, event):
 
-        try:
-            proj_name_old = self.mc_proj.value[0]
-        except IndexError:
-            proj_name_old = None
-
+        proj_name_old = self.mc_proj.value
         proj_name_new = self.textbox.value
         if proj_name_new not in self.mc_proj.options:
             print(
@@ -216,9 +209,8 @@ class proj_tab(gui_base):
 
             # first, remove from unassociated list:
             for exp_name in self.info_df.value.Name[self.info_df.value.select]:
-                reassociate(
-                    proj_old, proj_new, exp_name
-                )  # this function changes all relevant paths, entries and moves files.
+                # this function changes all relevant paths, entries and moves files.
+                reassociate(proj_old, proj_new, exp_name)
 
     # noinspection PyUnusedLocal
     def _reset_warning(self, event):
@@ -228,6 +220,7 @@ class proj_tab(gui_base):
         self.b_cancel.visible = False
 
     def view(self):
+        print(f"")
 
         proj_row = pn.Row(
             pn.Column(

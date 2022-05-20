@@ -14,6 +14,20 @@ The following plot types are available as of now:
 All plots except the maps plots are based timeseries (tslist) data, processed with WRFtamer. Map plots are based on
 wrfout-files. Map data is extracted from wrfout files during postprocessing to improve the responsiveness of WRFplotter.
 
+## Plotable variables
+Right now, a limited list of typically available meteorological variables can be plotted. 
+
+For **timeseries, profiles, histograms and scatter plots**, these include:
+   - wind speed (WSP)
+   - wind direction (DIR)
+   - temperature (T)
+   - potential temperature (PT)
+   - air pressure (PRES)
+
+For **Maps**, the following WRF variables can be plotted: "WSP", "DIR", "PT", "PRES", "PSFC", "U", "V", "W", "HFX", 
+"GRDFLX", "LH", "HGT"
+
+
 ## Preparing your observations
 
 Observations in the form of timeseries can be displayed by WRFplotter and compared with model results. The observations
@@ -35,7 +49,9 @@ variable 'station_name'. These timeseries must be concatenated along a dimension
 expects for each station the variables 'lat', 'lon' and 'station_elevation' as well as the attributes 'long_name' and 
 'units' for each variable.
 
-WRFplotter will check these files for heights and times to display as timesieres, profiles etc.
+WRFplotter will check these files for heights and times to display as timesieres, profiles etc. Since Cup and Sonic 
+anemometers are often installed on the same mast,  we provide a button "Sonic" and "Analog" to switch between these 
+devices.
 
 ## Usage
 

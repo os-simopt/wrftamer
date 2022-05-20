@@ -113,7 +113,7 @@ def merge_tslist_files(
     Ncdf is written to outdir
     """
 
-    # TODO: the way I select my data and the directories is clumsy at best. I should have indir and outdir be
+    # SOMEDAY: the way I select my data and the directories is clumsy at best. I should have indir and outdir be
     #  specified as posixPath objects and to the selection here.
     #  also, this would mean that I do not need two paths anymore.
     #  however, as of now, the function works, so YNGNI
