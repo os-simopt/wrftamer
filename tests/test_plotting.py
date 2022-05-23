@@ -8,8 +8,9 @@ from wrftamer.plotting.load_and_prepare import (
     prep_zt_data,
     prep_profile_data,
     get_limits_and_labels,
+    prep_windrose_data
 )
-from wrftamer.plotting.mpl_plots import create_mpl_plot, Profile, TimeSeries, Obs_vs_Mod
+from wrftamer.plotting.mpl_plots import create_mpl_plot, Profile, TimeSeries, Obs_vs_Mod, Histogram
 from wrftamer.plotting.hv_plots import create_hv_plot
 
 
@@ -57,9 +58,7 @@ def test_mpl_timeseries(infos, obs_data, mod_data):
         infos[ii]["plottype"] = plottype
 
         data, units, description = prep_ts_data(obs_data[ii], mod_data[ii], infos[ii])
-        plot_infos = get_limits_and_labels(
-            plottype, var, data, units=units, description=description
-        )
+        plot_infos = get_limits_and_labels(plottype, var, data, units=units, description=description)
 
         create_mpl_plot(data, plot_infos)
 
@@ -75,9 +74,58 @@ def test_hv_timeseries(infos, obs_data, mod_data):
         infos[ii]["plottype"] = plottype
 
         data, units, description = prep_ts_data(obs_data[ii], mod_data[ii], infos[ii])
-        plot_infos = get_limits_and_labels(
-            plottype, var, data, units=units, description=description
-        )
+        plot_infos = get_limits_and_labels(plottype, var, data, units=units, description=description)
+
+        plot_infos["Expvec"] = infos[ii]["Expvec"]
+        plot_infos["Obsvec"] = infos[ii]["Obsvec"]
+        plot_infos['proj_name'] = infos[ii]['proj_name']
+        plot_infos['loc'] = infos[ii]['loc']
+        plot_infos['lev'] = infos[ii]['lev']
+        plot_infos['anemometer'] = infos[ii]['anemometer']
+
+        create_hv_plot(plot_infos, data=data)
+
+
+def test_mpl_histogram(infos, obs_data, mod_data):
+    maxnum = len(infos)
+
+    for ii in range(0, maxnum):
+        var = infos[ii]["var"]
+        plottype = "Histogram"
+        infos[ii]["plottype"] = plottype
+
+        data, units, description = prep_ts_data(obs_data[ii], mod_data[ii], infos[ii])
+        plot_infos = get_limits_and_labels(plottype, var, data, units=units, description=description)
+
+        plot_infos["Expvec"] = infos[ii]["Expvec"]
+        plot_infos["Obsvec"] = infos[ii]["Obsvec"]
+        plot_infos['proj_name'] = infos[ii]['proj_name']
+        plot_infos['loc'] = infos[ii]['loc']
+        plot_infos['lev'] = infos[ii]['lev']
+        plot_infos['anemometer'] = infos[ii]['anemometer']
+
+        create_mpl_plot(data, plot_infos)
+
+        Histogram(data=data, **plot_infos)
+
+
+def test_hv_histogram(infos, obs_data, mod_data):
+    maxnum = len(infos)
+
+    for ii in range(0, maxnum):
+        var = infos[ii]["var"]
+        plottype = "Histogram"
+        infos[ii]["plottype"] = plottype
+
+        data, units, description = prep_ts_data(obs_data[ii], mod_data[ii], infos[ii])
+        plot_infos = get_limits_and_labels(plottype, var, data, units=units, description=description)
+
+        plot_infos["Expvec"] = infos[ii]["Expvec"]
+        plot_infos["Obsvec"] = infos[ii]["Obsvec"]
+        plot_infos['proj_name'] = infos[ii]['proj_name']
+        plot_infos['loc'] = infos[ii]['loc']
+        plot_infos['lev'] = infos[ii]['lev']
+        plot_infos['anemometer'] = infos[ii]['anemometer']
 
         create_hv_plot(plot_infos, data=data)
 
@@ -90,12 +138,8 @@ def test_mpl_profiles(infos, obs_data, mod_data):
         plottype = "Profiles"
         infos[ii]["plottype"] = plottype
 
-        data, units, description = prep_profile_data(
-            obs_data[ii], mod_data[ii], infos[ii]
-        )
-        plot_infos = get_limits_and_labels(
-            plottype, var, data, units=units, description=description
-        )
+        data, units, description = prep_profile_data(obs_data[ii], mod_data[ii], infos[ii])
+        plot_infos = get_limits_and_labels(plottype, var, data, units=units, description=description)
 
         create_mpl_plot(data, plot_infos)
 
@@ -179,6 +223,10 @@ def test_hv_obs_vs_mod(infos, obs_data, mod_data):
 
         plot_infos["Expvec"] = infos[ii]["Expvec"]
         plot_infos["Obsvec"] = infos[ii]["Obsvec"]
+        plot_infos['proj_name'] = infos[ii]['proj_name']
+        plot_infos['loc'] = infos[ii]['loc']
+        plot_infos['lev'] = infos[ii]['lev']
+        plot_infos['anemometer'] = infos[ii]['anemometer']
 
         create_hv_plot(data=data, infos=plot_infos)
 
@@ -203,3 +251,25 @@ def test_hv_not_implemented():
 
     plot_infos = {"plottype": "Map", "var": "WSP"}  # will just inform user
     create_hv_plot(plot_infos, map_data=None)
+
+def test_mpl_windrose(infos, obs_data, mod_data):
+
+    maxnum = len(infos)
+
+    for ii in range(0, maxnum):
+
+        var = 'WSP'
+        plottype = "Windrose"
+        infos[ii]["plottype"] = plottype
+
+        data, units, description = prep_windrose_data(obs_data[ii], mod_data[ii], infos[ii])
+        plot_infos = get_limits_and_labels(plottype, var, data, units=units, description=description)
+
+        plot_infos["Expvec"] = infos[ii]["Expvec"]
+        plot_infos["Obsvec"] = infos[ii]["Obsvec"]
+        plot_infos['proj_name'] = infos[ii]['proj_name']
+        plot_infos['loc'] = infos[ii]['loc']
+        plot_infos['lev'] = infos[ii]['lev']
+        plot_infos['anemometer'] = infos[ii]['anemometer']
+
+        create_mpl_plot(data=data, infos=plot_infos)

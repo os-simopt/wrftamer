@@ -76,9 +76,7 @@ class Map:
             data = wrf.getvar(fid, "tk", timeidx=idx, squeeze=False)[:, ml, :, :]
             data.attrs["model_level"] = ml
         elif var == "PT":
-            data = wrf.getvar(fid, "theta", units="K", timeidx=idx, squeeze=False)[
-                   :, ml, :, :
-                   ]
+            data = wrf.getvar(fid, "theta", units="K", timeidx=idx, squeeze=False)[:, ml, :, :]
             data.attrs["model_level"] = ml
         elif var == "WSP":
             data = wrf.getvar(fid, "uvmet_wspd_wdir", units="m s-1", timeidx=idx, squeeze=False)[0][:, ml, :, :]
@@ -88,23 +86,17 @@ class Map:
             data.attrs["units"] = "m s-1"
             data.attrs["model_level"] = ml
         elif var == "DIR":
-            data = wrf.getvar(
-                fid, "uvmet_wspd_wdir", units="m s-1", timeidx=idx, squeeze=False
-            )[1][:, ml, :, :]
+            data = wrf.getvar(fid, "uvmet_wspd_wdir", units="m s-1", timeidx=idx, squeeze=False)[1][:, ml, :, :]
             data.name = "DIR"
             data = data.drop_vars("wspd_wdir")
             data.attrs["description"] = "earth rotated wdir"
             data.attrs["units"] = "degrees"
             data.attrs["model_level"] = ml
         elif var in ["U", "V", "W"]:
-            data = wrf.getvar(
-                fid, var.lower() + "a", units="m s-1", timeidx=idx, squeeze=False
-            )[:, ml, :, :]
+            data = wrf.getvar(fid, var.lower() + "a", units="m s-1", timeidx=idx, squeeze=False)[:, ml, :, :]
             data.attrs["model_level"] = ml
         elif var == "WSP10":
-            data = wrf.getvar(
-                fid, "wspd_wdir10", units="m s-1", timeidx=idx, squeeze=False
-            )[0][:, :, :]
+            data = wrf.getvar(fid, "wspd_wdir10", units="m s-1", timeidx=idx, squeeze=False)[0][:, :, :]
             data.name = "WSP10"
             data = data.drop_vars("wspd_wdir")
             data.attrs["units"] = "m s-1"
@@ -117,9 +109,7 @@ class Map:
             data.attrs["units"] = "degrees"
             data.attrs["model_level"] = "sfc"
         elif var in ["PRES", "P"]:
-            data = wrf.getvar(fid, "p", units="Pa", timeidx=idx, squeeze=False)[
-                   :, ml, :, :
-                   ]
+            data = wrf.getvar(fid, "p", units="Pa", timeidx=idx, squeeze=False)[:, ml, :, :]
             data.attrs["model_level"] = ml
         # These lines should work in principle. However, I do not have testdata at the ready, so remove these lines.
         # elif var in ["QV", "QVAPOR"]:
@@ -325,9 +315,7 @@ class Map:
 # ----------------------------------------------------------------------------------------------------------------------
 
 # some helperfunctions
-def get_list_of_filenames(
-        name_of_dataset: str, dtstart: dt.datetime, dtend: dt.datetime
-):
+def get_list_of_filenames(name_of_dataset: str, dtstart: dt.datetime, dtend: dt.datetime):
     # this is for reading...
 
     # The user provides an observation path and a stationname to be read in.
@@ -378,9 +366,7 @@ def get_list_of_filenames(
     return filenames
 
 
-def get_list_of_filenames2(
-        name_of_dataset: str, dtstart: dt.datetime, dtend: dt.datetime
-):
+def get_list_of_filenames2(name_of_dataset: str, dtstart: dt.datetime, dtend: dt.datetime):
     # this is for writing...
     # TODO: combine the two routines.
     # TODO: create a rule when to split by time and create multiple files...

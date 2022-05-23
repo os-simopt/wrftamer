@@ -32,6 +32,7 @@ def create_hv_plot(infos: dict, data=None, map_data=None):
     title = infos.get("title", "")
 
     if plottype == "Timeseries":
+
         stats = Statistics(data, **infos)
 
         size = 5
@@ -73,6 +74,7 @@ def create_hv_plot(infos: dict, data=None, map_data=None):
         figure = pn.Column(figure, stats)
 
     elif plottype == 'Histogram':
+
         stats = Statistics(data, **infos)
 
         size = 5
@@ -240,15 +242,6 @@ def Map_hvplots(map_data, **infos):
     points_to_mark = infos.get("poi", None)
     coastline = infos.get("coastline", "10m")
     levels = infos.get("levels", 25)
-
-    # TODO: fix hvplot for maps. Make projections work.
-    #  -> Projekt for Moritz. I am almost there.
-
-    """
-    # This command no longer works with the current version of the packages. 
-    # I need a major cleanup, find a workaround and/or change the packages.
-    # Affected packages are most likely shapely, cartopy and maybe others.
-    """
 
     stand_lon = map_data.projection.stand_lon
     moad_cen_lat = map_data.projection.moad_cen_lat

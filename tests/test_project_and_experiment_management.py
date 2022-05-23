@@ -39,9 +39,7 @@ def test_nonexisting_project(base_test_env):
         test.list_exp()
 
     # adding an experiment to a project that does not exist should work (since the project is created on the fly!)
-    configfile = (
-            os.path.split(os.path.realpath(__file__))[0] + "/resources/configure_test.yaml"
-    )
+    configfile = os.path.split(os.path.realpath(__file__))[0] + "/resources/configure_test.yaml"
     test.exp_create("Some_Random_Exp_Name", "Some_Random_Comment", configfile)
     test.remove(force=True, verbose=False)
 
@@ -83,7 +81,7 @@ def test_project(testprojects):
     # check that testproject variables have been renamed (tests further down depend on this)
     if (
             testproject1.name == proj_name2
-            and Path(testproject1.proj_tab).stem == proj_name2
+            and Path(testproject1.proj_path).stem == proj_name2
             and Path(testproject1.tamer_path).stem == proj_name2
     ):
         pass
@@ -91,7 +89,7 @@ def test_project(testprojects):
         raise ValueError
 
     # check if the files with the expected new names really exist
-    if os.path.isdir(testproject1.proj_tab):
+    if os.path.isdir(testproject1.proj_path):
         pass
     else:
         raise FileNotFoundError
@@ -117,8 +115,8 @@ def test_project(testprojects):
     # Rewriting xls sheet should work (but won't do anything, since no experiments have been created)
     testproject1.rewrite_xls()
 
-    # Case damaged project. proj_tab missing, but tamer_path intact
-    shutil.rmtree(testproject1.proj_tab)
+    # Case damaged project. proj_path missing, but tamer_path intact
+    shutil.rmtree(testproject1.proj_path)
     with pytest.raises(FileNotFoundError):
         testproject1.rename(proj_name2)
 

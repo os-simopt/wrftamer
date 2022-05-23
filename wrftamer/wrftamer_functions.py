@@ -101,7 +101,7 @@ def create_rundir(
     """
     Creating directory structure for an experiment, linking files, copying configure files.
 
-    exp_tab: absolute path to the run_path of an experiment
+    exp_path: absolute path to the run_path of an experiment
     configure_file: the configure file that contains the paths
 
     """
@@ -117,7 +117,7 @@ def create_rundir(
     suffix_len = cfg["link_grib"]["suffix_len"]
 
     if verbose:
-        print(f"Building the exp_tab directory {exp_path}")
+        print(f"Building the exp_path directory {exp_path}")
         print("Relevant config_file and directories:")
         print(configure_file)
         print(exe_dir)
@@ -167,8 +167,8 @@ def copy_dirs(old_run_path: PosixPath, new_run_path: PosixPath, ignore_submit=Fa
     """
     Creating directory structure for an experiment, linking files, copying configure files.
 
-    old_wrf_run: the absolute path to the exp_tab directory to copy
-    new_wrf_run: the absolute path to the epx_path directory of the new experiment
+    old_wrf_run: the absolute path to the exp_path directory to copy
+    new_wrf_run: the absolute path to the exp_path directory of the new experiment
 
     """
 
@@ -321,14 +321,12 @@ def make_call_wd_file_from_template(miniconda_path, condaenv_name, templatefile=
 def _make_submitfile_from_template(submit_vars: dict, templatefile=None):
     # read template and configuration
     if templatefile is None:
-        myfile = (
-            os.path.split(os.path.realpath(__file__))[0] + "/resources/submit.template"
-        )
+        myfile = os.path.split(os.path.realpath(__file__))[0] + "/resources/submit.template"
     else:
         myfile = templatefile
 
     program = submit_vars["program"].split(".")[0]
-    exp_path = submit_vars["exp_tab"]
+    exp_path = submit_vars["exp_path"]
     outfile = f"{exp_path}/submit_{program}.sh"
 
     with open(myfile, "r") as f:
@@ -345,7 +343,7 @@ def make_submitfiles(exp_path: str, configure_file: str, templatefile=None):
         cfg = yaml.safe_load(f)
 
     submit_vars = dict()
-    submit_vars["exp_tab"] = exp_path
+    submit_vars["exp_path"] = exp_path
     submit_vars["SLURM_CPUS_PER_TASK"] = "${SLURM_CPUS_PER_TASK}"
     submit_vars["name"] = Path(exp_path).name
     submit_vars["slurm_log"] = f"{exp_path}/log/slurm.log"

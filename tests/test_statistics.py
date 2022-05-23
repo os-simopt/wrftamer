@@ -19,36 +19,37 @@ expect_xa3 = xr.load_dataset(data_path + "testres3.nc")
 expect_xa4 = xr.load_dataset(data_path + "testres4.nc")
 
 
-def test_stats1():  # dataframe without attrs
-    with pytest.raises(AttributeError):
-        res = Statistics(test_pd)
+def test_stats1():
 
+    infos = dict()
+    infos['proj_name'] = 'test'
+    infos['loc'] = 'loc'
+    infos['var'] = 'WSP'
+    infos['lev'] = '5'
+    infos['anemometer'] = 'USA'
+    infos['Expvec'] = ['model']
+    infos['Obsvec'] = ['obs']
 
-def test_stats2():
-    test_pd.proj_name = "test"
-    test_pd.location = "loc"
-    test_pd.variable = "WSP"
-    test_pd.level = 5
-    test_pd.anemometer = "USA"
-    test_pd.Expvec = ["model"]
-    test_pd.Obsvec = ["obs"]
-    res = Statistics(test_pd)
+    res = Statistics(test_pd, **infos)
 
-    if max(abs(res.values[0, 4::] - expect_pd.values[0, 4::])) > 1e-10:
+    if max(abs(res.values[0, 5::] - expect_pd.values[0, 5::])) > 1e-10:
         raise ValueError
 
 
-def test_stats3():
-    test_pd.proj_name = "test"
-    test_pd.location = "loc"
-    test_pd.variable = "DIR"
-    test_pd.level = 5
-    test_pd.anemometer = "USA"
-    test_pd.Expvec = ["model"]
-    test_pd.Obsvec = ["obs"]
-    res = Statistics(test_pd)
+def test_stats2():
 
-    if max(abs(res.values[0, 4:8] - expect_pd.values[0, 4:8])) > 1e-10:
+    infos = dict()
+    infos['proj_name'] = 'test'
+    infos['loc'] = 'loc'
+    infos['var'] = 'DIR'
+    infos['lev'] = '5'
+    infos['anemometer'] = 'USA'
+    infos['Expvec'] = ['model']
+    infos['Obsvec'] = ['obs']
+
+    res = Statistics(test_pd, **infos)
+
+    if max(abs(res.values[0, 5:8] - expect_pd.values[0, 5:8])) > 1e-10:
         raise ValueError
 
 
