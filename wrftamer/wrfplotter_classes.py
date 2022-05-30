@@ -315,8 +315,21 @@ class Map:
 # ----------------------------------------------------------------------------------------------------------------------
 
 # some helperfunctions
-def get_list_of_filenames(name_of_dataset: str, dtstart: dt.datetime, dtend: dt.datetime):
-    # this is for reading...
+
+def get_list_of_filenames(name_of_dataset: str, dtstart: dt.datetime, dtend: dt.datetime, split=None):
+    # this is for writing...
+    """
+
+    Args:
+        name_of_dataset: Name of the dataset
+        dtstart: start of timeseries
+        dtend: end of timeseries
+        split: if None, no splitting is done, otherwise use a pandas freq string
+        (i.e. YS for split by year and MS for split by month)
+
+    Returns: a list of filenames.
+
+    """
 
     # The user provides an observation path and a stationname to be read in.
     # i.e. the structure is
@@ -332,51 +345,23 @@ def get_list_of_filenames(name_of_dataset: str, dtstart: dt.datetime, dtend: dt.
 
     #############################################################################
     # CONVENTION: Each file must be named Stationname_starttime_endtime.nc
-    # Starttime and endtime on the day-basis should be fine for now
-    # Can do an update later on.
     #############################################################################
 
-    filepath = Path(os.environ["OBSERVATIONS_PATH"]) / f"{name_of_dataset}/"
-    list_of_files = list(filepath.glob(f"{name_of_dataset}*.nc"))
-    list_of_files.sort()
-
-    list_of_starts = [
-        item.stem.replace(name_of_dataset, "").split("_")[1] for item in list_of_files
-    ]
-    list_of_ends = [
-        item.stem.replace(name_of_dataset, "").split("_")[2] for item in list_of_files
-    ]
-
-    starts = np.asarray(
-        [dt.datetime.strptime(item, "%Y%m%d") for item in list_of_starts]
-    )
-    ends = np.asarray([dt.datetime.strptime(item, "%Y%m%d") for item in list_of_ends])
-
-    try:
-        idx1 = np.argmax(starts[starts <= dtstart])
-    except ValueError:
-        idx1 = 0
-    try:
-        idx2 = np.argmax(ends[ends <= dtend])
-    except ValueError:
-        idx2 = 0
-
-    filenames = list_of_files[idx1: idx2 + 1]
-
-    return filenames
-
-
-def get_list_of_filenames2(name_of_dataset: str, dtstart: dt.datetime, dtend: dt.datetime):
-    # this is for writing...
-    # TODO: combine the two routines.
-    # TODO: create a rule when to split by time and create multiple files...
+    # Removing time info, to fin convention.
+    dtstart2 = dt.datetime(dtstart.year, dtstart.month, dtstart.day)
+    dtend2 = dt.datetime(dtend.year, dtend.month, dtend.day)
 
     filepath = Path(os.environ["OBSERVATIONS_PATH"]) / f"{name_of_dataset}/"
-    start_str = dtstart.strftime("%Y%m%d")
-    end_str = dtend.strftime("%Y%m%d")
-    filename = f"{name_of_dataset}_{start_str}_{end_str}.nc"
 
-    return filepath / filename
+    # I may autodetect split in the future, or have some rules...
+    if split is None:
+        tvec = pd.date_range(start=dtstart2, end=dtend2, periods=2)
+    else:
+        tvec = pd.date_range(start=dtstart2, end=dtend2, freq=split)
+
+    filenames = [filepath / f"{name_of_dataset}_{tvec[idx].strftime('%Y%m%d')}_{tvec[idx + 1].strftime('%Y%m%d')}.nc"
+                 for idx in range(0, len(tvec) - 1)]
+    return filenames, tvec
 
 
 def get_max_timerange(name_of_dataset):
@@ -479,12 +464,23 @@ def assign_cf_attributes_tslist(
     l2 = list(data.keys())
     l1.extend(l2)
     for item in l1:
-        if item in ["station_name", "station_elevation", "GEN_SPD", "model_level"]:
-            var = item.lower()
-        else:
-            var = item.split("_")[0].lower()
 
-        data[item] = data[item].assign_attrs(cf_con[var])
+        if '_' in item:
+            var, lev = item.rsplit('_', 1)  # assuming the last portion of the variable name is the level.
+            try:
+                int(lev)
+            except ValueError:
+                var = item
+        else:
+            var = item
+
+        var = var.lower()
+
+        try:
+            data[item] = data[item].assign_attrs(cf_con[var])
+        except KeyError:
+            if verbose:
+                print(f'No cf attributes found for variable {var}')
 
     data.time.attrs = cf_con["time"]
 
@@ -659,6 +655,7 @@ class Timeseries:
             calc_pt=False,
             verbose=False,
             use_dask=False,
+            split=None,
     ):
         """
         Read timeseries data that is already conform with this class, i.e. get_list_of_filenames can find the data
@@ -671,6 +668,7 @@ class Timeseries:
             calc_pt: if potential temperature should be caluclated from temperature and pressure.
             verbose: Speak with user.
             use_dask: open as dask array
+            split: YS for yearly, MS for monthly or None for no splitting
 
         Returns: None
 
@@ -679,7 +677,7 @@ class Timeseries:
         if metadata is None:
             metadata = dict()
 
-        filenames = get_list_of_filenames(self.dataset, dtstart, dtend)
+        filenames, disc = get_list_of_filenames(self.dataset, dtstart, dtend, split)
         if len(filenames) == 0:
             if verbose:
                 print("No filenames found")
@@ -763,9 +761,8 @@ class Timeseries:
                     os.path.split(os.path.realpath(__file__))[0]
                     + "/resources/cf_table_timeseries_fields.yaml"
             )
-            data = assign_cf_attributes_tslist(
-                data, metadata, cf_table, old_attrs, verbose
-            )
+
+            data = assign_cf_attributes_tslist(data, metadata, cf_table, old_attrs, verbose)
             all_data.append(data)
 
         self.data = xr.concat(all_data, dim=concat_dim)
@@ -777,18 +774,38 @@ class Timeseries:
     def read_non_conform_csvdata(self):
         raise NotImplementedError
 
+    def apply_cf_attributes(self, station_name: str, lat: float, lon: float, elev: float, verbose=False):
+        # Will need this method later anyway.
+        # I may have to modify this method once I get to writing the csv reader.
+        # I.e. have a single non_conform reader and call this method afterwards.
+        # In the end, there would be three sources for non-conform data: netcdf, csv and as an argument from
+        # __init__
+
+        old_attrs = []
+        # Preparing metadata:
+        metadata = dict()
+        metadata["featureType"] = "timeSeries"  # assuming the feature
+        metadata["station_name"] = station_name
+        metadata["lat"] = lat
+        metadata["lon"] = lon
+        metadata["station_elevation"] = elev
+
+        cf_table = (os.path.split(os.path.realpath(__file__))[0]
+                    + "/resources/cf_table_timeseries_fields.yaml")
+
+        self.data = assign_cf_attributes_tslist(self.data, metadata, cf_table, old_attrs, verbose)
+
     # ----------------------------------------------------------------------
     #  Writers
     # ----------------------------------------------------------------------
-    def write_cfconform_data(
-            self, overwrite=False, concat_dim="station_name", verbose=False
-    ):
+    def write_cfconform_data(self, overwrite=False, concat_dim="station_name", split=None, verbose=False):
         """
         Write data to
         Args:
             overwrite: if True, an existing file will be overwritten. If False, and the file exists,
             data will be appended along the dimension concat_dim.
             concat_dim: the dimension along which data will be concatenated if a file already exists.
+            split: YS for yearly, MS for monthly or None for no splitting
             verbose: if True, speak with user
 
         Returns: None
@@ -801,32 +818,34 @@ class Timeseries:
         dtstart = dt.datetime.fromtimestamp(t1.item() / 10 ** 9)
         dtend = dt.datetime.fromtimestamp(t2.item() / 10 ** 9)
 
-        targetfile = get_list_of_filenames2(self.dataset, dtstart, dtend)
+        filenames, tvec_split = get_list_of_filenames(self.dataset, dtstart, dtend, split)
 
-        if os.path.exists(targetfile) and not overwrite:
-            if verbose:
-                print(f"merging into {targetfile}")
-            old_data = xr.open_dataset(targetfile)
-            all_data = xr.concat([old_data, self.data], dim=concat_dim)
-            all_data = all_data.set_index({concat_dim: concat_dim})
-            old_data.close()
-            all_data.to_netcdf(targetfile, mode="w", unlimited_dims="time")
-            all_data.close()
-        elif os.path.exists(targetfile) and overwrite:
-            if verbose:
-                print(f"Write new file {targetfile}")
-            self.data.to_netcdf(targetfile, mode="w", unlimited_dims="time")
-        elif not os.path.exists(targetfile):
-            targetfile.parent.mkdir(exist_ok=True)
-            self.data.to_netcdf(targetfile, mode="w", unlimited_dims="time")
+        for idx in range(0, len(filenames)):
+            targetfile = filenames[idx]
+            subset = self.data.sel(time=slice(tvec_split[idx], tvec_split[idx + 1]))
+
+            if os.path.exists(targetfile) and not overwrite:
+                if verbose:
+                    print(f"merging into {targetfile}")
+                old_data = xr.open_dataset(targetfile)
+                all_data = xr.concat([old_data, subset], dim=concat_dim)
+                all_data = all_data.set_index({concat_dim: concat_dim})
+                old_data.close()
+                all_data.to_netcdf(targetfile, mode="w", unlimited_dims="time")
+                all_data.close()
+            elif os.path.exists(targetfile) and overwrite:
+                if verbose:
+                    print(f"Write new file {targetfile}")
+                subset.to_netcdf(targetfile, mode="w", unlimited_dims="time")
+            elif not os.path.exists(targetfile):
+                targetfile.parent.mkdir(exist_ok=True)
+                subset.to_netcdf(targetfile, mode="w", unlimited_dims="time")
 
     # ----------------------------------------------------------------------
     #  Plotters
     # ----------------------------------------------------------------------
 
-    def plot_Availability(
-            self, var: str, station_name: str, year: str, zz: float, savename
-    ):
+    def plot_Availability(self, var: str, station_name: str, year: str, zz: float, savename):
 
         """
         Creates a plot of the data availability.

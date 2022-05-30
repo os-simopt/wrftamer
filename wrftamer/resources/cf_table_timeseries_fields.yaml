@@ -3,6 +3,9 @@
 station_name:
     long_name: "station name"
     cf_role: "timeseries_id"
+station_id:
+    long_name: "station id"
+    cf_role: "timeseries_id"
 station_elevation:
     standard_name: surface_altitude
     long_name: height above sea level
@@ -24,12 +27,10 @@ t:
     standard_name: air_temperature
     long_name: temperature
     units: K
-
 pt:
     standard_name: air_potential_temperature
     long_name: potential temperature
     units: K
-
 wsp:
     standard_name: wind_speed
     long_name: horizontal wind speed
@@ -66,4 +67,68 @@ gen_spd:
     standard_name: generator_speed
     long_name: generator speed
     units: rpm
-
+hum:
+    standard_name: humidity
+    long_name: humidity
+    units: '%'
+prec_dur:
+    standard_name: precipitation_duration
+    long_name: precipitation duration
+    units: s
+prec_height:
+    standard_name: precipitation_height
+    long_name: precipitation height
+    units: kg m-2
+prec_ind:
+    standard_name: precipitation_indicator_wr
+    long_name: precipitation indicator
+    units: '-'
+rad_glob:
+    standard_name: radiation_global
+    long_name: global radiation
+    units: J m-2
+rad_sky_sw:
+    standard_name: radiation_sky_short_wave_diffuse
+    long_name: short wave diffuse radiation from sky
+    units: J m-2
+rad_sky_lw:
+    standard_name: radiation_sky_long_wave
+    long_name: long wave radiation from sky
+    units: J m-2
+sun_dur:
+    standard_name: sunshine_duration
+    long_name: sunshine duration
+    units: s
+tmax_air:
+    standard_name: temperature_air_max
+    long_name: maximum air temperature
+    units: K
+tmin_air:
+    standard_name: temperature_air_min
+    long_name: minimum air temperature
+    units: K
+tmean_air:
+    standard_name: temperature_air_mean
+    long_name: mean air temperature
+    units: K
+tdmean:
+    standard_name: temperature_dew_point_mean
+    long_name: mean dew point temperature
+    units: K
+wdir_gust_max:
+    standard_name: wind_direction_gust_max
+    long_name: direction of maximum gust
+    units: degree
+wsp_gust_max:
+    standard_name: wind_gust_max
+    long_name: maximum gust
+    units: m s-1
+wsp_min:
+    standard_name: wind_speed_min
+    long_name: wind speed minimum
+    units: m s-1
+wsp_max:
+    standard_name: wind_speed_max
+    long_name: wind speed maximum
+    units: m s-1
+    comment: 'rolling mean'

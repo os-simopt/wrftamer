@@ -10,7 +10,6 @@ from wrftamer.wrfplotter_classes import (
     Map,
     Timeseries,
     calc_PT,
-    get_list_of_filenames2,
     get_list_of_filenames,
 )
 
@@ -84,13 +83,13 @@ def test_store_and_load_intermediate(map_env):
         if cls.data.model_level == "sfc":
             model_level = "sfc"
             expected_filename = (
-                testdir / f"Interm_{cls.data.dom}_{cls.data.name}_{timestring}.nc"
+                    testdir / f"Interm_{cls.data.dom}_{cls.data.name}_{timestring}.nc"
             )
         else:
             model_level = ml
             expected_filename = (
-                testdir
-                / f"Interm_{cls.data.dom}_{cls.data.name}_{timestring}_ml{cls.data.model_level}.nc"
+                    testdir
+                    / f"Interm_{cls.data.dom}_{cls.data.name}_{timestring}_ml{cls.data.model_level}.nc"
             )
 
         expected_hgt = testdir / f"hgt_{cls.data.dom}.nc"
@@ -232,13 +231,10 @@ def test_write_cfconform_data(ts_env):
 
     dtstart = dt.datetime(2020, 5, 17)
     dtend = dt.datetime(2020, 5, 19)
-    targetfile = get_list_of_filenames2(cls1.dataset, dtstart, dtend)
+    targetfiles, disc = get_list_of_filenames(cls1.dataset, dtstart, dtend, split=None)
 
-    # This tests does not work on GitHub for some reason.
-    #if not targetfile.is_file():
-    #    raise FileNotFoundError
-
-    shutil.rmtree(targetfile.parent)
+    for targetfile in targetfiles:
+        shutil.rmtree(targetfile.parent)
 
 
 def test_plot_Availability(ts_env):
@@ -267,17 +263,8 @@ def test_plot_Availability(ts_env):
 def test_get_list_of_filenames():
     name_of_dataset = "Testset"
 
-    # Case1: time window much larger than Testset
     dtstart = dt.datetime(2018, 1, 1)
     dtend = dt.datetime(2022, 1, 1)
     get_list_of_filenames(name_of_dataset, dtstart, dtend)
-
-    # Case2: time window earlier than Testset
-    dtstart = dt.datetime(2018, 1, 1)
-    dtend = dt.datetime(2019, 1, 1)
-    get_list_of_filenames(name_of_dataset, dtstart, dtend)
-
-    # Case2: time window earlier than Testset
-    dtstart = dt.datetime(2021, 1, 1)
-    dtend = dt.datetime(2022, 1, 1)
-    get_list_of_filenames(name_of_dataset, dtstart, dtend)
+    get_list_of_filenames(name_of_dataset, dtstart, dtend, split='YS')
+    get_list_of_filenames(name_of_dataset, dtstart, dtend, split='MS')
