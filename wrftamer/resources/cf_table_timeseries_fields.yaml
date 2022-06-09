@@ -35,23 +35,11 @@ wsp:
     standard_name: wind_speed
     long_name: horizontal wind speed
     units: 'm s-1'
-wspd:
-    standard_name: wind_speed
-    long_name: horizontal wind speed
-    units: 'm s-1'
 dir:
     standard_name: wind_from_direction
     long_name: wind direction
     units: 'degree'
-wdir:
-    standard_name: wind_from_direction
-    long_name: wind direction
-    units: 'degree'
 p:
-    standard_name: air_pressure
-    long_name: air pressure
-    units: Pa
-pres:
     standard_name: air_pressure
     long_name: air pressure
     units: Pa
@@ -67,17 +55,17 @@ gen_spd:
     standard_name: generator_speed
     long_name: generator speed
     units: rpm
-hum:
-    standard_name: humidity
-    long_name: humidity
+rh:
+    standard_name: relative_humidity
+    long_name: relative humidity
     units: '%'
 prec_dur:
     standard_name: precipitation_duration
     long_name: precipitation duration
     units: s
-prec_height:
-    standard_name: precipitation_height
-    long_name: precipitation height
+prec_amount:
+    standard_name: precipitation_amount
+    long_name: precipitation amount
     units: kg m-2
 prec_ind:
     standard_name: precipitation_indicator_wr
@@ -96,8 +84,8 @@ rad_sky_lw:
     long_name: long wave radiation from sky
     units: J m-2
 sun_dur:
-    standard_name: sunshine_duration
-    long_name: sunshine duration
+    standard_name: duration_of_sunshine
+    long_name: duration of sunshine
     units: s
 tmax_air:
     standard_name: temperature_air_max
@@ -115,7 +103,7 @@ tdmean:
     standard_name: temperature_dew_point_mean
     long_name: mean dew point temperature
     units: K
-wdir_gust_max:
+dir_gust_max:
     standard_name: wind_direction_gust_max
     long_name: direction of maximum gust
     units: degree

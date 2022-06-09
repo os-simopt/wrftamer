@@ -441,13 +441,16 @@ def assign_cf_attributes_tslist(
                 print(f"Consider putting {item} into the metadata")
 
     # Add lat, lon, station_name and station_elevation to coordinates.
-    if "lat" not in data:  # assuming all are missing if one are missing.
+    if "lat" not in data:  # assuming all are missing if one is missing.
         lat = xr.DataArray(metadata["lat"])
         lon = xr.DataArray(metadata["lon"])
         alt = xr.DataArray(metadata["station_elevation"])
 
         data = data.assign({"lat": lat, "lon": lon, "station_elevation": alt})
         data = data.set_coords(["lat", "lon", "station_elevation"])
+
+    if 'station_id' in data:
+        data = data.set_coords(["station_id"])
 
     if "station_name" not in data:
         name = xr.DataArray(metadata["station_name"])
@@ -829,8 +832,12 @@ class Timeseries:
                     print(f"merging into {targetfile}")
                 old_data = xr.open_dataset(targetfile)
                 all_data = xr.concat([old_data, subset], dim=concat_dim)
-                all_data = all_data.set_index({concat_dim: concat_dim})
+
+                if concat_dim not in all_data.indexes:
+                    all_data = all_data.set_index({concat_dim: concat_dim})
+
                 old_data.close()
+
                 all_data.to_netcdf(targetfile, mode="w", unlimited_dims="time")
                 all_data.close()
             elif os.path.exists(targetfile) and overwrite:

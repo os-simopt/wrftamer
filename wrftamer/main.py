@@ -713,15 +713,14 @@ class project:
         workdir = self.get_workdir(exp_name)
 
         outdir = workdir / "out"
-        idir = (workdir / "out").glob("tsfiles*")
+        idir = list((workdir / "out").glob("tsfiles*"))
 
-        if len(list(idir)) == 0 or not outdir.is_dir():
+        if len(idir) == 0 or not outdir.is_dir():
             if verbose:
                 print(f"Cannot process tslists.")
                 print(f"The directory {workdir}/out/tsfiles*' does not exist")
             return
 
-        Path(outdir / f"raw_tslist_{domain}")
         merge_tslist_files(idir, outdir, location, domain, self.name, exp_name)
 
         # if tslists exists
