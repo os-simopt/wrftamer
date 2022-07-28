@@ -347,7 +347,7 @@ def get_list_of_filenames(name_of_dataset: str, dtstart: dt.datetime, dtend: dt.
     # CONVENTION: Each file must be named Stationname_starttime_endtime.nc
     #############################################################################
 
-    # Removing time info, to fin convention.
+    # Removing time info, to fit convention.
     dtstart2 = dt.datetime(dtstart.year, dtstart.month, dtstart.day)
     dtend2 = dt.datetime(dtend.year, dtend.month, dtend.day)
 
@@ -698,6 +698,9 @@ class Timeseries:
                 tmp = xr.load_dataset(filename)
                 data.append(tmp)
             data = xr.concat(data, dim="time")
+            # drop duplicates
+            _, index = np.unique(data['time'], return_index=True)
+            data = data.isel(time=index)
 
         if calc_pt:
             # This will only do something if T_X and P_Y exists.
