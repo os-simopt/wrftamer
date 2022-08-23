@@ -120,3 +120,19 @@ wsp_max:
     long_name: wind speed maximum
     units: m s-1
     comment: 'rolling mean'
+wsp_mean:
+    standard_name: wind_speed_mean
+    long_name: average wind speed
+    units: m s-1
+wsp_std:
+    standard_name: wind_speed_std
+    long_name: wind speed standard deviation
+    units: m s-1
+dir_mean:
+    standard_name: wind_from_direction_mean
+    long_name: average wind direction
+    units: 'degree'
+dir_std:
+    standard_name: wind_from_direction_std
+    long_name: wind direction standard deviation
+    units: 'degree'
