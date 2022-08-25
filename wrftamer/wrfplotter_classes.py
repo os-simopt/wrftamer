@@ -424,7 +424,8 @@ def assign_cf_attributes_tslist(
             return
 
     if "Conventions" not in metadata:
-        print('"Conventions" not in metadata. Selecting CF-1.8 as default.')
+        if verbose:
+            print('"Conventions" not in metadata. Selecting CF-1.8 as default.')
         metadata["Conventions"] = "CF-1.8"
 
     recommended_set = [
@@ -770,6 +771,7 @@ class Timeseries:
 
             data = assign_cf_attributes_tslist(data, metadata, cf_table, old_attrs, verbose)
             all_data.append(data)
+            data.close()
 
         self.data = xr.concat(all_data, dim=concat_dim)
         save_attts = self.data[concat_dim].attrs
@@ -835,6 +837,7 @@ class Timeseries:
                     print(f"merging into {targetfile}")
                 old_data = xr.open_dataset(targetfile)
                 all_data = xr.concat([old_data, subset], dim=concat_dim)
+                old_data.close()
 
                 if concat_dim not in all_data.indexes:
                     all_data = all_data.set_index({concat_dim: concat_dim})
