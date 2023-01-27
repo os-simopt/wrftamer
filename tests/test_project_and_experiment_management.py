@@ -334,10 +334,7 @@ def experiment_checks(proj_name1, exp_name1):
     proj.exp_get_maxdom_from_config(exp_name1)
 
     # Updating the database should work
-    proj.update_xlsx()
-
-    # Should check the other branch.
-    proj.rewrite_xls()
+    proj.update_csv()
 
     # Removing an experiment should work
     proj.exp_remove(exp_name1, force=True)
