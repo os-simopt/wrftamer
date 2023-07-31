@@ -28,3 +28,4 @@ coverage.xml
 /tests/resources/testset2.nc
 /tests/resources/testset3.nc
 
+/jupyterlab/

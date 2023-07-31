@@ -26,8 +26,10 @@ def load_obs_data(obs_data: dict, obs: str, dataset: str, **kwargs):
         dtstart = dt.datetime(ttp.year, 1, 1)
         dtend = dt.datetime(ttp.year + 1, 1, 1)
 
+    split = kwargs.get('split', None)
+
     ts = Timeseries(dataset)
-    ts.read_cfconform_data(dtstart, dtend, calc_pt=True)
+    ts.read_cfconform_data(dtstart, dtend, calc_pt=True, split=split)
 
     if "station_name" in ts.data.dims:
         for stat in ts.data.station_name.values:
@@ -41,7 +43,7 @@ def load_obs_data(obs_data: dict, obs: str, dataset: str, **kwargs):
 
 def load_mod_data(mod_data: dict, exp_name: str, verbose=False, **kwargs):
     """
-    This function just loads model data from a single location and stores everything in the mod_data dict.
+    This function loads model data for all locations and stores everything in the mod_data dict.
     """
 
     from wrftamer.main import project
@@ -99,15 +101,16 @@ def load_all_obs_data(dataset, **kwargs):
         dtstart, dtend = kwargs["obs_load_from_to"]
     except KeyError:
         ttp = kwargs["time_to_plot"]
-
         dtstart = dt.datetime(ttp.year, 1, 1)
         dtend = dt.datetime(ttp.year + 1, 1, 1)
+
+    split = kwargs.get('split', None)
 
     ts = Timeseries(dataset)
 
     use_dask = kwargs.get("use_dask", True)
 
-    ts.read_cfconform_data(dtstart, dtend, calc_pt=True, use_dask=use_dask)
+    ts.read_cfconform_data(dtstart, dtend, calc_pt=True, use_dask=use_dask, split=split)
 
     return ts.data
 
@@ -442,7 +445,8 @@ def prep_ts_data(obs_data, mod_data, infos: dict, verbose=False) -> (pd.DataFram
 
             # interpolate all data to desired level
             zvec = mymod.ALT[0, :].values
-            idx = (np.abs(zvec - float(lev))).argmin()
+            idxvec = np.arange(0, len(zvec))
+            idx = max(idxvec[zvec < float(lev)])
             xa1 = mymod.isel(model_level=idx)
             xa2 = mymod.isel(model_level=idx + 1)
             w1 = abs(zvec[idx] - float(lev)) / abs(zvec[idx + 1] - zvec[idx])

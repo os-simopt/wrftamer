@@ -46,8 +46,8 @@ def list_unassociated_exp(verbose=True):
     home_path, db_path, run_path, archive_path, disc = wrftamer_paths()
 
     try:
-        filename = db_path / "Unassociated_Experiments/List_of_Experiments.xlsx"
-        df = get_xls(filename)
+        filename = db_path / "Unassociated_Experiments/List_of_Experiments.csv"
+        df = get_csv(filename)
 
         if verbose:
             print(df.Name)
@@ -61,8 +61,8 @@ def list_unassociated_exp(verbose=True):
     return mylist
 
 
-def get_xls(filename):
-    df = pd.read_excel(
+def get_csv(filename):
+    df = pd.read_csv(
         filename,
         index_col="index",
         usecols=[
@@ -98,7 +98,7 @@ def reassociate(proj_old, proj_new, exp_name: str):
     )
 
     # Database update
-    df = get_xls(proj_new.filename)
+    df = get_csv(proj_new.filename)
     # Check if name is unique, otherwise cannot add an experiment of the same name
     if exp_name in df.Name.values:
         raise FileExistsError
@@ -109,7 +109,7 @@ def reassociate(proj_old, proj_new, exp_name: str):
     df.to_excel(proj_new.filename)
 
     # remove from old db
-    df = get_xls(proj_old.filename)
+    df = get_csv(proj_old.filename)
     idx = df.index[df.Name == exp_name].values
     df = df.drop(idx)
     df.to_excel(proj_old.filename)
@@ -150,14 +150,14 @@ class project:
 
     @property
     def filename(self):
-        filename = self.tamer_path / "List_of_Experiments.xlsx"
+        filename = self.tamer_path / "List_of_Experiments.csv"
         return filename
 
     # ------------------------------------------------------------------------------------------------------------------
     # Project related methods
     def create(self, verbose=True):
         """
-        Creates a directory and an empty xls file named List_of_Experiments.xls
+        Creates a directory and an empty csv file named List_of_Experiments.csv
         Creates a directory in run_path named proj_name. Runs should be created there
 
         Drops an error if proj_name already exists.
@@ -186,7 +186,7 @@ class project:
                 ]
             )
             df.set_index("index")
-            df.to_excel(self.tamer_path / "List_of_Experiments.xlsx")
+            df.to_csv(self.tamer_path / "List_of_Experiments.csv")
 
         namelist_template = (
             os.path.split(os.path.realpath(__file__))[0]
@@ -321,34 +321,20 @@ class project:
     def list_exp(self, verbose=True):
 
         # Fails with a FileNotFoundError if project does not exist.
-        df = get_xls(self.filename)
+        df = get_csv(self.filename)
 
         if verbose:
             print(df.Name)
 
         return df.Name.to_list()
 
-    def rewrite_xls(self):
-        """
-        Sometimes, when I edit the xls shet manually, It happens that it is stored with tousands of lines, all containing
-        just nans. This makes the wrftamer and especially the GUI extremely slow. An xlsx sheet like this must be reead
-        and rewritten. This function does exactly that.
-        """
-
-        df = get_xls(self.filename)
-        if len(df) == 0:
-            return
-
-        df = df[np.isfinite(df.index)]
-        df.to_excel(self.filename)
-
-    def update_xlsx(self):
+    def update_csv(self):
         """
         Calculation of rt, du etc is rather slow, so instead of calling this in the GUI, just call it from time to
-        time and write the data into the xlsx sheet.
+        time and write the data into the csv file.
         """
 
-        df = get_xls(self.filename)
+        df = get_csv(self.filename)
 
         exp_list = df.Name.to_list()
 
@@ -368,7 +354,7 @@ class project:
 
     def cleanup_db(self, verbose=True):
 
-        df = get_xls(self.filename)
+        df = get_csv(self.filename)
 
         for exp_name in df["Name"]:
             if (self.proj_path / exp_name).is_dir():
@@ -414,7 +400,7 @@ class project:
             self.create()  # always create a project, even if proj_name is None.
 
         # Check Database
-        df = get_xls(self.filename)
+        df = get_csv(self.filename)
 
         # Check if name is unique, otherwise cannot add an experiment of the same name
         if exp_name in df.Name.values:
@@ -476,7 +462,7 @@ class project:
 
         old_exp_path = self.proj_path / old_exp_name
         new_exp_path = self.proj_path / new_exp_name
-        df = get_xls(self.filename)
+        df = get_csv(self.filename)
 
         status = self.exp_get_status(old_exp_name)
         if status == "archived":
@@ -553,7 +539,7 @@ class project:
         archive_path = self.archive_path / exp_name
         status = self.exp_get_status(exp_name)
 
-        df = get_xls(self.filename)
+        df = get_csv(self.filename)
 
         if exp_path.is_dir() or archive_path.is_dir():
             remove_dirs = True
@@ -604,7 +590,7 @@ class project:
         old_workdir = self.get_workdir(old_exp_name)
         new_workdir = old_workdir.parent / new_exp_name
         # I do not call get_workdir (because this one would be a run dir, so it would fail with archived runs)
-        df = get_xls(self.filename)
+        df = get_csv(self.filename)
 
         if os.path.isdir(new_workdir):
             if verbose:
@@ -713,15 +699,14 @@ class project:
         workdir = self.get_workdir(exp_name)
 
         outdir = workdir / "out"
-        idir = (workdir / "out").glob("tsfiles*")
+        idir = list((workdir / "out").glob("tsfiles*"))
 
-        if len(list(idir)) == 0 or not outdir.is_dir():
+        if len(idir) == 0 or not outdir.is_dir():
             if verbose:
                 print(f"Cannot process tslists.")
                 print(f"The directory {workdir}/out/tsfiles*' does not exist")
             return
 
-        Path(outdir / f"raw_tslist_{domain}")
         merge_tslist_files(idir, outdir, location, domain, self.name, exp_name)
 
         # if tslists exists
@@ -1008,7 +993,7 @@ class project:
 
     def exp_provide_info(self, exp_name=None):
 
-        df = get_xls(self.filename)
+        df = get_csv(self.filename)
 
         select = list(np.repeat(False, len(df)))
         df["select"] = select
@@ -1024,7 +1009,7 @@ class project:
 
     def exp_provide_all_info(self, exp_name=None):
 
-        df = get_xls(self.filename)
+        df = get_csv(self.filename)
 
         if exp_name is not None:
             df = df[df.Name == exp_name]
@@ -1033,7 +1018,7 @@ class project:
 
     def exp_get_status(self, exp_name):
 
-        df = get_xls(self.filename)
+        df = get_csv(self.filename)
         df = df[df.Name == exp_name]
 
         try:
@@ -1105,7 +1090,7 @@ class project:
         A small helper function to update the data base entries. may go to another file at some point.
         """
 
-        df = get_xls(self.filename)
+        df = get_csv(self.filename)
 
         line = df[df.Name == exp_name]
 
