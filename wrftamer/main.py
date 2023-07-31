@@ -7,10 +7,10 @@ import numpy as np
 from pathlib import Path
 import yaml
 from collections import defaultdict
+from tqdm import tqdm
 
 from wrftamer.wrftamer_paths import wrftamer_paths, get_make_submit
 import wrftamer.wrftamer_functions as wtfun
-from wrftamer.utility import printProgressBar
 from wrftamer.process_tslist_files import merge_tslist_files, average_ts_files
 from wrftamer.wrfplotter_classes import Map
 
@@ -728,12 +728,8 @@ class project:
         rawlist = list(outdir.glob("raw*"))
 
         total = len(rawlist)
-        printProgressBar(0, total, prefix="Progress:", suffix="Complete", length=50)
-        for i, rawfile in enumerate(rawlist):
+        for i, rawfile in tqdm(enumerate(rawlist)):
             average_ts_files(str(rawfile), timeavg)
-            printProgressBar(
-                i + 1, total, prefix="Progress:", suffix="Complete", length=50
-            )
 
         self._update_db_entry(exp_name, {"status": "post processed"})
 

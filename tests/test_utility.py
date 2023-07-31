@@ -1,21 +1,7 @@
-import numpy as np
-from wrftamer.utility import printProgressBar, get_random_string
+from wrftamer.utility import get_random_string
 import pytest
 
-
-def test_printPogressBar():
-    rawlist = np.arange(1000)
-    total = len(rawlist)
-    printProgressBar(0, total, prefix="Progress:", suffix="Complete", length=50)
-    for i, rawfile in enumerate(rawlist):
-        printProgressBar(i + 1, total, prefix="Progress:", suffix="Complete", length=50)
-
-
-def test_printPogressBar2():
-    rawlist = np.arange(0)
-    total = len(rawlist)
-    printProgressBar(0, total, prefix="Progress:", suffix="Complete", length=50)
-
+# works
 
 def test_get_random_string1():
     with pytest.raises(ValueError):

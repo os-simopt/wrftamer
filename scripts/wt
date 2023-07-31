@@ -78,32 +78,36 @@ def cli_first_steps(
 
     """
 
+    wrf_and_wsp_parent_dir = Path(wrf_and_wsp_parent_dir)
+
     if exe_dir is None:
         exe_dir = home_path / "bin/wrf_executables"
+    else:
+        exe_dir = Path(exe_dir)
 
     if essentials_dir is None:
         essentials_dir = home_path / "src/wrf_essentials"
+    else:
+        essentials_dir = Path(essentials_dir)
 
     if non_essentials_dir is None:
         non_essentials_dir = home_path / "src/wrf_nonessentials"
+    else:
+        non_essentials_dir = Path(non_essentials_dir)
 
     if vtable is None:
         vtable = "Vtable.ECMWF"
 
-    click.echo("Creating directory %s" % exe_dir)
-    click.echo("Copying relevant .exe files to %s" % exe_dir)
-    click.echo(
-        "The executables were copied from subdirectories of %s" % wrf_and_wsp_parent_dir
-    )
+    click.echo(f"Creating directory {exe_dir}")
+    click.echo(f"Copying relevant .exe files to {exe_dir}")
+    click.echo(f"The executables were copied from subdirectories of {wrf_and_wsp_parent_dir}")
     click.echo("")
-    click.echo("Creating directory %s" % essentials_dir)
-    click.echo("Copying relevant files to %s" % essentials_dir)
-    click.echo(
-        "The files were copied from subdirectories of %s" % wrf_and_wsp_parent_dir
-    )
-    click.echo("Vtable: %s", vtable)
+    click.echo(f"Creating directory {essentials_dir}")
+    click.echo(f"Copying relevant files to {essentials_dir}")
+    click.echo(f"The files were copied from subdirectories of {wrf_and_wsp_parent_dir}")
+    click.echo(f"Vtable: {vtable}")
     click.echo("")
-    click.echo("Creating directory %s" % non_essentials_dir)
+    click.echo(f"Creating directory {non_essentials_dir}")
     click.echo("")
 
     wtfun.make_executable_dir(exe_dir, wrf_and_wsp_parent_dir)

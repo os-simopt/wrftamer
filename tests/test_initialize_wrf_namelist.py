@@ -5,6 +5,8 @@ import yaml
 import pytest
 from wrftamer.initialize_wrf_namelist import initialize_wrf_namelist
 
+# works
+
 test_res_path = Path(os.path.split(os.path.realpath(__file__))[0] + "/resources/")
 exp_path = test_res_path / "test_run"
 
