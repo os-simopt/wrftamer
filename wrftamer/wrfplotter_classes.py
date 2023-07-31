@@ -63,7 +63,7 @@ class Map:
         ml: model level
         """
 
-        fid = Dataset(filename, "r")
+        fid = Dataset(filename, "r", format="NETCDF4_CLASSIC")
         time = wrf.getvar(fid, "times", wrf.ALL_TIMES)
 
         if select_time == -1:

@@ -6,6 +6,8 @@ import pandas as pd
 from wrftamer.main import project, list_projects, list_unassociated_exp, reassociate
 
 
+# works
+
 # -----------------------------------------------------------------------
 # Trivial tests for nonexistent project
 # -----------------------------------------------------------------------
@@ -439,6 +441,7 @@ def test_postprocessing(test_env2):
     test_proj.rename("some_random_new_name", verbose=True)
 
 
+@pytest.mark.wip
 def test_postprocessing2(test_env2):
     test_proj, exp_name1 = test_env2
 
@@ -455,6 +458,7 @@ def test_postprocessing2(test_env2):
     )  # use defaults
 
 
+@pytest.mark.wip
 def test_postprocessing3(test_env2):
     test_proj, exp_name1 = test_env2
 

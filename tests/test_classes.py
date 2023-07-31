@@ -22,6 +22,7 @@ def test_init():
     Map(plot_path="some/path", intermediate_path="other/path", fmt="pdf")
 
 
+@pytest.mark.wip
 def test_extract_data_from_wrfout(map_env):
     testfile = map_env[0]
 
@@ -60,6 +61,7 @@ def test_extract_data_from_wrfout(map_env):
     cls.extract_data_from_wrfout(testfile, dom, "T", ml, select_time)
 
 
+@pytest.mark.wip
 def test_store_and_load_intermediate(map_env):
     testfile, testdir = map_env
 
@@ -104,6 +106,7 @@ def test_store_and_load_intermediate(map_env):
         cls.load_intermediate(dom, var, model_level, "*")
 
 
+@pytest.mark.wip
 def test_plot(map_env):
     testfile, testdir = map_env
 
@@ -146,6 +149,7 @@ def test_init2():
         Timeseries(1, data=None)
 
 
+@pytest.mark.wip
 def test_read_cfconform_data(ts_env):
     cls1 = Timeseries("Testset")
     cls2 = Timeseries("Testset2")
@@ -177,6 +181,7 @@ def test_read_cfconform_data(ts_env):
     cls2.read_cfconform_data(dtstart, dtend, None, True, verbose=True, use_dask=False)
 
 
+@pytest.mark.wip
 def test_read_non_conform_ncdata(ts_env):
     filenames = ts_env
 
@@ -205,12 +210,14 @@ def test_read_non_conform_ncdata(ts_env):
     )
 
 
+@pytest.mark.wip
 def test_read_non_conform_csvdata():
     cls = Timeseries("Testset")
     with pytest.raises(NotImplementedError):
         cls.read_non_conform_csvdata()
 
 
+@pytest.mark.wip
 def test_write_cfconform_data(ts_env):
     cls1 = Timeseries("Testset")
 
@@ -237,6 +244,7 @@ def test_write_cfconform_data(ts_env):
         shutil.rmtree(targetfile.parent)
 
 
+@pytest.mark.wip
 def test_plot_Availability(ts_env):
     cls1 = Timeseries("Testset")
     cls2 = Timeseries("Testset2")
@@ -260,6 +268,7 @@ def test_plot_Availability(ts_env):
         os.remove(filename)
 
 
+@pytest.mark.wip
 def test_get_list_of_filenames():
     name_of_dataset = "Testset"
 

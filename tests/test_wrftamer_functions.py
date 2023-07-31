@@ -1,6 +1,5 @@
 import pytest
 import os
-import shutil
 from pathlib import Path
 from wrftamer.wrftamer_functions import (
     writeLogFile,
@@ -15,6 +14,7 @@ from wrftamer.wrftamer_functions import (
 # rename_dirs: test with ignore_submit = False
 # copy_dirs: create fake files to link.
 
+# works
 
 def test_writeLogFile(functions_environment):
     test_exp_path = functions_environment

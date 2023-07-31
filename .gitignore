@@ -13,6 +13,8 @@ __pycache__
 .coverage
 coverage.xml
 
+/jupyter/*
+
 /tests/resources/model_data/Ave10Min_tslist_d01.nc
 /tests/resources/model_data/raw_tslist_d01.nc
 /tests/resources/observations_data/Nonconform/Nonconform_20200101_20210101.nc

@@ -4,6 +4,7 @@ from wrftamer.process_tslist_files import merge_tslist_files, average_ts_files
 
 # TODO: I should add tests for other variant of tsfiles...
 #  Also, test the Failure if the format of the tsfiles is wrong...
+# works
 
 
 def test_tslist_processing(tslist_environment):

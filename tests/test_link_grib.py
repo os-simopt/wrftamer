@@ -2,8 +2,9 @@ import pytest
 from wrftamer.link_grib import link_grib
 
 
-def test_link_grib1(link_environment):
+# works
 
+def test_link_grib1(link_environment):
     driving_data, exp_path = link_environment
 
     link_grib(driving_data, exp_path, SUFFIX_LEN=3)
@@ -18,7 +19,6 @@ def test_link_grib1(link_environment):
 
 
 def test_link_grib2(link_environment):
-
     driving_data, exp_path = link_environment
 
     with pytest.raises(SystemExit):
