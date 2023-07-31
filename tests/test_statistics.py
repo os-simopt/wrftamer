@@ -1,9 +1,8 @@
 import pytest
 import pandas as pd
 import os
-import xarray as xr
 import numpy as np
-from wrftamer.Statistics import Statistics, Statistics_xarray
+from src.wrftamer import Statistics, Statistics_xarray
 
 # fails
 

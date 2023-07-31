@@ -3,7 +3,7 @@ import shutil
 from pathlib import Path
 import yaml
 import pytest
-from wrftamer.initialize_wrf_namelist import initialize_wrf_namelist
+from src.wrftamer import initialize_wrf_namelist
 
 # works
 

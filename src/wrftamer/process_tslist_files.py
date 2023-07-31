@@ -6,7 +6,7 @@ import xarray as xr
 import numpy as np
 import os
 import itertools
-from wrftamer.wrfplotter_classes import assign_cf_attributes_tslist
+from src.wrftamer.wrfplotter_classes import assign_cf_attributes_tslist
 
 
 def uv_to_FFDD(u, v):

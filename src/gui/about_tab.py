@@ -1,6 +1,5 @@
-import os
-import wrftamer
-from wrftamer.gui.gui_base import path_base
+from src import wrftamer
+from src.gui.gui_base import path_base
 import panel as pn
 
 

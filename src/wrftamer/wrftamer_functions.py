@@ -6,9 +6,9 @@ import pandas as pd
 from pathlib import Path, PosixPath
 import re
 import subprocess
-from wrftamer.initialize_wrf_namelist import initialize_wrf_namelist
-from wrftamer.link_grib import link_grib
-from wrftamer.wrftamer_paths import wrftamer_paths
+from src.wrftamer.initialize_wrf_namelist import initialize_wrf_namelist
+from src.wrftamer.link_grib import link_grib
+from src.wrftamer.wrftamer_paths import wrftamer_paths
 
 """
 Here, I translated the old shell scripts to python scripts.

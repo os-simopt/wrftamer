@@ -3,8 +3,8 @@ import os
 from pathlib import Path
 import shutil
 import datetime as dt
-from wrftamer.plotting.load_and_prepare import load_obs_data, load_mod_data
-from wrftamer.main import project
+from src.wrftamer.plotting.load_and_prepare import load_obs_data, load_mod_data
+from src.wrftamer import project
 
 
 @pytest.fixture

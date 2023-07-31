@@ -5,7 +5,7 @@ This script is called by the wt watchdog. It searches for experiments with the s
 the postprocessing protocol defined in the configure.yaml file.
 """
 
-from wrftamer.main import project, list_projects
+from src.wrftamer import project, list_projects
 import datetime as dt
 import click
 

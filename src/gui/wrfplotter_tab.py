@@ -5,10 +5,10 @@ import pandas as pd
 from pathlib import Path
 from io import StringIO
 
-from wrftamer.gui.gui_base import path_base
-from wrftamer.main import project, list_projects, list_unassociated_exp
+from src.gui.gui_base import path_base
+from src.wrftamer.main import project, list_projects, list_unassociated_exp
 
-from wrftamer.gui.wrfplotter_utility import (
+from src.gui.wrfplotter_utility import (
     get_available_obs,
     get_available_doms,
     get_vars_per_plottype,
@@ -19,18 +19,18 @@ from wrftamer.gui.wrfplotter_utility import (
     get_available_tvec,
 )
 
-from wrftamer.wrfplotter_classes import Map, get_max_timerange
-from wrftamer.plotting.load_and_prepare import load_obs_data, load_mod_data
-from wrftamer.plotting.load_and_prepare import (
+from src.wrftamer.wrfplotter_classes import Map, get_max_timerange
+from src.wrftamer.plotting.load_and_prepare import load_obs_data, load_mod_data
+from src.wrftamer.plotting.load_and_prepare import (
     prep_profile_data,
     prep_ts_data,
     prep_zt_data,
     prep_windrose_data,
     get_limits_and_labels,
 )
-from wrftamer.plotting.hv_plots import create_hv_plot
-from wrftamer.plotting.mpl_plots import create_mpl_plot
-from wrftamer.utility import get_random_string
+from src.wrftamer.plotting.hv_plots import create_hv_plot
+from src.wrftamer.plotting.mpl_plots import create_mpl_plot
+from src.wrftamer.utility import get_random_string
 import holoviews as hv
 
 hv.extension("bokeh")

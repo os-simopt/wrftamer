@@ -4,7 +4,7 @@ import xarray as xr
 import panel as pn
 import datetime as dt
 import pandas as pd
-from wrftamer.main import project
+from src.wrftamer.main import project
 import yaml
 
 

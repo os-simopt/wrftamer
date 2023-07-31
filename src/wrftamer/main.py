@@ -9,10 +9,10 @@ import yaml
 from collections import defaultdict
 from tqdm import tqdm
 
-from wrftamer.wrftamer_paths import wrftamer_paths, get_make_submit
-import wrftamer.wrftamer_functions as wtfun
-from wrftamer.process_tslist_files import merge_tslist_files, average_ts_files
-from wrftamer.wrfplotter_classes import Map
+from src.wrftamer.wrftamer_paths import wrftamer_paths, get_make_submit
+import src.wrftamer.wrftamer_functions as wtfun
+from src.wrftamer.process_tslist_files import merge_tslist_files, average_ts_files
+from src.wrftamer.wrfplotter_classes import Map
 
 
 def list_projects(verbose=True):

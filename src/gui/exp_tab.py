@@ -1,8 +1,8 @@
 import os
 import re
 import panel as pn
-from wrftamer.main import project, list_unassociated_exp
-from wrftamer.gui.gui_base import path_base
+from src.wrftamer.main import project, list_unassociated_exp
+from src.gui.gui_base import path_base
 
 
 class exp_tab(path_base):

@@ -6,7 +6,7 @@ import pytest
 import pandas as pd
 import xarray as xr
 import matplotlib.pyplot as plt
-from wrftamer.wrfplotter_classes import (
+from src.wrftamer import (
     Map,
     Timeseries,
     calc_PT,

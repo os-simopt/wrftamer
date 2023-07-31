@@ -1,5 +1,4 @@
-import pytest
-from wrftamer.process_tslist_files import merge_tslist_files, average_ts_files
+from src.wrftamer import merge_tslist_files, average_ts_files
 
 
 # TODO: I should add tests for other variant of tsfiles...

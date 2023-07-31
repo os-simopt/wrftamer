@@ -9,9 +9,9 @@ from pathlib import PosixPath, Path
 import os
 import yaml
 from typing import Union
-from wrftamer.plotting.mpl_plots import Availability, Map_Cartopy
-from wrftamer.plotting.hv_plots import Map_hvplots
-from wrftamer.plotting.load_and_prepare import get_limits_and_labels
+from src.wrftamer.plotting.mpl_plots import Availability, Map_Cartopy
+from src.wrftamer.plotting.hv_plots import Map_hvplots
+from src.wrftamer.plotting.load_and_prepare import get_limits_and_labels
 
 
 class Map:
@@ -30,12 +30,12 @@ class Map:
         if "plot_path" in kwargs:
             self.plot_path = Path(kwargs["plot_path"])
         else:
-            self.plot_path = Path("./")
+            self.plot_path = Path("/")
 
         if "intermediate_path" in kwargs:
             self.intermediate_path = Path(kwargs["intermediate_path"])
         else:
-            self.intermediate_path = Path("./")
+            self.intermediate_path = Path("/")
 
         if "fmt" in kwargs:
             self.fmt = kwargs["fmt"]

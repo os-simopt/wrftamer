@@ -1,5 +1,5 @@
 import pytest
-from wrftamer.link_grib import link_grib
+from src.wrftamer import link_grib
 
 
 # works

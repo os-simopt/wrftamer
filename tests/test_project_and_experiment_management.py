@@ -3,7 +3,7 @@ import os
 from pathlib import Path
 import shutil
 import pandas as pd
-from wrftamer.main import project, list_projects, list_unassociated_exp, reassociate
+from src.wrftamer import project, list_projects, list_unassociated_exp, reassociate
 
 
 # works
