@@ -3,7 +3,7 @@ import shutil
 import datetime as dt
 import yaml
 import pandas as pd
-from pathlib import Path, PosixPath
+from pathlib import Path
 import re
 import subprocess
 from src.wrftamer.initialize_wrf_namelist import initialize_wrf_namelist
@@ -43,7 +43,7 @@ def writeLogFile(logfile: str, program: str, log_level: int, message: str):
         fid.write(full_message)
 
 
-def make_executable_dir(exe_dir: PosixPath, wrf_and_wsp_parent_dir: PosixPath):
+def make_executable_dir(exe_dir: Path, wrf_and_wsp_parent_dir: Path):
     """
     Creates a directory for the copies of the executables of WRF and WPS and copies these files" \
     """
@@ -59,9 +59,7 @@ def make_executable_dir(exe_dir: PosixPath, wrf_and_wsp_parent_dir: PosixPath):
         shutil.copy(str(item), exe_dir)
 
 
-def make_essential_data_dir(
-    wrf_and_wsp_parent_dir: PosixPath, essentials_dir: PosixPath, vtable: str
-):
+def make_essential_data_dir(wrf_and_wsp_parent_dir: Path, essentials_dir: Path, vtable: str):
     """
     Creates a directory for the copies of the essential data of WRF and WPS; copies the data.
     """
@@ -89,15 +87,23 @@ def make_essential_data_dir(
         shutil.copy(str(item), essentials_dir)
 
 
-def make_non_essential_data_dir(non_essentials_dir: str):
+def make_non_essential_data_dir(non_essentials_dir: Path):
     os.makedirs(non_essentials_dir, exist_ok=True)
 
     # noting to copy for non-essentials (for now)
 
 
-def create_rundir(
-    exp_path: PosixPath, configure_file: str, namelist_template: str, verbose=False
-):
+def make_unassociated_experiments_dir(unassociated_dir: Path):
+    os.makedirs(unassociated_dir)
+
+    df = pd.DataFrame(
+        columns=["index", "Name", "time", "comment", "start", "end", "disk use", "runtime", "status", ]
+    )
+    df.set_index("index")
+    df.to_csv(unassociated_dir / "List_of_Experiments.csv")
+
+
+def create_rundir(exp_path: Path, configure_file: str, namelist_template: str, verbose=False):
     """
     Creating directory structure for an experiment, linking files, copying configure files.
 
@@ -163,7 +169,7 @@ def create_rundir(
     shutil.copyfile(configure_file, f"{exp_path}/configure.yaml")
 
 
-def copy_dirs(old_run_path: PosixPath, new_run_path: PosixPath, ignore_submit=False):
+def copy_dirs(old_run_path: Path, new_run_path: Path, ignore_submit=False):
     """
     Creating directory structure for an experiment, linking files, copying configure files.
 
@@ -249,7 +255,7 @@ def copy_dirs(old_run_path: PosixPath, new_run_path: PosixPath, ignore_submit=Fa
         _update_submitfile(file2, replace)
 
 
-def rename_dirs(old_run_path: PosixPath, new_run_path: PosixPath, make_submit=False):
+def rename_dirs(old_run_path: Path, new_run_path: Path, make_submit=False):
     os.rename(old_run_path, new_run_path)
     # re-link the wps-file
     os.remove(new_run_path / "wrf/namelist.wps")  # remove dangling link
@@ -299,8 +305,8 @@ def make_call_wd_file_from_template(miniconda_path, condaenv_name, templatefile=
 
     if templatefile is None:
         myfile = (
-            os.path.split(os.path.realpath(__file__))[0]
-            + "/resources/call_watchdog.template"
+                os.path.split(os.path.realpath(__file__))[0]
+                + "/resources/call_watchdog.template"
         )
     else:
         myfile = templatefile
@@ -360,7 +366,7 @@ def make_submitfiles(exp_path: str, configure_file: str, templatefile=None):
     _make_submitfile_from_template(submit_vars, templatefile)
 
 
-def run_wps_command(exp_path: PosixPath, program: str):
+def run_wps_command(exp_path: Path, program: str):
     """
     # this function combines the old geogrid.sh, ungrib.sh and metgrid.sh files to a single function.
 
@@ -398,7 +404,7 @@ def run_wps_command(exp_path: PosixPath, program: str):
                 writeLogFile(wt_log, "run_wps_command", 2, f": {cmd} exited with error")
 
 
-def move_output(exp_path: PosixPath):
+def move_output(exp_path: Path):
     inpath = exp_path / "wrf"
     logpath = exp_path / "log"
     outpath = exp_path / "out"
@@ -498,7 +504,7 @@ def update_namelist_for_rst(restart_file: str, namelistfile: str, outfile: str):
                     "start_second",
                 ]:
                     val = (
-                        str(cfg[key]).zfill(2) + ","
+                            str(cfg[key]).zfill(2) + ","
                     )  # bugfix, as yaml.safe_load drops leading zeros.
                 else:
                     val = str(cfg[key]) + ","
@@ -517,7 +523,7 @@ def update_namelist_for_rst(restart_file: str, namelistfile: str, outfile: str):
                     val.strip()
                 )  # write these values in dict for calculation of run_hours
             if (
-                key == "run_hours"
+                    key == "run_hours"
             ):  # this line could appear before all dom_keys, thus save this linenumber
                 rh_line_nb = line_nb
 

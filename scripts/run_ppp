@@ -79,6 +79,7 @@ def run_ppp_for_completed_exp(
 
         for exp_name in list_of_exps:
 
+            proj._determine_status(exp_name)
             status = proj.exp_get_status(exp_name)
 
             if status == "run complete" or force:
@@ -95,7 +96,7 @@ def run_ppp_for_completed_exp(
                     print(
                         "    "
                         + str(dt.datetime.now())
-                        + ": Nothing to do for experiment"
+                        + ": Nothing to do for experiment "
                         + exp_name
                     )
 

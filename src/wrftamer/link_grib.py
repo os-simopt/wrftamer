@@ -4,7 +4,7 @@ import glob
 import os
 import sys
 from itertools import product
-from pathlib import Path, PosixPath
+from pathlib import Path
 
 doc = """
 A simple replacement for link_grib.sh. Links all grib files in the driving_data
@@ -12,7 +12,7 @@ A simple replacement for link_grib.sh. Links all grib files in the driving_data
 """
 
 
-def link_grib(driving_data: PosixPath, exp_path: PosixPath, SUFFIX_LEN=3):
+def link_grib(driving_data: Path, exp_path: Path, SUFFIX_LEN=3):
 
     """
 

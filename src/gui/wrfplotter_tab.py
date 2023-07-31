@@ -219,12 +219,22 @@ class wrfplotter_tab(path_base):
                 # to make sure that no nonesens is kept in memory
                 self.obs_data = dict()
                 self.progress.bar_color = "info"
-                for idx, obs in enumerate(self.list_of_obs):
-                    if idx > 0:  # idx 0 is alyways None (no Obs selected)
-                        dataset = self.dataset_dict[obs]
-                        load_obs_data(self.obs_data, obs, dataset, **self.gui_status)
-                    progress_value = int(100 * (idx + 1) / len(self.list_of_obs))
+
+                # Load single OBS
+                obs = self.sel_obs.value
+                if obs is not None:
+                    dataset = self.dataset_dict[obs]
+                    load_obs_data(self.obs_data, obs, dataset, **self.gui_status)
+                    progress_value = 100
                     self.progress.value = progress_value
+
+                # Load all OBS(deprecated)
+                #for idx, obs in enumerate(self.list_of_obs):
+                #    if idx > 0:  # idx 0 is alyways None (no Obs selected)
+                #        dataset = self.dataset_dict[obs]
+                #        load_obs_data(self.obs_data, obs, dataset, **self.gui_status)
+                #    progress_value = int(100 * (idx + 1) / len(self.list_of_obs))
+                #    self.progress.value = progress_value
 
                 # --------------------------------------
                 #                Mod
@@ -279,10 +289,10 @@ class wrfplotter_tab(path_base):
             extension = self.sel_store.value
             try:
                 if extension == "csv":
-                    self.stats.to_csv(self.plot_path + "Statistics.csv")
+                    self.stats.to_csv(self.plot_path / "Statistics.csv")
                     print("Data Stored to file Statistics.csv")
                 elif extension == "markdown":
-                    self.stats.to_markdown(self.plot_path + "Statistics.md")
+                    self.stats.to_markdown(self.plot_path / "Statistics.md")
                     print("Data Stored to file Statistics.md")
             except Exception as e:
                 print(e)

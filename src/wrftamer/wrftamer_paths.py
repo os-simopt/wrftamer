@@ -15,23 +15,23 @@ def wrftamer_paths():
         home_path = Path(os.environ["WRFTAMER_HOME_PATH"])
         db_path = home_path / "db"
     except KeyError:
-        home_path = Path(os.environ["HOME"]) / "wrftamer"
-        db_path = Path(os.environ["HOME"]) / "wrftamer/db"
+        home_path = Path(os.environ["HOME"]) / ".wrftamer"
+        db_path = Path(os.environ["HOME"]) / ".wrftamer/db"
 
     try:
         run_path = Path(os.environ["WRFTAMER_RUN_PATH"])
     except KeyError:
-        run_path = Path(os.environ["HOME"]) / "wrftamer/run"
+        run_path = Path(os.environ["HOME"]) / ".wrftamer/run"
 
     try:
         archive_path = Path(os.environ["WRFTAMER_ARCHIVE_PATH"])
     except KeyError:
-        archive_path = Path(os.environ["HOME"]) / "wrftamer/archive"
+        archive_path = Path(os.environ["HOME"]) / ".wrftamer/archive"
 
     try:
         plot_path = Path(os.environ["WRFTAMER_PLOT_PATH"])
     except KeyError:
-        plot_path = Path(os.environ["HOME"]) / "wrftamer/plots"
+        plot_path = Path(os.environ["HOME"]) / ".wrftamer/plots"
 
     # I may add more paths later on. These include:
     # $HOME/wrftamer/src/wrf_essentials
