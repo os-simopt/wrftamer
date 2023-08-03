@@ -9,6 +9,8 @@ import itertools
 from typing import Union
 import yaml
 
+from wrftamer import res_path
+
 
 def assign_cf_attributes_tslist(
         data: xr.Dataset,
@@ -153,16 +155,11 @@ def read_files(fiile, var_element, version: str):
         raise IndexError
 
     with open(fiile, "r") as myfile:
-        head = myfile.readline().rstrip(
-            "\n"
-        )  # contains information like station height, station name, startdate
+        # head contains information like station height, station name, startdate
+        head = myfile.readline().rstrip("\n")
         # this adds the timezone info. DLeuk, 30.08.2021
-        startdate = dt.datetime.strptime(
-            head.split(" ")[-1] + "-+0000", "%Y-%m-%d_%H:%M:%S-%z"
-        )
-        data = pd.read_csv(
-            myfile, sep=r"\s+", header=None, index_col=0, usecols=use_cols, names=names
-        )
+        startdate = dt.datetime.strptime(head.split(" ")[-1] + "-+0000", "%Y-%m-%d_%H:%M:%S-%z")
+        data = pd.read_csv(myfile, sep=r"\s+", header=None, index_col=0, usecols=use_cols, names=names)
 
         # Make a new index for the dataframe, by taking the starttime into account.
 
@@ -204,9 +201,7 @@ def read_headinfo(tsfile1):
         return {"hgt": hgt, "lat": lat, "lon": lon}, version
 
 
-def merge_tslist_files(
-        indir, outdir, location, domain, proj_name: str, exp_name: str, institution="-"
-):
+def merge_tslist_files(indir, outdir, location, domain, proj_name: str, exp_name: str, institution="-"):
     """
     This function will take all ts-files and merge all variables belonging one domain into a ncdf.
     This is done for all stations (locations). These files are concated together.
@@ -239,10 +234,7 @@ def merge_tslist_files(
     # domlist = list(set([item.name.split('.')[1] for item in ts_files]))
     # varlist = list(set([item.name.split('.')[2] for item in ts_files]))
 
-    cf_table = (
-            os.path.split(os.path.realpath(__file__))[0]
-            + "/../../resources/cf_table_wrfdata.yaml"
-    )
+    cf_table = res_path / 'cf_table_wrfdata.yaml'
 
     # check if indir is one folder or a list of folders
     indir = indir if isinstance(indir, list) else list(indir)

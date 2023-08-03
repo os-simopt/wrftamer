@@ -1,5 +1,4 @@
-# coding: utf-8
-import os
+from wrftamer import res_path
 
 """
 This script will initialize the namelist.input (WRF) and namelist.wps (WPS).
@@ -11,10 +10,7 @@ and a namelist.template
 def initialize_wrf_namelist(namelist_vars: dict, namelistfile: str, templatefile=None):
     # read template and configuration
     if templatefile is None:
-        mypath = (
-            os.path.split(os.path.realpath(__file__))[0]
-            + "/../../resources/namelist.template"
-        )
+        mypath = res_path / 'namelist.template'
     else:
         mypath = templatefile
 

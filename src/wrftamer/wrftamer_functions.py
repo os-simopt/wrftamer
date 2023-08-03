@@ -9,6 +9,7 @@ import subprocess
 from wrftamer.initialize_wrf_namelist import initialize_wrf_namelist
 from wrftamer.link_grib import link_grib
 from wrftamer.wrftamer_paths import wrftamer_paths
+from wrftamer import res_path
 
 """
 Here, I translated the old shell scripts to python scripts.
@@ -69,9 +70,7 @@ def make_essential_data_dir(wrf_and_wsp_parent_dir: Path, essentials_dir: Path, 
     # copy essentials
     shutil.copy(f"{wrf_and_wsp_parent_dir}/WPS/geogrid/GEOGRID.TBL", essentials_dir)
     shutil.copy(f"{wrf_and_wsp_parent_dir}/WPS/link_grib.csh", essentials_dir)
-    shutil.copy(
-        f"{wrf_and_wsp_parent_dir}/WPS/ungrib/Variable_Tables/{vtable}", essentials_dir
-    )
+    shutil.copy(f"{wrf_and_wsp_parent_dir}/WPS/ungrib/Variable_Tables/{vtable}", essentials_dir)
     shutil.copy(f"{wrf_and_wsp_parent_dir}/WPS/metgrid/METGRID.TBL", essentials_dir)
 
     os.rename(f"{essentials_dir}/{vtable}", f"{essentials_dir}/Vtable")
@@ -304,10 +303,7 @@ def make_call_wd_file_from_template(miniconda_path, condaenv_name, templatefile=
     home_path, db_path, run_path, archive_path, plot_path = wrftamer_paths()
 
     if templatefile is None:
-        myfile = (
-                os.path.split(os.path.realpath(__file__))[0]
-                + "/../../resources/call_watchdog.template"
-        )
+        myfile = res_path / 'call_watchdog.template'
     else:
         myfile = templatefile
 
@@ -327,7 +323,7 @@ def make_call_wd_file_from_template(miniconda_path, condaenv_name, templatefile=
 def _make_submitfile_from_template(submit_vars: dict, templatefile=None):
     # read template and configuration
     if templatefile is None:
-        myfile = os.path.split(os.path.realpath(__file__))[0] + "/../../resources/submit.template"
+        myfile = res_path / 'submit.template'
     else:
         myfile = templatefile
 
@@ -397,9 +393,7 @@ def run_wps_command(exp_path: Path, program: str):
         if len(lines) > 0:
             last_line = lines[-1]
             if "Successful" in last_line:
-                writeLogFile(
-                    wt_log, "run_wps_command", 0, f": {cmd} completed successfully"
-                )
+                writeLogFile(wt_log, "run_wps_command", 0, f": {cmd} completed successfully")
             else:
                 writeLogFile(wt_log, "run_wps_command", 2, f": {cmd} exited with error")
 

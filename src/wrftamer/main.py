@@ -8,10 +8,15 @@ from pathlib import Path
 import yaml
 from collections import defaultdict
 from tqdm import tqdm
+from typing import Union
 
-from wrftamer.wrftamer_paths import wrftamer_paths, get_make_submit
+from wrftamer.wrftamer_paths import wrftamer_paths
 import wrftamer.wrftamer_functions as wtfun
 from wrftamer.process_tslist_files import merge_tslist_files, average_ts_files
+
+from wrftamer import res_path, cfg
+
+home_path, db_path, run_path, arch_path, disc = wrftamer_paths()
 
 
 def list_projects(verbose=True):
@@ -22,8 +27,6 @@ def list_projects(verbose=True):
         verbose: can be silent
 
     """
-
-    home_path, db_path, run_path, archive_path, disc = wrftamer_paths()
 
     list_of_projects = [
         name
@@ -42,8 +45,6 @@ def list_projects(verbose=True):
 
 
 def list_unassociated_exp(verbose=True):
-    home_path, db_path, run_path, archive_path, disc = wrftamer_paths()
-
     try:
         filename = db_path / "Unassociated_Experiments/List_of_Experiments.csv"
         df = get_csv(filename)
@@ -122,10 +123,9 @@ def reassociate(proj_old, proj_new, exp_name: str):
 class Project:
     def __init__(self, name):
 
-        self.wrftamer_paths = (
-            wrftamer_paths()
-        )  # home_path, db_path, run_path, archive_path, some_other_path
-        self.make_submit = get_make_submit()
+        # home_path, db_path, run_path, arch_path, some_other_path
+        self.wrftamer_paths = (wrftamer_paths())
+        self.make_submit = cfg['wrftamer_make_submit']
 
         if name is None:
             name = "Unassociated_Experiments"
@@ -187,15 +187,8 @@ class Project:
             df.set_index("index")
             df.to_csv(self.tamer_path / "List_of_Experiments.csv")
 
-        namelist_template = (
-            os.path.split(os.path.realpath(__file__))[0]
-            + "/../../resources/namelist.template"
-        )
-        wrftamer_conf = (
-            os.path.split(os.path.realpath(__file__))[0]
-            + "/../../resources/configure_template.yaml"
-        )
-
+        namelist_template = res_path / 'namelist.template'
+        wrftamer_conf = res_path / 'configure_template.yaml'
         newfile = self.proj_path / "namelist.template"
         new_conf = self.proj_path / "configure_template.yaml"
 
@@ -256,25 +249,25 @@ class Project:
         old_archive_path = self.archive_path
         new_archive_path = self.archive_path.parent / new_name
 
-        if not os.path.isdir(old_tamer_path):
+        if not old_tamer_path.is_dir():
             raise FileNotFoundError
 
-        if not os.path.isdir(old_proj_path) and not os.path.isdir(old_archive_path):
+        if not old_proj_path.is_dir() and not old_archive_path.is_dir():
             raise FileNotFoundError  # neither on archive nor in run place
 
         if (
-            os.path.isdir(new_proj_path)
-            or os.path.isdir(new_tamer_path)
-            or os.path.isdir(new_archive_path)
+                new_proj_path.is_dir()
+                or new_tamer_path.is_dir()
+                or new_archive_path.is_dir()
         ):
             raise FileExistsError
 
         os.rename(old_tamer_path, new_tamer_path)
 
-        if os.path.isdir(old_proj_path):
+        if old_proj_path.is_dir():
             os.rename(old_proj_path, new_proj_path)
 
-        if os.path.isdir(old_archive_path):
+        if old_archive_path.is_dir():
             os.rename(old_archive_path, new_archive_path)
 
         self.name = new_name
@@ -290,7 +283,7 @@ class Project:
 
         """
 
-        if not os.path.isdir(self.proj_path):
+        if not self.proj_path.is_dir():
             if verbose:
                 print("This project does not exist")
             raise FileNotFoundError
@@ -371,13 +364,13 @@ class Project:
 
     # ------------------------------------------------------------------------------------------------------------------
     def exp_create(
-        self,
-        exp_name,
-        comment: str,
-        configfile: str,
-        namelisttemplate=None,
-        submittemplate=None,
-        verbose=True,
+            self,
+            exp_name,
+            comment: str,
+            configfile: Union[str, Path],
+            namelisttemplate=None,
+            submittemplate=None,
+            verbose=True,
     ):
 
         """
@@ -414,7 +407,7 @@ class Project:
         # Check folders
         exp_path = self.proj_path / exp_name
 
-        if os.path.isdir(exp_path):
+        if exp_path.is_dir():
             raise FileExistsError
 
         if verbose:
@@ -444,9 +437,7 @@ class Project:
         df.loc[len(df)] = new_line
         df.to_excel(self.filename)
 
-    def exp_copy(
-        self, old_exp_name: str, new_exp_name: str, comment: str, verbose=True
-    ):
+    def exp_copy(self, old_exp_name: str, new_exp_name: str, comment: str, verbose=True):
         """
 
         Args:
@@ -469,10 +460,10 @@ class Project:
                 print("This run has already been archived and may not be copied.")
             return
 
-        if not os.path.isdir(old_exp_path):
+        if not old_exp_path.is_dir():
             raise FileNotFoundError
 
-        if os.path.isdir(new_exp_path):
+        if new_exp_path.is_dir():
             raise FileExistsError
 
         # check Database
@@ -591,7 +582,7 @@ class Project:
         # I do not call get_workdir (because this one would be a run dir, so it would fail with archived runs)
         df = get_csv(self.filename)
 
-        if os.path.isdir(new_workdir):
+        if new_workdir.is_dir():
             if verbose:
                 print(f"Cannot rename, experiment {new_exp_name} exists.")
             raise FileExistsError
@@ -674,13 +665,13 @@ class Project:
             print("---------------------------------------")
 
         if any(
-            [
-                len(list((workdir / "wrf").glob("*.log"))) > 0,
-                len(list((workdir / "wrf").glob("*.rsl"))) > 0,
-                len(list((workdir / "wrf").glob("wrfout*"))) > 0,
-                len(list((workdir / "wrf").glob("wrfaux*"))) > 0,
-                len(list((workdir / "wrf").glob("*.UU"))) > 0,
-            ]
+                [
+                    len(list((workdir / "wrf").glob("*.log"))) > 0,
+                    len(list((workdir / "wrf").glob("*.rsl"))) > 0,
+                    len(list((workdir / "wrf").glob("wrfout*"))) > 0,
+                    len(list((workdir / "wrf").glob("wrfaux*"))) > 0,
+                    len(list((workdir / "wrf").glob("*.UU"))) > 0,
+                ]
         ):
 
             wtfun.move_output(workdir)
@@ -692,7 +683,7 @@ class Project:
                 print("No files to move")
 
     def exp_process_tslist(
-        self, exp_name: str, location: str, domain: str, timeavg: list, verbose=True
+            self, exp_name: str, location: str, domain: str, timeavg: list, verbose=True
     ):
 
         workdir = self.get_workdir(exp_name)
@@ -733,7 +724,7 @@ class Project:
         exp_path = self.proj_path / exp_name
         archive_path = self.archive_path / exp_name
 
-        if not os.path.isdir(exp_path):
+        if not exp_path.is_dir():
             raise FileNotFoundError
 
         if not keep_log:
@@ -810,7 +801,6 @@ class Project:
                 pass
                 print('Map plotting capability removed.')
 
-
         self._update_db_entry(exp_name, {"status": "post processed"})
 
     def exp_du(self, exp_name: str, verbose=True):
@@ -834,9 +824,9 @@ class Project:
 
         infile1 = workdir / "wrf/rsl.error.0000"
         infile2 = workdir / "log/rsl.error.0000"
-        if os.path.isfile(infile1):
+        if infile1.is_file():
             infile = infile1
-        elif os.path.isfile(infile2):
+        elif infile2.is_file():
             infile = infile2
         else:
             if verbose:
@@ -977,7 +967,7 @@ class Project:
         workdir = self.get_workdir(exp_name)
 
         namelist = workdir / "wrf/namelist.input"
-        if not os.path.isfile(namelist):
+        if not namelist.is_file():
             return start, end
 
         with open(namelist, "r") as fid:

@@ -1,8 +1,12 @@
 import pytest
 import os
-from pathlib import Path
 import shutil
+from pathlib import Path
+
+os.environ['wrftamer_test_mode'] = 'True'
+
 from wrftamer.main import Project
+from wrftamer import test_res_path
 
 
 @pytest.fixture
@@ -11,21 +15,13 @@ def base_test_env():
     Creates a directory for testing purposes. This directory is removed after tests are completed.
     """
 
-    test_env = Path(
-        os.path.split(os.path.realpath(__file__))[0] + "/resources/test_environment"
-    )
+    test_env = Path(os.environ['HOME']) / 'wrftamer_test_tmpdir'
 
     if test_env.is_dir():
         shutil.rmtree(test_env)
-
     os.mkdir(test_env)
 
-    os.environ["WRFTAMER_HOME_PATH"] = str(test_env / "wrftamer")
-    os.environ["WRFTAMER_RUN_PATH"] = str(test_env / "wrftamer/run/")
-    os.environ["WRFTAMER_ARCHIVE_PATH"] = str(test_env / "wrftamer/archive/")
-    os.environ["WRFTAMER_PLOT_PATH"] = str(test_env / "wrftamer/plots/")
-    os.environ["OBSERVATIONS_PATH"] = str(test_env.parent / "observations_data/")
-    os.environ["WRFTAMER_make_submit"] = 'True'
+    os.environ["OBSERVATIONS_PATH"] = str(test_res_path / "observations_data/")
 
     yield test_env
 
@@ -59,9 +55,8 @@ def unassociated_exps(base_test_env):
     proj_name = None
     test = Project(proj_name)
 
-    test.create(
-        verbose=True
-    )  # checks itself for files being created. Raises FileNotFoundError on failure
+    # checks itself for files being created. Raises FileNotFoundError on failure
+    test.create(verbose=True)
 
     yield test
 
@@ -76,15 +71,13 @@ def test_env2(testprojects):
 
     # ------------------------------------------------------
     # adding an exp to a project should work fine.
-    configfile = (
-            os.path.split(os.path.realpath(__file__))[0] + "/resources/configure_test.yaml"
-    )
+    configfile = test_res_path / 'configure_test.yaml'
+
     testproject1.exp_create(exp_name1, "First Experiment", configfile, verbose=True)
 
     # copy dummy data
-    source = Path(
-        os.path.split(os.path.realpath(__file__))[0] + "/resources/dummy_data"
-    )
+    source = test_res_path / 'dummy_data'
+
     target = testproject1.proj_path / exp_name1 / "wrf"
     for item in source.glob("*"):
         shutil.copy(item, target)
@@ -101,16 +94,12 @@ def link_environment(base_test_env):
     with open(base_test_env / "wrf/GRIBFILE.AAA", "w") as f:
         f.write("somedata\n")
 
-    data_path = Path(os.path.split(os.path.realpath(__file__))[0] + "/resources/")
-    driving_data = data_path / "driving_data"
+    driving_data = test_res_path / "driving_data"
 
     yield driving_data, base_test_env
 
 
-# -----------------------------------------------------------------------------------------------------------------------
-
-
-# ------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 
 
 @pytest.fixture()
@@ -119,8 +108,6 @@ def tslist_environment(base_test_env):
     # The fixture ensures that the environment will always be torn down after tests.
     # However, if the code in the fixture reaches an error, this is no longer the case.
     # For this reason, test project and experiment first!
-
-    test_res_path = Path(os.path.split(os.path.realpath(__file__))[0] + "/resources")
 
     # Create project and experiment
     proj_name = "WRFTAMER_TEST"
@@ -138,6 +125,7 @@ def tslist_environment(base_test_env):
         test_res_path / "model_data/tsfiles_20211206_094418",
         workdir / "out/tsfiles_20211206_094418",
     )
+
     os.symlink(
         test_res_path / "model_data/tsfiles_20211206_194418",
         workdir / "out/tsfiles_20211206_194418",
@@ -149,8 +137,8 @@ def tslist_environment(base_test_env):
     test.remove(force=True, verbose=False)
 
 
+# ----------------------------------------------------------------------------------------------------------------------
 # wrftamer_functions environment
-
 
 @pytest.fixture
 def functions_environment(base_test_env):
