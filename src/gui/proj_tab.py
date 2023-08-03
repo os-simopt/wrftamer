@@ -1,7 +1,7 @@
 import panel as pn
 import re
 from src.gui.gui_base import path_base
-from src.wrftamer.main import project, list_projects, list_unassociated_exp, reassociate
+from wrftamer.main import Project, list_projects, list_unassociated_exp, reassociate
 
 tabulator_formatters = {"select": {"type": "tickCross"}}
 
@@ -46,7 +46,7 @@ class proj_tab(path_base):
             background="#ffffff",
         )
 
-        proj = project(None)
+        proj = Project(None)
         df = proj.exp_provide_info()
         self.info_df = pn.widgets.Tabulator(df, formatters=tabulator_formatters, height=600)
 
@@ -60,7 +60,7 @@ class proj_tab(path_base):
         def _update_info(selection):
 
             proj_name = selection
-            proj = project(proj_name)
+            proj = Project(proj_name)
             exp_list = proj.list_exp(verbose=False)
             if proj_name is not None:
                 self.info_panel.name = "Experiments associated with this project"
@@ -101,7 +101,7 @@ class proj_tab(path_base):
             ########################################
             # Do the actual project creation.
             ########################################
-            proj = project(proj_name)
+            proj = Project(proj_name)
 
             try:
                 proj.create()
@@ -117,7 +117,7 @@ class proj_tab(path_base):
                 # unassociated to associated.
 
                 proj_name_old = self.mc_proj.value
-                proj_old = project(proj_name_old)
+                proj_old = Project(proj_name_old)
 
                 # first, remove from unassociated list:
                 for exp_name in self.info_df.value.Name[self.info_df.value.select]:
@@ -146,7 +146,7 @@ class proj_tab(path_base):
                 ########################################
                 # Do the actual project renaming
                 ########################################
-                proj = project(choice)
+                proj = Project(choice)
                 proj.rename(new_name)
 
                 # Change widgets
@@ -171,7 +171,7 @@ class proj_tab(path_base):
                 ########################################
                 # Do the actual project removal.
                 ########################################
-                proj = project(choice)
+                proj = Project(choice)
                 try:
                     proj.remove(force=True)
                 except FileNotFoundError:
@@ -204,8 +204,8 @@ class proj_tab(path_base):
         if any(self.info_df.value.select):
             print("Reassociating experiments to new project")
 
-            proj_old = project(proj_name_old)
-            proj_new = project(proj_name_new)
+            proj_old = Project(proj_name_old)
+            proj_new = Project(proj_name_new)
 
             # first, remove from unassociated list:
             for exp_name in self.info_df.value.Name[self.info_df.value.select]:

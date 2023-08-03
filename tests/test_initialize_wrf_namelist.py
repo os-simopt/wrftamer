@@ -3,7 +3,7 @@ import shutil
 from pathlib import Path
 import yaml
 import pytest
-from src.wrftamer import initialize_wrf_namelist
+from wrftamer.initialize_wrf_namelist import initialize_wrf_namelist
 
 # works
 
@@ -12,7 +12,7 @@ exp_path = test_res_path / "test_run"
 
 templatefile = Path(
     os.path.split(os.path.realpath(__file__))[0]
-    + "/../wrftamer/resources/namelist.template"
+    + "/../resources/namelist.template"
 )
 
 namelistfile = exp_path / "wrf/namelist.test"

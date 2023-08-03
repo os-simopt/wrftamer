@@ -2,7 +2,7 @@ import pytest
 import pandas as pd
 import os
 import numpy as np
-from src.wrftamer import Statistics, Statistics_xarray
+from wrftamer.statistics import statistics, Statistics_xarray
 
 # fails
 
@@ -32,7 +32,7 @@ def test_stats1():
     infos['Expvec'] = ['model']
     infos['Obsvec'] = ['obs']
 
-    res = Statistics(test_pd, **infos)
+    res = statistics(test_pd, **infos)
 
     if max(abs(res.values[0, 5::] - expect_pd.values[0, 5::])) > 1e-10:
         raise ValueError
@@ -49,7 +49,7 @@ def test_stats2():
     infos['Expvec'] = ['model']
     infos['Obsvec'] = ['obs']
 
-    res = Statistics(test_pd, **infos)
+    res = statistics(test_pd, **infos)
 
     if max(abs(res.values[0, 5:8] - expect_pd.values[0, 5:8])) > 1e-10:
         raise ValueError

@@ -3,8 +3,7 @@ import os
 from pathlib import Path
 import shutil
 import pandas as pd
-from src.wrftamer import project, list_projects, list_unassociated_exp, reassociate
-
+from wrftamer.main import Project, list_projects, list_unassociated_exp, reassociate
 
 # works
 
@@ -14,7 +13,7 @@ from src.wrftamer import project, list_projects, list_unassociated_exp, reassoci
 
 
 def test_nonexisting_project(base_test_env):
-    test = project("some_random_name")  # initialize class, no creation here
+    test = Project("some_random_name")  # initialize class, no creation here
 
     # removal of project that does not exists should fail
     with pytest.raises(FileNotFoundError):
@@ -114,9 +113,6 @@ def test_project(testprojects):
     # listing all experiments inside a project should work
     testproject1.list_exp()
 
-    # Rewriting xls sheet should work (but won't do anything, since no experiments have been created)
-    testproject1.rewrite_xls()
-
     # Case damaged project. proj_path missing, but tamer_path intact
     shutil.rmtree(testproject1.proj_path)
     with pytest.raises(FileNotFoundError):
@@ -197,7 +193,7 @@ def test_experiment_creation_thoroughly(testprojects):
 
     configfile = os.path.split(os.path.realpath(__file__))[0] + "/resources/my_configure_test.yaml"
 
-    proj = project(proj_name1)
+    proj = Project(proj_name1)
     proj.exp_create(exp_name1, "some comment", configfile)
 
     # Test here that the whole experiment directory tree exists and that
@@ -287,7 +283,7 @@ def experiment_checks(proj_name1, exp_name1):
     exp_name3 = "TEST3"
     configfile = os.path.split(os.path.realpath(__file__))[0] + '/resources/configure_test.yaml'
 
-    proj = project(proj_name1)
+    proj = Project(proj_name1)
     proj.exp_create(exp_name1, "some comment", configfile)
 
     # ------------------------------------------------------
@@ -482,7 +478,7 @@ def test_remove_with_correct_input1(base_test_env, monkeypatch):
     # This simulates the user entering "Yes" in the terminal:
     monkeypatch.setattr("builtins.input", lambda _: "Yes")
 
-    testproject = project("WRFTAMER_TEST1")
+    testproject = Project("WRFTAMER_TEST1")
     exp_name1 = "TEST1"
 
     # ------------------------------------------------------
@@ -501,7 +497,7 @@ def test_remove_with_correct_input2(base_test_env, monkeypatch):
     # This simulates the user entering "Yes" in the terminal:
     monkeypatch.setattr("builtins.input", lambda _: "yes")
 
-    testproject = project("WRFTAMER_TEST1")
+    testproject = Project("WRFTAMER_TEST1")
     exp_name1 = "TEST1"
 
     # ------------------------------------------------------

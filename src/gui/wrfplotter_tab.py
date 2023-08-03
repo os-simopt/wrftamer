@@ -6,7 +6,7 @@ from pathlib import Path
 from io import StringIO
 
 from src.gui.gui_base import path_base
-from src.wrftamer.main import project, list_projects, list_unassociated_exp
+from wrftamer.main import Project, list_projects, list_unassociated_exp
 
 from src.gui.wrfplotter_utility import (
     get_available_obs,
@@ -19,18 +19,18 @@ from src.gui.wrfplotter_utility import (
     get_available_tvec,
 )
 
-from src.wrftamer.wrfplotter_classes import Map, get_max_timerange
-from src.wrftamer.plotting.load_and_prepare import load_obs_data, load_mod_data
-from src.wrftamer.plotting.load_and_prepare import (
+from wrftamer.wrfplotter_classes import Map, get_max_timerange
+from wrftamer.plotting.load_and_prepare import load_obs_data, load_mod_data
+from wrftamer.plotting.load_and_prepare import (
     prep_profile_data,
     prep_ts_data,
     prep_zt_data,
     prep_windrose_data,
     get_limits_and_labels,
 )
-from src.wrftamer.plotting.hv_plots import create_hv_plot
-from src.wrftamer.plotting.mpl_plots import create_mpl_plot
-from src.wrftamer.utility import get_random_string
+from wrftamer.plotting.hv_plots import create_hv_plot
+from wrftamer.plotting.mpl_plots import create_mpl_plot
+from wrftamer.utility import get_random_string
 import holoviews as hv
 
 hv.extension("bokeh")
@@ -244,7 +244,7 @@ class wrfplotter_tab(path_base):
                 self.progress.bar_color = "primary"
                 self.progress.value = 0
 
-                proj = project(proj_name)
+                proj = Project(proj_name)
                 list_of_exps = proj.list_exp(verbose=False)
 
                 for idx, exp_name in enumerate(list_of_exps):
@@ -264,7 +264,7 @@ class wrfplotter_tab(path_base):
                 self.map_cls = None
                 try:
 
-                    proj = project(proj_name)
+                    proj = Project(proj_name)
                     exp_name = self.mc_exp.value[0]
 
                     i_path = proj.get_workdir(exp_name) / "out"
@@ -434,7 +434,7 @@ class wrfplotter_tab(path_base):
             try:
                 exp_name = exp_list[0]
 
-                proj = project(proj_name)
+                proj = Project(proj_name)
                 list_of_locs = proj.exp_list_tslocs(exp_name, False)
             except:
                 list_of_locs = []
@@ -450,7 +450,7 @@ class wrfplotter_tab(path_base):
         @pn.depends(self.mc_proj.param.value, watch=True)
         def _update_exp_list(proj_name):
 
-            proj = project(proj_name)
+            proj = Project(proj_name)
             self.mc_exp.options = proj.list_exp(verbose=False)
 
         @pn.depends(self.mc_exp.param.value, self.sel_obs.param.value, watch=True)
@@ -690,7 +690,7 @@ class wrfplotter_tab(path_base):
                 # This is not really a plot created on-the-fly, but a static view of pre-created plots.
                 # Its fast though...
                 # I might try creating plots based on intermediate files...
-                proj = project(proj_name)
+                proj = Project(proj_name)
                 exp_path = proj.get_workdir(exp_name=exp_list[0])
 
                 timestamp = ttp.strftime("%Y%m%d_%H%M%S")

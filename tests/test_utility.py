@@ -1,5 +1,6 @@
-from src.wrftamer import get_random_string
+from wrftamer.utility import get_random_string
 import pytest
+
 
 # works
 

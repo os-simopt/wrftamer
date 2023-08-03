@@ -1,7 +1,7 @@
 import pytest
 import os
 from pathlib import Path
-from src.wrftamer import (
+from wrftamer.wrftamer_functions import (
     writeLogFile,
     make_executable_dir,
     make_essential_data_dir,

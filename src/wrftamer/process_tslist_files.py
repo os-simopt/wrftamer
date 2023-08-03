@@ -6,7 +6,119 @@ import xarray as xr
 import numpy as np
 import os
 import itertools
-from src.wrftamer.wrfplotter_classes import assign_cf_attributes_tslist
+from typing import Union
+import yaml
+
+
+def assign_cf_attributes_tslist(
+        data: xr.Dataset,
+        metadata: dict,
+        cf_table: Union[str, bytes, os.PathLike],
+        old_attrs=None,
+        verbose=False,
+):
+    """
+    Required metadata:
+    - Conventions (i.e. CF-1.8)
+    - featureType (point,timeSeries,trajectory,profile,timeSeriesProfile,trajectoryProfile)
+    - station_name
+    - lat, lon, station_altitude
+
+    Suggestion for good metadata:
+    - title, institution, source, history, references, comment (root level)
+    - level, platform_name, platform_id, (root level)
+    - description, Flags, altitude, _FillValue, missing_value, (variable level), calendar (time)
+    """
+    if old_attrs is None:
+        old_attrs = []
+
+    # Check for minimal amout of metadata
+    minimal_set = ["featureType", "station_name", "lat", "lon", "station_elevation"]
+    for item in minimal_set:
+        if item not in metadata:
+            print(f"Required entry {item} not found in metadata. Aborting")
+            return
+
+    if "Conventions" not in metadata:
+        if verbose:
+            print('"Conventions" not in metadata. Selecting CF-1.8 as default.')
+        metadata["Conventions"] = "CF-1.8"
+
+    recommended_set = [
+        "title",
+        "institution",
+        "source",
+        "history",
+        "references",
+        "comment",
+    ]
+    for item in recommended_set:
+        if item not in metadata:
+            if verbose:
+                print(f"Consider putting {item} into the metadata")
+
+    # Add lat, lon, station_name and station_elevation to coordinates.
+    if "lat" not in data:  # assuming all are missing if one is missing.
+        lat = xr.DataArray(metadata["lat"])
+        lon = xr.DataArray(metadata["lon"])
+        alt = xr.DataArray(metadata["station_elevation"])
+
+        data = data.assign({"lat": lat, "lon": lon, "station_elevation": alt})
+        data = data.set_coords(["lat", "lon", "station_elevation"])
+
+    if 'station_id' in data:
+        data = data.set_coords(["station_id"])
+
+    if "station_name" not in data:
+        name = xr.DataArray(metadata["station_name"])
+        data = data.assign({"station_name": name})
+        data = data.set_coords(["station_name"])
+
+    # ---------------------------------------------------------------------------
+    # Add attributes.
+    with open(cf_table, "r") as fid:
+        cf_con = yaml.safe_load(fid)
+
+    # set attributes of variables according to cf table
+    l1 = list(data.coords.keys())
+    l2 = list(data.keys())
+    l1.extend(l2)
+    for item in l1:
+
+        if '_' in item:
+            var, lev = item.rsplit('_', 1)  # assuming the last portion of the variable name is the level.
+            try:
+                int(lev)
+            except ValueError:
+                var = item
+        else:
+            var = item
+
+        var = var.lower()
+
+        try:
+            data[item] = data[item].assign_attrs(cf_con[var])
+        except KeyError:
+            if verbose:
+                print(f'No cf attributes found for variable {var}')
+
+    data.time.attrs = cf_con["time"]
+
+    for item in metadata:
+        if item in ["lat", "lon", "station_elevation", "station_name"]:
+            pass  # created above
+        else:
+            # non-dicts are written to the root level.
+            data.attrs[item] = metadata[item]
+
+    # Remove old attributes:
+    for item in old_attrs:
+        try:
+            del data.attrs[item]
+        except KeyError:
+            pass
+
+    return data
 
 
 def uv_to_FFDD(u, v):
@@ -93,7 +205,7 @@ def read_headinfo(tsfile1):
 
 
 def merge_tslist_files(
-    indir, outdir, location, domain, proj_name: str, exp_name: str, institution="-"
+        indir, outdir, location, domain, proj_name: str, exp_name: str, institution="-"
 ):
     """
     This function will take all ts-files and merge all variables belonging one domain into a ncdf.
@@ -128,8 +240,8 @@ def merge_tslist_files(
     # varlist = list(set([item.name.split('.')[2] for item in ts_files]))
 
     cf_table = (
-        os.path.split(os.path.realpath(__file__))[0]
-        + "/../wrftamer/resources/cf_table_wrfdata.yaml"
+            os.path.split(os.path.realpath(__file__))[0]
+            + "/../../resources/cf_table_wrfdata.yaml"
     )
 
     # check if indir is one folder or a list of folders
@@ -193,7 +305,7 @@ def merge_tslist_files(
                 data_df = data_df[~data_df.index.duplicated(keep="first")].sort_index()
                 all_xxr[f"{loc}.{dom}"][var_element] = data_df
                 if (
-                    var_element == "TS"
+                        var_element == "TS"
                 ):  # for surface file: variables are written into columns
                     for col in data_df.columns:
                         all_xxr[f"{loc}.{dom}"][col] = data_df[col]

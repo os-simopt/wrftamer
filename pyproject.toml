@@ -69,11 +69,12 @@ max-line-length=120
 
 [tool.pytest.ini_options]
     minversion="6.0"
-    addopts = "-m 'not wip and not slow' --cov-branch --cov-report term-missing --cov-report xml --cov-report html --cov-report term --cov=wrftamer -vv --strict-markers -rfE"
+    addopts = "-m 'not wip and not slow and not config_req' --cov-branch --cov-report term-missing --cov-report xml --cov-report html --cov-report term --cov=wrftamer -vv --strict-markers -rfE"
     markers = [
         "slow: marks tests as slow (deselect with '-m \"not slow\"')",
         "wip: marks all work-in-progress tests",
-        "bugfix: marks test that require bugfixing"
+        "bugfix: marks test that require bugfixing",
+        "config_req: marks tests that require a valid config file"
     ]
 
     testpaths = [

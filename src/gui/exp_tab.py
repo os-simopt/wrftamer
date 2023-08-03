@@ -1,7 +1,7 @@
 import os
 import re
 import panel as pn
-from src.wrftamer.main import project, list_unassociated_exp
+from wrftamer.main import Project, list_unassociated_exp
 from src.gui.gui_base import path_base
 
 
@@ -116,7 +116,7 @@ class exp_tab(path_base):
                 ########################################
 
                 # works even if proj_name is None > unassociated experiment
-                proj = project(proj_name)
+                proj = Project(proj_name)
                 try:
                     proj.exp_create(
                         exp_name,
@@ -157,7 +157,7 @@ class exp_tab(path_base):
                     ########################################
                     # Do the actual Experiment renaming
                     ########################################
-                    proj = project(proj_name)
+                    proj = Project(proj_name)
                     try:
                         proj.exp_rename(exp_name, new_name, verbose=False)
                     except FileExistsError:
@@ -189,7 +189,7 @@ class exp_tab(path_base):
                     ########################################
                     # Do the actual Experiment removal.
                     ########################################
-                    proj = project(proj_name)
+                    proj = Project(proj_name)
 
                     try:
                         proj.exp_remove(exp_name, force=True, verbose=False)
@@ -226,7 +226,7 @@ class exp_tab(path_base):
                     # Copy the actual Experiment.
                     ########################################
 
-                    proj = project(proj_name)
+                    proj = Project(proj_name)
 
                     try:
                         proj.exp_copy(
@@ -255,7 +255,7 @@ class exp_tab(path_base):
                 self.msg_procesing.visible = True
                 for exp_name in choices:
                     print("Processing:", exp_name)
-                    proj = project(proj_name)
+                    proj = Project(proj_name)
                     proj.exp_run_postprocessing_protocol(exp_name, verbose=False)
 
                 self.msg_procesing.visible = False
@@ -276,7 +276,7 @@ class exp_tab(path_base):
 
                 for exp_name in choices:
                     print("Archiving:", exp_name)
-                    proj = project(proj_name)
+                    proj = Project(proj_name)
                     proj.exp_archive(exp_name, keep_log=bool(keep_log), verbose=False)
 
                 self.msg_procesing.visible = False
@@ -301,7 +301,7 @@ class exp_tab(path_base):
 
         @pn.depends(self.mc_proj.param.value, watch=True)
         def _update_exp_list(proj_name):
-            proj = project(proj_name)
+            proj = Project(proj_name)
             new_options = proj.list_exp(verbose=False)
             self.mc_exp.options = new_options
 

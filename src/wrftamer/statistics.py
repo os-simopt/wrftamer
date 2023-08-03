@@ -3,7 +3,7 @@ import pandas as pd
 import xarray as xr
 
 
-def _StatCalc(obs, mod):
+def _stat_calc(obs, mod):
     bias = np.nanmean(mod - obs)
     std_err = np.nanstd(mod - obs)
     mae = np.nanmean(abs(mod - obs))
@@ -33,7 +33,7 @@ def _StatCalc(obs, mod):
     return bias, std_err, mae, r, mape, rmse
 
 
-def _StatCalc_dir(obs, mod):
+def _stat_calc_dir(obs, mod):
     tmp = mod - obs
     tmp[tmp > 180] -= 360.0
     tmp[tmp < -180] += 360.0
@@ -50,8 +50,8 @@ def _StatCalc_dir(obs, mod):
 
 
 ##########################################################################
-def Statistics(input_dataframe: pd.DataFrame, proj_name: str, loc: str, var: str, lev: str,
-               anemometer: str, Expvec: list, Obsvec: list, **kwargs) -> pd.DataFrame:
+def statistics(input_dataframe: pd.DataFrame, proj_name: str, loc: str, var: str, lev: str,
+               anemometer: str, expvec: list, obsvec: list, **kwargs) -> pd.DataFrame:
     """
     The new Statistics Function. It takes the same data as the obs_vs_mod plot
     and calculates statistics. Attention! Assumes that the first column is the OBS!
@@ -64,8 +64,8 @@ def Statistics(input_dataframe: pd.DataFrame, proj_name: str, loc: str, var: str
     """
 
     # Calculation
-    obsname = Obsvec[0]
-    modnames = Expvec
+    obsname = obsvec[0]
+    modnames = expvec
 
     if obsname == '':
         return
@@ -77,12 +77,12 @@ def Statistics(input_dataframe: pd.DataFrame, proj_name: str, loc: str, var: str
     for mm, modname in enumerate(modnames):
         mod = input_dataframe[modname]
         if var == "DIR":
-            Stats[:, mm] = _StatCalc_dir(obs, mod)
+            Stats[:, mm] = _stat_calc_dir(obs, mod)
         else:
-            Stats[:, mm] = _StatCalc(obs, mod)
+            Stats[:, mm] = _stat_calc(obs, mod)
 
     d = {
-        "Mod": Expvec,
+        "Mod": expvec,
         "Obs": [loc for x in range(len(modnames))],
         "Device": [anemometer for x in range(len(modnames))],
         "Variable": [var for x in range(len(modnames))],
@@ -137,7 +137,7 @@ def Statistics_xarray(input_ds: xr.Dataset, calc_for_ramp=0) -> xr.Dataset:
 
     station_names = input_ds.station_name.values
 
-    Stats = np.zeros([6, len(mod_names), len(station_names)])
+    stats = np.zeros([6, len(mod_names), len(station_names)])
 
     for ss, station_name in enumerate(station_names):
 
@@ -154,28 +154,28 @@ def Statistics_xarray(input_ds: xr.Dataset, calc_for_ramp=0) -> xr.Dataset:
                 mod = input_ds[modname][ss, :].values
 
             if is_dir:
-                Stats[:, mm, ss] = _StatCalc_dir(obs, mod)
+                stats[:, mm, ss] = _stat_calc_dir(obs, mod)
             else:
-                Stats[:, mm, ss] = _StatCalc(obs, mod)
+                stats[:, mm, ss] = _stat_calc(obs, mod)
 
     dims = ["mod_name", "station_name"]
 
-    Stats = xr.Dataset(
+    stats = xr.Dataset(
         {
-            "bias": (dims, Stats[0, :, :]),
-            "std": (dims, Stats[1, :, :]),
-            "mae": (dims, Stats[2, :, :]),
-            "CorCo": (dims, Stats[3, :, :]),
-            "mape": (dims, Stats[4, :, :]),
-            "rmse": (dims, Stats[5, :, :]),
+            "bias": (dims, stats[0, :, :]),
+            "std": (dims, stats[1, :, :]),
+            "mae": (dims, stats[2, :, :]),
+            "CorCo": (dims, stats[3, :, :]),
+            "mape": (dims, stats[4, :, :]),
+            "rmse": (dims, stats[5, :, :]),
         },
         coords={"mod_name": mod_names, "station_name": station_names},
     )
 
-    Stats.attrs = input_ds.attrs
-    Stats.attrs["calc_for_ramp"] = calc_for_ramp
+    stats.attrs = input_ds.attrs
+    stats.attrs["calc_for_ramp"] = calc_for_ramp
 
     if rename:
-        Stats = Stats.rename({"station_name": "exp_name"})
+        stats = stats.rename({"station_name": "exp_name"})
 
-    return Stats
+    return stats

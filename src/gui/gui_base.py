@@ -1,4 +1,4 @@
-from src.wrftamer.wrftamer_paths import wrftamer_paths
+from wrftamer.wrftamer_paths import wrftamer_paths
 import os
 
 

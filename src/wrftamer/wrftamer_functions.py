@@ -6,9 +6,9 @@ import pandas as pd
 from pathlib import Path
 import re
 import subprocess
-from src.wrftamer.initialize_wrf_namelist import initialize_wrf_namelist
-from src.wrftamer.link_grib import link_grib
-from src.wrftamer.wrftamer_paths import wrftamer_paths
+from wrftamer.initialize_wrf_namelist import initialize_wrf_namelist
+from wrftamer.link_grib import link_grib
+from wrftamer.wrftamer_paths import wrftamer_paths
 
 """
 Here, I translated the old shell scripts to python scripts.
@@ -306,7 +306,7 @@ def make_call_wd_file_from_template(miniconda_path, condaenv_name, templatefile=
     if templatefile is None:
         myfile = (
                 os.path.split(os.path.realpath(__file__))[0]
-                + "/resources/call_watchdog.template"
+                + "/../../resources/call_watchdog.template"
         )
     else:
         myfile = templatefile
@@ -327,7 +327,7 @@ def make_call_wd_file_from_template(miniconda_path, condaenv_name, templatefile=
 def _make_submitfile_from_template(submit_vars: dict, templatefile=None):
     # read template and configuration
     if templatefile is None:
-        myfile = os.path.split(os.path.realpath(__file__))[0] + "/resources/submit.template"
+        myfile = os.path.split(os.path.realpath(__file__))[0] + "/../../resources/submit.template"
     else:
         myfile = templatefile
 

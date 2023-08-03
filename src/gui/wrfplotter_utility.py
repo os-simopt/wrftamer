@@ -4,7 +4,7 @@ import xarray as xr
 import panel as pn
 import datetime as dt
 import pandas as pd
-from src.wrftamer.main import project
+from wrftamer.main import Project
 import yaml
 
 
@@ -56,7 +56,7 @@ def get_available_obs() -> (dict, list):
 
 
 def get_available_tvec(proj_name, exp_name):
-    proj = project(proj_name)
+    proj = Project(proj_name)
     start, end = proj.exp_start_end(exp_name)
 
     diff = end - start
@@ -86,7 +86,7 @@ def get_available_tvec(proj_name, exp_name):
 
 def get_available_doms(proj_name):
     max_dom = 1
-    proj = project(proj_name)
+    proj = Project(proj_name)
     list_of_proj = proj.list_exp(False)
     for exp_name in list_of_proj:
         max_dom = proj.exp_get_maxdom_from_config(exp_name)

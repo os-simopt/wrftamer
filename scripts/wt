@@ -6,9 +6,9 @@ import click
 import shutil
 from crontab import CronTab
 
-from src.wrftamer import project, list_projects
-from src.wrftamer import wrftamer_paths
-import src.wrftamer.wrftamer_functions as wtfun
+from wrftamer import project, list_projects
+from wrftamer import wrftamer_paths
+import wrftamer.wrftamer_functions as wtfun
 
 home_path, db_path, run_path, archive_path, disc = wrftamer_paths()
 
