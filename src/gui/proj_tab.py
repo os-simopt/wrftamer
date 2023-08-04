@@ -1,6 +1,6 @@
 import panel as pn
 import re
-from src.gui.gui_base import path_base
+from gui.gui_base import path_base
 from wrftamer.main import Project, list_projects, list_unassociated_exp, reassociate
 
 tabulator_formatters = {"select": {"type": "tickCross"}}
@@ -32,7 +32,7 @@ class proj_tab(path_base):
         self.del_warn = pn.widgets.StaticText(
             name="Warning",
             value="This will delete all data of this project. Click again to proceed.",
-            background="#ffcc00",
+            styles={'background': "#ffcc00"},
         )
         self.del_warn.visible = False
 
@@ -43,7 +43,7 @@ class proj_tab(path_base):
         self.info_panel = pn.widgets.StaticText(
             name="Experiments not associated with any project",
             value=str(len(list_of_experiments)),
-            background="#ffffff",
+            styles={'background': "#ffffff"}
         )
 
         proj = Project(None)

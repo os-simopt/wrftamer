@@ -5,10 +5,10 @@ import pandas as pd
 from pathlib import Path
 from io import StringIO
 
-from src.gui.gui_base import path_base
+from gui.gui_base import path_base
 from wrftamer.main import Project, list_projects, list_unassociated_exp
 
-from src.gui.wrfplotter_utility import (
+from gui.wrfplotter_utility import (
     get_available_obs,
     get_available_doms,
     get_vars_per_plottype,

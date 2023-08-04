@@ -1,9 +1,9 @@
 import panel as pn
 
-from src.gui.proj_tab import proj_tab
-from src.gui.exp_tab import exp_tab
-from src.gui.about_tab import about_tab
-from src.gui.wrfplotter_tab import wrfplotter_tab
+from gui.proj_tab import proj_tab
+from gui.exp_tab import exp_tab
+from gui.about_tab import about_tab
+from gui.wrfplotter_tab import wrfplotter_tab
 
 pn.extension("tabulator")
 tabulator_formatters = {"select": {"type": "tickCross"}}

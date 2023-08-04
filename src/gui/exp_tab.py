@@ -2,7 +2,7 @@ import os
 import re
 import panel as pn
 from wrftamer.main import Project, list_unassociated_exp
-from src.gui.gui_base import path_base
+from gui.gui_base import path_base
 
 
 class exp_tab(path_base):
@@ -40,19 +40,19 @@ class exp_tab(path_base):
             name="Warning",
             value="This will delete all data of this experiment. Click again to "
                   "proceed.",
-            background="#ffcc00",
+            styles={'background': "#ffcc00"},
         )
         self.del_warn.visible = False
 
         self.msg_procesing = pn.widgets.StaticText(name="Processing", value="Please wait for a moment.",
-                                                   background="#ffcc00")
+                                                   styles={'background': "#ffcc00"})
         self.msg_procesing.visible = False
 
         self.b_cancel = pn.widgets.Button(name="Cancel", button_type="warning", visible=False)
 
         ################################################################################################
         # mainpage
-        self.header = pn.widgets.StaticText(value="Select Configure File", background="#ffffff")
+        self.header = pn.widgets.StaticText(value="Select Configure File", styles={'background': "#ffffff"})
         self.file_input = pn.widgets.FileInput(name="Select Configure File", accept=".yaml", multiple=False)
 
         self.comment_box = pn.widgets.TextInput(

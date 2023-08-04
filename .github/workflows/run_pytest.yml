@@ -38,7 +38,7 @@ jobs:
 
     - name: Create Conda Environment
       run: |
-        conda install --channel=conda-forge --name=base conda-lock
+        conda install --channel=conda-forge conda-lock
         conda-lock install --name test_env -f conda-lock.yml
 
     - name: Activate Conda Environment
