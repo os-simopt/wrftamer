@@ -1,7 +1,10 @@
 import pytest
 import os
 import shutil
+import pandas as pd
 from pathlib import Path
+import xarray as xr
+import numpy as np
 
 os.environ['wrftamer_test_mode'] = 'True'
 
@@ -183,3 +186,50 @@ def functions_environment(base_test_env):
         f.write("")
 
     yield test_exp_path
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+# statistics_data
+@pytest.fixture()
+def statistics_pd():
+    test_pd = pd.read_csv(test_res_path / "testdata.csv")
+    expect_pd = pd.read_csv(test_res_path / "testres.csv", index_col=0)
+
+    yield test_pd, expect_pd
+
+
+@pytest.fixture()
+def statistics_xa(statistics_pd):
+    test_pd, expect_pd = statistics_pd
+
+    test_xa = xr.Dataset(
+        coords={
+            'time': test_pd['index'].values,
+            'station_name': ['Station1'],
+        },
+        data_vars={
+            'model': (['station_name', 'time'], np.expand_dims(test_pd.model.values, axis=0)),
+            'Obs': (['station_name', 'time'], np.expand_dims(test_pd.obs.values, axis=0)),
+        }
+    )
+
+    test_xa.attrs = {'var': 'wsp'}
+
+    # ------------------------------------------------------------------------------------------------------------------
+    expect_xa = xr.Dataset(
+        coords={
+            'mod_name': ['model'],
+            'station_name': ['Station1'],
+        },
+        data_vars={
+            'bias': (['mod_name', 'station_name'], np.expand_dims(expect_pd.BIAS.values, axis=0)),
+            'std': (['mod_name', 'station_name'], np.expand_dims(expect_pd['STD(ERR)'].values, axis=0)),
+            'mae': (['mod_name', 'station_name'], np.expand_dims(expect_pd.MAE.values, axis=0)),
+            'CorCo': (['mod_name', 'station_name'], np.expand_dims(expect_pd.CorCo.values, axis=0)),
+            'mape': (['mod_name', 'station_name'], np.expand_dims(expect_pd.MAPE.values, axis=0)),
+            'rmse': (['mod_name', 'station_name'], np.expand_dims(expect_pd.RMSE.values, axis=0)),
+        }
+    )
+    # ------------------------------------------------------------------------------------------------------------------
+
+    return test_xa, expect_xa

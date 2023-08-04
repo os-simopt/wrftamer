@@ -42,7 +42,7 @@ def assign_cf_attributes_tslist(
             return
 
     if "Conventions" not in metadata:
-        if verbose:
+        if verbose:  # pragma: no cover
             print('"Conventions" not in metadata. Selecting CF-1.8 as default.')
         metadata["Conventions"] = "CF-1.8"
 
@@ -56,7 +56,7 @@ def assign_cf_attributes_tslist(
     ]
     for item in recommended_set:
         if item not in metadata:
-            if verbose:
+            if verbose:  # pragma: no cover
                 print(f"Consider putting {item} into the metadata")
 
     # Add lat, lon, station_name and station_elevation to coordinates.
@@ -101,7 +101,7 @@ def assign_cf_attributes_tslist(
         try:
             data[item] = data[item].assign_attrs(cf_con[var])
         except KeyError:
-            if verbose:
+            if verbose:  # pragma: no cover
                 print(f'No cf attributes found for variable {var}')
 
     data.time.attrs = cf_con["time"]

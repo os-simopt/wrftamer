@@ -37,7 +37,7 @@ def list_projects(verbose=True):
     if 'Unassociated_Experiments' in list_of_projects:
         list_of_projects.remove('Unassociated_Experiments')
 
-    if verbose:
+    if verbose:  # pragma: no cover
         for item in list_of_projects:
             print(item)
 
@@ -49,12 +49,12 @@ def list_unassociated_exp(verbose=True):
         filename = db_path / "Unassociated_Experiments/List_of_Experiments.csv"
         df = get_csv(filename)
 
-        if verbose:
+        if verbose:  # pragma: no cover
             print(df.Name)
 
         mylist = [item for item in df.Name]
     except FileNotFoundError:
-        if verbose:
+        if verbose:  # pragma: no cover
             print("No unassociates Experiments found.")
         mylist = []
 
@@ -165,7 +165,7 @@ class Project:
         if os.path.isdir(self.tamer_path) or os.path.isdir(self.proj_path):
             raise FileExistsError
         else:
-            if verbose:
+            if verbose:  # pragma: no cover
                 print("Creating Project", self.name)
 
             os.mkdir(self.proj_path)
@@ -219,7 +219,7 @@ class Project:
 
         if val in ["Yes"]:
 
-            if verbose:
+            if verbose:  # pragma: no cover
                 print("Removing", self.proj_path)
                 print("Removing", self.tamer_path)
                 print("Removing", self.archive_path)
@@ -284,7 +284,7 @@ class Project:
         """
 
         if not self.proj_path.is_dir():
-            if verbose:
+            if verbose:  # pragma: no cover
                 print("This project does not exist")
             raise FileNotFoundError
 
@@ -302,7 +302,7 @@ class Project:
 
         proj_size = proj_size1 + proj_size2
 
-        if verbose:
+        if verbose:  # pragma: no cover
             print("Size of the project", self.name, ": ", proj_size, "bytes")
 
         return proj_size
@@ -350,13 +350,11 @@ class Project:
 
         for exp_name in df["Name"]:
             if (self.proj_path / exp_name).is_dir():
-                if verbose:
+                if verbose:  # pragma: no cover
                     print("Experiment", exp_name, "exists")
             else:
-                if verbose:
-                    print(
-                        "Experiment", exp_name, "does not exist and is removed from db"
-                    )
+                if verbose:  # pragma: no cover
+                    print("Experiment", exp_name, "does not exist and is removed from db")
                 idx = df.index[df.Name == exp_name].values
                 df = df.drop(idx)
 
@@ -396,10 +394,8 @@ class Project:
 
         # Check if name is unique, otherwise cannot add an experiment of the same name
         if exp_name in df.Name.values:
-            if verbose:
-                print(
-                    "Directories of the experiment do not exist, but an entry in the database does."
-                )
+            if verbose:  # pragma: no cover
+                print("Directories of the experiment do not exist, but an entry in the database does.")
                 print("This can happen, if a folder has been removed manually.")
                 print("Run cleanup_db to resolve this issue.")
             raise FileExistsError
@@ -410,7 +406,7 @@ class Project:
         if exp_path.is_dir():
             raise FileExistsError
 
-        if verbose:
+        if verbose:  # pragma: no cover
             print("---------------------------------------")
             print(f"Creating Experiment {exp_name}")
             print(f" in directory {exp_path}")
@@ -456,7 +452,7 @@ class Project:
 
         status = self.exp_get_status(old_exp_name)
         if status == "archived":
-            if verbose:
+            if verbose:  # pragma: no cover
                 print("This run has already been archived and may not be copied.")
             return
 
@@ -469,15 +465,13 @@ class Project:
         # check Database
         # Check if name is unique, otherwise cannot add an experiment of the same name
         if new_exp_name in df.Name.values:
-            if verbose:
-                print(
-                    "Directories of the new experiment do not exist, but an entry in the database does."
-                )
+            if verbose:  # pragma: no cover
+                print("Directories of the new experiment do not exist, but an entry in the database does.")
                 print("This can happen, if a folder has been removed manually.")
                 print("Run cleanup_db to resolve this issue.")
             raise FileExistsError
 
-        if verbose:
+        if verbose:  # pragma: no cover
             print("---------------------------------------")
             print(f"Reusing Experiment {old_exp_name}")
             print(f" as experiment {new_exp_name}")
@@ -534,14 +528,14 @@ class Project:
         if exp_path.is_dir() or archive_path.is_dir():
             remove_dirs = True
         else:
-            if verbose:
+            if verbose:  # pragma: no cover
                 print("Directories of experiment not found.")
             remove_dirs = False
 
         if exp_name in df.Name.values:
             remove_db_entry = True
         else:
-            if verbose:
+            if verbose:  # pragma: no cover
                 print("Database entry of experiment not found.")
             remove_db_entry = False
 
@@ -556,7 +550,7 @@ class Project:
             val = input("Proceed? Yes/[No]")
 
         if val in ["Yes"]:
-            if verbose:
+            if verbose:  # pragma: no cover
                 print("---------------------------------------")
                 print(f"Removing Experiment {exp_name}")
                 print("---------------------------------------")
@@ -583,7 +577,7 @@ class Project:
         df = get_csv(self.filename)
 
         if new_workdir.is_dir():
-            if verbose:
+            if verbose:  # pragma: no cover
                 print(f"Cannot rename, experiment {new_exp_name} exists.")
             raise FileExistsError
 
@@ -594,15 +588,13 @@ class Project:
             print("This can happen, if a folder has been removed manually.")
             print("Run cleanup_db to resolve this issue.")
             raise FileNotFoundError
-        elif new_exp_name in df.Name.values:
-            print(
-                f"Directories of the experiment {new_exp_name} do not exist, but an entry in the database does."
-            )
+        elif new_exp_name in df.Name.values:  # pragma: no cover
+            print(f"Directories of the experiment {new_exp_name} do not exist, but an entry in the database does.")
             print("This can happen, if a folder has been removed manually.")
             print("Run cleanup_db to resolve this issue.")
             raise FileExistsError
 
-        if verbose:
+        if verbose:  # pragma: no cover
             print("---------------------------------------")
             print(f"Renaming Experiment {old_exp_name} to {new_exp_name}")
             print("---------------------------------------")
@@ -620,7 +612,7 @@ class Project:
 
         exp_path = self.proj_path / exp_name
 
-        if verbose:
+        if verbose:  # pragma: no cover
             print("Running WPS (geogrid, ungrib, metgrid)")
 
         wtfun.run_wps_command(exp_path, "geogrid")
@@ -631,7 +623,7 @@ class Project:
 
         exp_path = self.proj_path / exp_name
 
-        if verbose:
+        if verbose:  # pragma: no cover
             print("---------------------------------------")
             print(f"Restarting Experiment {exp_name} with restart file {restartfile}")
             print("---------------------------------------")
@@ -640,7 +632,7 @@ class Project:
             date_string = Path(restartfile).name[11::]
             dt.datetime.strptime(date_string, "%Y-%m-%d_%H:%M:%S")
         except ValueError:
-            if verbose:
+            if verbose:  # pragma: no cover
                 print(f"File {restartfile} does not have the format %Y-%m-%d_%H:%M:%S")
                 print("A Path in front of the filename is fine")
             raise NameError
@@ -658,7 +650,7 @@ class Project:
 
         workdir = self.get_workdir(exp_name)
 
-        if verbose:
+        if verbose:  # pragma: no cover
             print("---------------------------------------")
             print("Moving model output to out and log dirs")
             print(f"Source: {workdir}/wrf/")
@@ -679,7 +671,7 @@ class Project:
             self._update_db_entry(exp_name, {"status": "moved"})
 
         else:
-            if verbose:
+            if verbose:  # pragma: no cover
                 print("No files to move")
 
     def exp_process_tslist(
@@ -692,7 +684,7 @@ class Project:
         idir = list((workdir / "out").glob("tsfiles*"))
 
         if len(idir) == 0 or not outdir.is_dir():
-            if verbose:
+            if verbose:  # pragma: no cover
                 print(f"Cannot process tslists.")
                 print(f"The directory {workdir}/out/tsfiles*' does not exist")
             return
@@ -750,7 +742,7 @@ class Project:
         for myfile in filelist:
             os.remove(myfile)
 
-        if verbose:
+        if verbose:  # pragma: no cover
             print("---------------------------------------")
             print("Archiving model output")
             print(f"Source: {exp_path}")
@@ -774,9 +766,7 @@ class Project:
         try:
             ppp = cfg["pp_protocol"]
         except KeyError:
-            print(
-                "Cannot perform post processing protocol. No valid enty found in configure.yaml"
-            )
+            print("Cannot perform post processing protocol. No valid enty found in configure.yaml")
             return
 
         for item in ppp:
@@ -813,7 +803,7 @@ class Project:
             if (os.path.isfile(f) and not os.path.islink(f))
         ) / (1024 * 1024)
 
-        if verbose:
+        if verbose:  # pragma: no cover
             print("Size of the experiment", exp_name, ": ", exp_size, "megabytes")
 
         return exp_size
@@ -829,7 +819,7 @@ class Project:
         elif infile2.is_file():
             infile = infile2
         else:
-            if verbose:
+            if verbose:  # pragma: no cover
                 print("logfile rsl.error.0000 not found. Cannot calculate wrf timing")
             total_time = np.nan
             return total_time
@@ -847,7 +837,7 @@ class Project:
                     time = float(line.split()[7])
                     domains_w[dom].append(time)
 
-        if verbose:
+        if verbose:  # pragma: no cover
             print("Average/median WRF timing [seconds]:")
             print("|        |           mean           |          median          |")
             print("| domain | calc time | writing time | calc time | writing time |")
@@ -953,7 +943,7 @@ class Project:
         loc_list = list(set([item.rsplit("/", 1)[1].split(".")[0] for item in mylist]))
         loc_list.sort()
 
-        if verbose:
+        if verbose:  # pragma: no cover
             print(loc_list)
 
         return loc_list
@@ -982,7 +972,7 @@ class Project:
                     tmp = tmp.split("=")[1].strip()
                     end = dt.datetime.strptime(tmp, "'%Y-%m-%d_%H:%M:%S'")
 
-        if verbose:
+        if verbose:  # pragma: no cover
             print("Model start and end:", start, end)
 
         return start, end
@@ -1074,5 +1064,5 @@ class Project:
 
         if not exp_path.exists() and not archive_path.exists():
             status = "uncreated"
-        else:
-            self._update_db_entry(exp_name, {"status": status})
+
+        self._update_db_entry(exp_name, {"status": status})

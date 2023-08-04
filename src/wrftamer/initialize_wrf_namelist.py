@@ -1,3 +1,5 @@
+from pathlib import Path
+from typing import Union
 from wrftamer import res_path
 
 """
@@ -7,7 +9,7 @@ and a namelist.template
 """
 
 
-def initialize_wrf_namelist(namelist_vars: dict, namelistfile: str, templatefile=None):
+def initialize_wrf_namelist(namelist_vars: dict, namelistfile: Union[str, Path], templatefile=None):
     # read template and configuration
     if templatefile is None:
         mypath = res_path / 'namelist.template'
@@ -47,8 +49,8 @@ def initialize_wrf_namelist(namelist_vars: dict, namelistfile: str, templatefile
 
             if key == "run_hours":
                 val = (
-                    namelist_vars["dtend"] - namelist_vars["dtbeg"]
-                ).total_seconds() // 3600
+                              namelist_vars["dtend"] - namelist_vars["dtbeg"]
+                      ).total_seconds() // 3600
                 val = f"{val:02.0f},"
             if section == "domains" and key == "eta_levels":
                 # we might need to insert custom eta levels at this point
@@ -71,7 +73,7 @@ def initialize_wrf_namelist(namelist_vars: dict, namelistfile: str, templatefile
                         max_keylen = max(len(eta_key), max_keylen)
             elem = str(val).split(",")
             if (len(elem) > namelist_vars["max_dom"]) and not key.startswith(
-                "eta_levels"
+                    "eta_levels"
             ):
                 val = ",".join(elem[: namelist_vars["max_dom"]]) + ","
 

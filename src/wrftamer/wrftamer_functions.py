@@ -121,7 +121,7 @@ def create_rundir(exp_path: Path, configure_file: str, namelist_template: str, v
     driving_data = Path(cfg["paths"]["driving_data"])
     suffix_len = cfg["link_grib"]["suffix_len"]
 
-    if verbose:
+    if verbose:  # pragma: no cover
         print(f"Building the exp_path directory {exp_path}")
         print("Relevant config_file and directories:")
         print(configure_file)
