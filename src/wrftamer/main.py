@@ -106,13 +106,13 @@ def reassociate(proj_old, proj_new, exp_name: str):
     # Add to new db
     new_line = [exp_name, time_of_creation, comment, start, end, du, rt, "created"]
     df.loc[len(df)] = new_line
-    df.to_excel(proj_new.filename)
+    df.to_csv(proj_new.filename)
 
     # remove from old db
     df = get_csv(proj_old.filename)
     idx = df.index[df.Name == exp_name].values
     df = df.drop(idx)
-    df.to_excel(proj_old.filename)
+    df.to_csv(proj_old.filename)
 
     # move actual experiment
     old_workdir = proj_old.get_workdir(exp_name)
@@ -342,7 +342,7 @@ class Project:
             new_line = [exp_name, time, comment, start, end, du, rt, status]
             df.loc[idx] = new_line
 
-        df.to_excel(self.filename)
+        df.to_csv(self.filename)
 
     def cleanup_db(self, verbose=True):
 
@@ -360,7 +360,7 @@ class Project:
                 idx = df.index[df.Name == exp_name].values
                 df = df.drop(idx)
 
-        df.to_excel(self.filename)
+        df.to_csv(self.filename)
 
     # ------------------------------------------------------------------------------------------------------------------
     def exp_create(
@@ -435,7 +435,7 @@ class Project:
         new_line = [exp_name, time_of_creation, comment, start, end, du, rt, "created"]
 
         df.loc[len(df)] = new_line
-        df.to_excel(self.filename)
+        df.to_csv(self.filename)
 
     def exp_copy(self, old_exp_name: str, new_exp_name: str, comment: str, verbose=True):
         """
@@ -483,7 +483,7 @@ class Project:
             print(f" as experiment {new_exp_name}")
             print("---------------------------------------")
 
-        wtfun.copy_dirs(old_exp_path, new_exp_path)
+        wtfun.copy_dirs(old_exp_path, new_exp_path, make_submit=self.make_submit)
 
         # --------------------------------------------------------------------------------------------------------------
         # Database update
@@ -506,7 +506,7 @@ class Project:
         ]
 
         df.loc[len(df)] = new_line
-        df.to_excel(self.filename)
+        df.to_csv(self.filename)
 
         self._update_db_entry(new_exp_name, {"status": "created"})
 
@@ -570,7 +570,7 @@ class Project:
             if remove_db_entry:
                 idx = df.index[df.Name == exp_name].values
                 df = df.drop(idx)
-                df.to_excel(self.filename)
+                df.to_csv(self.filename)
         else:
             print("Abort. (Yes must be capitalized)")
             return
@@ -614,7 +614,7 @@ class Project:
         idx = df.index[df.Name == old_exp_name].values
         df.Name.values[idx] = new_exp_name
 
-        df.to_excel(self.filename)
+        df.to_csv(self.filename)
 
     def exp_run_wps(self, exp_name, verbose=True):
 
@@ -1024,7 +1024,7 @@ class Project:
                 new_line.append(line[item].values[0])
 
         df[df.Name == exp_name] = new_line
-        df.to_excel(self.filename)
+        df.to_csv(self.filename)
 
     def _determine_status(self, exp_name):
 

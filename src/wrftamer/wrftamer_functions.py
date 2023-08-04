@@ -168,7 +168,7 @@ def create_rundir(exp_path: Path, configure_file: str, namelist_template: str, v
     shutil.copyfile(configure_file, f"{exp_path}/configure.yaml")
 
 
-def copy_dirs(old_run_path: Path, new_run_path: Path, ignore_submit=False):
+def copy_dirs(old_run_path: Path, new_run_path: Path, make_submit=False):
     """
     Creating directory structure for an experiment, linking files, copying configure files.
 
@@ -231,7 +231,7 @@ def copy_dirs(old_run_path: Path, new_run_path: Path, ignore_submit=False):
     os.symlink(new_run_path / "wrf/namelist.input", new_run_path / "wrf/namelist.wps")
 
     # copy submit files and change paths as is appropriate
-    if not ignore_submit:
+    if make_submit:
         shutil.copyfile(
             f"{old_run_path}/submit_wrf.sh", f"{new_run_path}/submit_wrf.sh"
         )

@@ -4,4 +4,4 @@ wrftamer_paths:
     run_path: "wrftamer_test_tmpdir/run"
     archive_path: "wrftamer_test_tmpdir/archive"
     plot_path: "wrftamer_test_tmpdir/plots"
-wrftamer_make_submit: False
+wrftamer_make_submit: True

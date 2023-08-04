@@ -1,6 +1,4 @@
 import pytest
-import os
-from pathlib import Path
 from wrftamer.wrftamer_functions import (
     writeLogFile,
     make_executable_dir,

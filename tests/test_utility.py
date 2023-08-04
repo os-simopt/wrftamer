@@ -6,10 +6,10 @@ import pytest
 
 def test_get_random_string1():
     with pytest.raises(ValueError):
-        res = get_random_string(-100)
+        _ = get_random_string(-100)
 
     with pytest.raises(ValueError):
-        res = get_random_string(0)
+        _ = get_random_string(0)
 
 
 def test_get_random_string2():
