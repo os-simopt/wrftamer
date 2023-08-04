@@ -6,8 +6,8 @@ import click
 import shutil
 from crontab import CronTab
 
-from wrftamer import project, list_projects
-from wrftamer import wrftamer_paths
+from wrftamer.main import Project, list_projects
+from wrftamer.wrftamer_paths import wrftamer_paths
 import wrftamer.wrftamer_functions as wtfun
 
 home_path, db_path, run_path, archive_path, disc = wrftamer_paths()
@@ -78,7 +78,7 @@ def cli_first_steps(
 
     """
 
-    wrf_and_wsp_parent_dir = Path(wrf_and_wsp_parent_dir)
+    wrf_and_wsp_parent_dir = Path(wrf_and_wps_parent_dir)
 
     if exe_dir is None:
         exe_dir = home_path / "bin/wrf_executables"
@@ -202,7 +202,7 @@ def cli_create(
 
     # Create Project on demand
     if proj_name is not None:
-        proj = project(proj_name)
+        proj = Project(proj_name)
         if not os.path.isdir(proj.proj_path):
             print("This project does not yet exist.")
             val = input("Do you want to create it? Yes/[No]")
@@ -218,7 +218,7 @@ def cli_create(
     else:
         click.echo("This experiment is not associated with any project.")
 
-    proj = project(proj_name)  # works even for proj_name=None > unassociated.
+    proj = Project(proj_name)  # works even for proj_name=None > unassociated.
     try:
         proj.exp_create(
             exp_name,
@@ -256,7 +256,7 @@ def cli_run_wps(exp_name, proj_name=None):
 
     """
 
-    proj = project(proj_name)
+    proj = Project(proj_name)
     proj.exp_run_wps(exp_name)
 
 
@@ -271,7 +271,7 @@ def cli_run_wps(exp_name, proj_name=None):
     help="Name of the project this experiment is associated with [default: None]",
 )
 def cli_remove(exp_name, proj_name=None):
-    proj = project(proj_name)
+    proj = Project(proj_name)
     proj.exp_remove(exp_name)
 
 
@@ -312,7 +312,7 @@ def cli_copy(exp_name, new_exp_name, proj_name=None, comment=""):
         "You chose this experiment: %s and the new experiment: %s"
         % (exp_name, new_exp_name)
     )
-    proj = project(proj_name)
+    proj = Project(proj_name)
 
     try:
         proj.exp_copy(exp_name, new_exp_name, comment)
@@ -348,7 +348,7 @@ def cli_rename(exp_name, new_exp_name, proj_name=None):
     """
     click.echo("Rename %s to %s" % (exp_name, new_exp_name))
 
-    proj = project(proj_name)
+    proj = Project(proj_name)
 
     try:
         proj.exp_rename(exp_name, new_exp_name, verbose=False)
@@ -388,7 +388,7 @@ def cli_restart(restartfile, proj_name=None):
 
     exp_name = Path(restartfile).parents[1].stem
 
-    proj = project(proj_name)
+    proj = Project(proj_name)
     proj.exp_restart(exp_name, restartfile)  # moves output as well.
 
 
@@ -414,7 +414,7 @@ def cli_move(exp_name, proj_name=None):
     """
     click.echo("Move WRF-Output")
 
-    proj = project(proj_name)
+    proj = Project(proj_name)
     proj.exp_move(exp_name)
 
 
@@ -457,7 +457,7 @@ def cli_tslist(exp_name, location, domain, timeavg, proj_name=None):
     click.echo("process ts-files")
 
     try:
-        proj = project(proj_name)
+        proj = Project(proj_name)
         proj.exp_process_tslist(exp_name, location, domain, timeavg)
     except FileNotFoundError as e:
         print("The directory that contains the tsfiles does not exist.")
@@ -473,7 +473,7 @@ def cli_tslist(exp_name, location, domain, timeavg, proj_name=None):
 def cli_ppp(exp_name, proj_name=None):
     click.echo("Perform post processing protocol")
     try:
-        proj = project(proj_name)
+        proj = Project(proj_name)
         proj.exp_run_postprocessing_protocol(exp_name)
     except Exception as e:
         print("Problems with the post processing protocoll")
@@ -509,7 +509,7 @@ def cli_archive(exp_name, proj_name=None, keep_log="True"):
     click.echo(f"archiving {exp_name}")
 
     try:
-        proj = project(proj_name)
+        proj = Project(proj_name)
         proj.exp_archive(exp_name, keep_log=bool(keep_log))
     except FileNotFoundError:
         print("This experiment does not exist")
@@ -528,7 +528,7 @@ def cli_archive(exp_name, proj_name=None, keep_log="True"):
 def cli_timing(exp_name, proj_name=None):
     click.echo("show timing")
 
-    proj = project(proj_name)
+    proj = Project(proj_name)
     proj.exp_runtime(exp_name, verbose=True)
 
 
@@ -549,7 +549,7 @@ def cli_create_project(proj_name):
     Returns: None
 
     """
-    proj = project(proj_name)
+    proj = Project(proj_name)
 
     try:
         proj.create()
@@ -575,7 +575,7 @@ def cli_remove_project(proj_name):
     Returns: None
 
     """
-    proj = project(proj_name)
+    proj = Project(proj_name)
     try:
         proj.remove()
     except FileNotFoundError:
@@ -600,7 +600,7 @@ def cli_rename_project(proj_name, new_name):
     Returns: None
 
     """
-    proj = project(proj_name)
+    proj = Project(proj_name)
 
     try:
         proj.rename(new_name)
@@ -641,7 +641,7 @@ def cli_du_project(proj_name):
     Returns:
 
     """
-    proj = project(proj_name)
+    proj = Project(proj_name)
     try:
         proj.disk_use()
     except FileNotFoundError:
@@ -663,7 +663,7 @@ def cli_runtimes_project(proj_name):
     Returns: None
 
     """
-    proj = project(proj_name)
+    proj = Project(proj_name)
 
     try:
         proj.runtimes()
@@ -681,7 +681,7 @@ def cli_runtimes_project(proj_name):
     help="Name of the project this experiment is associated with [default: None]",
 )
 def cli_cleanup_db(proj_name=None):
-    proj = project(proj_name)
+    proj = Project(proj_name)
 
     # first, check if the project exists in the db, if not, remove it
     if proj.tamer_path.is_dir() and not proj.proj_path.is_dir():

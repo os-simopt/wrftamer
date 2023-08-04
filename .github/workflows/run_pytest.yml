@@ -17,7 +17,7 @@ on:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -38,10 +38,9 @@ jobs:
 
     - name: Create Conda Environment
       run: |
+        conda install --channel=conda-forge --name=base conda-lock
+        conda-lock install --name test_env -f conda-lock.yml
 
-        conda install -n base -c conda-forge mamba
-        mamba env create -n test_env -f conda-lock.yml
-        
     - name: Activate Conda Environment
       run: conda activate test_env
 

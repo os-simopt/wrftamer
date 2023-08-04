@@ -5,4 +5,4 @@
 
 SCRIPT_DIR=$(python -c "import wrftamer; print(wrftamer.__file__.split('__')[0])")
 
-panel serve "$SCRIPT_DIR"/gui/gui.py --port=5009 --show
+panel serve "$SCRIPT_DIR"/../gui/gui.py --port=5009 --show
