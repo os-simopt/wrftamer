@@ -19,21 +19,28 @@ from gui.wrfplotter_utility import (
     get_available_tvec,
 )
 
-from wrftamer.wrfplotter_classes import Map, get_max_timerange
-from wrftamer.plotting.load_and_prepare import load_obs_data, load_mod_data
-from wrftamer.plotting.load_and_prepare import (
-    prep_profile_data,
-    prep_ts_data,
-    prep_zt_data,
-    prep_windrose_data,
-    get_limits_and_labels,
-)
-from wrftamer.plotting.hv_plots import create_hv_plot
-from wrftamer.plotting.mpl_plots import create_mpl_plot
 from wrftamer.utility import get_random_string
-import holoviews as hv
 
-hv.extension("bokeh")
+try:
+    from wrfplotter.wrfplotter_classes import Map, get_max_timerange
+    from wrfplotter.plotting.load_and_prepare import load_obs_data, load_mod_data
+    from wrfplotter.plotting.load_and_prepare import (
+        prep_profile_data,
+        prep_ts_data,
+        prep_zt_data,
+        prep_windrose_data,
+        get_limits_and_labels,
+    )
+
+    from wrfplotter.plotting.hv_plots import create_hv_plot
+    from wrfplotter.plotting.mpl_plots import create_mpl_plot
+
+    use_wrfplotter = True
+
+    import holoviews as hv
+    hv.extension("bokeh")
+except ImportError:
+    use_wrfplotter = False
 
 
 def create_plot_panel(plottypes_avil):

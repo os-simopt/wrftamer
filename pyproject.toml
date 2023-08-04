@@ -42,7 +42,8 @@
 
 [tool.poetry]
     packages = [
-    'wrfplotter'
+    'wrfplotter',
+    'gui',
     ]
 
 [tool.poetry.scripts]
