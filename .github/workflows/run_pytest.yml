@@ -19,6 +19,9 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -l {0}
 
     steps:
     - name: Checkout Repository
@@ -27,12 +30,15 @@ jobs:
     - name: Set up Miniconda
       uses: conda-incubator/setup-miniconda@v2
       with:
-        auto-update-conda: false
-        root-key: ${{ runner.temp }}/conda
-        installer-url: https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+        miniconda-version: "latest"
+        channels: conda-forge, os-simopt
+        use-only-tar-bz2: true  # IMPORTANT: This needs to be set for caching to work properly!
+        auto-update-conda: true
+        auto-activate-base: true
 
     - name: Create Conda Environment
       run: |
+
         conda install -n base -c conda-forge mamba
         mamba env create -n test_env -f conda-lock.yml
         
@@ -46,9 +52,7 @@ jobs:
         conda develop .
         cd ..
 
-  test:
-    runs-on: ubuntu-latest
-    steps:
+
     - name: Lanuch tests and generate report
       run: |
         pytest
