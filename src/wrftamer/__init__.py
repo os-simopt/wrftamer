@@ -20,5 +20,3 @@ try:
 except KeyError:
     print('environment varialbe wrftamer_config not found. Defaulting to a directory relative to $HOME')
     cfg = get_config(path_seed=this_path / '__init__.py')
-
-print(cfg['wrftamer_paths']['wrftamer_path'])
