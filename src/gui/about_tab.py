@@ -1,5 +1,5 @@
 import wrftamer
-from gui.gui_base import path_base
+from gui.old_panel_gui.gui_base import path_base
 import panel as pn
 
 

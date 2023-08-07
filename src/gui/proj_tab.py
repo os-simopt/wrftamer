@@ -1,6 +1,6 @@
 import panel as pn
 import re
-from gui.gui_base import path_base
+from gui.old_panel_gui.gui_base import path_base
 from wrftamer.main import Project, list_projects, list_unassociated_exp, reassociate
 
 tabulator_formatters = {"select": {"type": "tickCross"}}

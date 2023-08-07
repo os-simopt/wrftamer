@@ -1,12 +1,12 @@
 import panel as pn
 
-from gui.proj_tab import proj_tab
-from gui.exp_tab import exp_tab
-from gui.about_tab import about_tab
+from gui.old_panel_gui.proj_tab import proj_tab
+from gui.old_panel_gui.exp_tab import exp_tab
+from gui.old_panel_gui.about_tab import about_tab
 
-from gui.wrfplotter_tab import use_wrfplotter
+from gui.old_panel_gui.wrfplotter_tab import use_wrfplotter
 if use_wrfplotter:
-    from gui.wrfplotter_tab import wrfplotter_tab
+    from gui.old_panel_gui.wrfplotter_tab import wrfplotter_tab
 
 
 pn.extension("tabulator")

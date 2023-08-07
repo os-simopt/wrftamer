@@ -3,8 +3,8 @@ import os
 from pathlib import Path
 import shutil
 import pandas as pd
-from wrftamer.main import Project, list_projects, list_unassociated_exp, reassociate
-from wrftamer import res_path, test_res_path
+from wrftamer.main import Project, list_projects, reassociate
+from wrftamer import test_res_path
 
 # works
 
@@ -54,12 +54,6 @@ def test_nonexisting_project(base_test_env):
 def test_list_projects(testprojects):
     # listing all projects should work (even if no projects exist)
     list_projects(verbose=True)
-
-
-def test_list_unassociated_exp(testprojects):
-    # listing unassociated exps (if none exist) will just return an empty list
-    res = list_unassociated_exp(verbose=True)
-    assert len(res) == 0
 
 
 # -----------------------------------------------------------------------
@@ -338,13 +332,9 @@ def experiment_checks(proj_name1, exp_name1):
     proj._determine_status(exp_name2)
 
 
-def test_experiment_without_project(unassociated_exps):
+def test_experiment_without_project():
     proj_name1 = None
     exp_name1 = "TEST1"
-
-    # This should find no unassociate experiments.
-    res = list_unassociated_exp(verbose=True)
-    assert len(res) == 0
 
     experiment_checks(proj_name1, exp_name1)
 

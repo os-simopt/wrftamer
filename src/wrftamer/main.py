@@ -9,6 +9,7 @@ import yaml
 from collections import defaultdict
 from tqdm import tqdm
 from typing import Union
+import re
 
 from wrftamer.wrftamer_paths import wrftamer_paths
 import wrftamer.wrftamer_functions as wtfun
@@ -19,7 +20,7 @@ from wrftamer import res_path, cfg
 home_path, db_path, run_path, arch_path, disc = wrftamer_paths()
 
 
-def list_projects(verbose=True):
+def list_projects(verbose=True) -> list:
     """
     Lists all projects that exist.
 
@@ -42,23 +43,6 @@ def list_projects(verbose=True):
             print(item)
 
     return list_of_projects
-
-
-def list_unassociated_exp(verbose=True):
-    try:
-        filename = db_path / "Unassociated_Experiments/List_of_Experiments.csv"
-        df = get_csv(filename)
-
-        if verbose:  # pragma: no cover
-            print(df.Name)
-
-        mylist = [item for item in df.Name]
-    except FileNotFoundError:
-        if verbose:  # pragma: no cover
-            print("No unassociates Experiments found.")
-        mylist = []
-
-    return mylist
 
 
 def get_csv(filename):
@@ -121,30 +105,31 @@ def reassociate(proj_old, proj_new, exp_name: str):
 
 
 class Project:
-    def __init__(self, name):
+    def __init__(self, name: Union[str, None] = None):
 
-        # home_path, db_path, run_path, arch_path, some_other_path
-        self.wrftamer_paths = (wrftamer_paths())
         self.make_submit = cfg['wrftamer_make_submit']
 
         if name is None:
             name = "Unassociated_Experiments"
 
+        if not re.match(r"^[A-Za-z0-9_-]+$", name):
+            raise ValueError('Project name must contain only alphanumeric values, underscores and dashes.')
+
         self.name = name
 
     @property
     def tamer_path(self):
-        tamer_path = self.wrftamer_paths[1] / self.name
+        tamer_path = db_path / self.name
         return tamer_path
 
     @property
     def proj_path(self):
-        proj_path = self.wrftamer_paths[2] / self.name
+        proj_path = run_path / self.name
         return proj_path
 
     @property
     def archive_path(self):
-        archive_path = self.wrftamer_paths[3] / self.name
+        archive_path = arch_path / self.name
         return archive_path
 
     @property
@@ -207,6 +192,11 @@ class Project:
 
         Returns: None
         """
+
+        if self.name == "Unassociated_Experiments":
+            if verbose:
+                print('Default project cannot be removed.')
+            return
 
         if force:
             val = "Yes"
@@ -385,7 +375,10 @@ class Project:
         Returns: None
         """
 
-        # First, check if proj_name exists. If no, create
+        if not re.match(r"^[A-Za-z0-9_-]+$", exp_name):
+            raise ValueError('Experiment name must contain only alphanumeric values, underscores and dashes.')
+
+        # Check if proj_name exists. If no, create
         if not self.proj_path.is_dir():
             self.create()  # always create a project, even if proj_name is None.
 
@@ -445,6 +438,9 @@ class Project:
         Returns: None
 
         """
+
+        if not re.match(r"^[A-Za-z0-9_-]+$", new_exp_name):
+            raise ValueError('Experiment name must contain only alphanumeric values, underscores and dashes.')
 
         old_exp_path = self.proj_path / old_exp_name
         new_exp_path = self.proj_path / new_exp_name
@@ -570,6 +566,9 @@ class Project:
             return
 
     def exp_rename(self, old_exp_name: str, new_exp_name: str, verbose=True):
+
+        if not re.match(r"^[A-Za-z0-9_-]+$", new_exp_name):
+            raise ValueError('Experiment name must contain only alphanumeric values, underscores and dashes.')
 
         old_workdir = self.get_workdir(old_exp_name)
         new_workdir = old_workdir.parent / new_exp_name

@@ -2,7 +2,7 @@ import os
 import re
 import panel as pn
 from wrftamer.main import Project, list_unassociated_exp
-from gui.gui_base import path_base
+from gui.old_panel_gui.gui_base import path_base
 
 
 class exp_tab(path_base):
