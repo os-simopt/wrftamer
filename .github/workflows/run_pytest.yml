@@ -47,10 +47,18 @@ jobs:
       run: conda activate myenv
 
     - name: Install Conda package
-      run: conda install -c os-simopt simopt-tools
+      run: |
+        conda install -c os-simopt simopt-tools
+        conda install conda-build
 
     - name: Install Pip requirements
       run: pip install -r requirements.txt
+
+    - name: Install Package in dev mode
+      run: |
+        cd src
+        conda develop .
+        cd ..
 
     - name: Lanuch tests and generate report
       run: |
