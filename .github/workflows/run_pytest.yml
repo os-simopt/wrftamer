@@ -27,35 +27,17 @@ jobs:
     - name: Checkout Repository
       uses: actions/checkout@v2
 
-    - name: Set up Miniconda
-      uses: conda-incubator/setup-miniconda@v2
+    - name: Set up Python
+      uses: actions/setup-python@v2
       with:
-        miniconda-version: "latest"
-        channels: conda-forge, os-simopt
-        use-only-tar-bz2: true  # IMPORTANT: This needs to be set for caching to work properly!
-        auto-update-conda: true
-        auto-activate-base: true
+        python-version: 3.10
 
-    - name: Create Conda Environment
+    - name: Install Poetry
+      run: curl -sSL https://install.python-poetry.org | python -
+
+    - name: Build and Test
       run: |
-        conda install --channel=conda-forge conda-lock
-        conda-lock install --name test_env conda-lock.yml --dev
-
-    - name: Activate Conda Environment
-      run: conda activate test_env
-
-    - name: Install Dependencies and Run Tests
-      run: |
-        python --version
-        conda list
-        cd src
-        ls
-        conda develop .
-        cd ..
-
-
-    - name: Lanuch tests and generate report
-      run: |
+        poetry install
         pytest
 
     - name: Coverage comment
