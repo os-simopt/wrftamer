@@ -18,24 +18,26 @@ on:
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   test:
+    name: Run tests & display coverage
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash -l {0}
-
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v2
-
+    - uses: actions/checkout@v3
     - name: Set up Python
       uses: actions/setup-python@v3
+      with:
+        python-version: '3.9'
 
-    - name: Install Poetry
-      run: curl -sSL https://install.python-poetry.org | python -
-
-    - name: Build and Test
+    - name: Install dependencies
       run: |
-        poetry install
+        python --version
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install -e .
+
+    - name: Lanuch tests and generate report
+      run: |
+        pip install pytest
+        pip install pytest-cov
         pytest
 
     - name: Coverage comment

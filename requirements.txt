@@ -1,0 +1,12 @@
+streamlit
+click
+toml
+numpy
+pandas
+matplotlib
+pyyaml
+netcdf4
+xarray
+python-crontab
+openpyxl
+simopt-tools
