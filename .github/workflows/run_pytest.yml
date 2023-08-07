@@ -27,12 +27,25 @@ jobs:
       with:
         python-version: '3.9'
 
-    - name: Install dependencies
+    - name: Install Conda
       run: |
-        python --version
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        pip install -e .
+        wget -q https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
+        bash miniconda.sh -b -p $HOME/miniconda
+        export PATH="$HOME/miniconda/bin:$PATH"
+        conda init bash
+      shell: bash
+
+    - name: Create Conda environment
+      run: conda create -n myenv python=3.9
+
+    - name: Activate Conda environment
+      run: conda activate myenv
+
+    - name: Install Conda package
+      run: conda install -c os-simopt simopt-tools
+
+    - name: Install Pip requirements
+      run: pip install -r requirements.txt
 
     - name: Lanuch tests and generate report
       run: |
