@@ -153,8 +153,8 @@ class Project:
             if verbose:  # pragma: no cover
                 print("Creating Project", self.name)
 
-            os.mkdir(self.proj_path)
-            os.mkdir(self.tamer_path)
+            self.proj_path.mkdir(parents=True)
+            self.tamer_path.mkdir(parents=True)
 
             df = pd.DataFrame(
                 columns=[
