@@ -39,7 +39,7 @@ jobs:
     - name: Create Conda Environment
       run: |
         conda install --channel=conda-forge conda-lock
-        conda-lock install --name test_env conda-lock.yml
+        conda-lock install --name test_env conda-lock.yml --dev
 
     - name: Activate Conda Environment
       run: conda activate test_env
@@ -47,7 +47,9 @@ jobs:
     - name: Install Dependencies and Run Tests
       run: |
         python --version
+        conda list
         cd src
+        ls
         conda develop .
         cd ..
 
