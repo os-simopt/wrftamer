@@ -1,63 +1,46 @@
-import pytest
-import pandas as pd
-import os
-import xarray as xr
 import numpy as np
-from wrftamer.Statistics import Statistics, Statistics_xarray
-
-# fails
-
-data_path = os.path.split(os.path.realpath(__file__))[0] + "/resources/"
-test_pd = pd.read_csv(data_path + "testdata.csv")
-expect_pd = pd.read_csv(data_path + "testres.csv", index_col=0)
+from wrftamer.statistics import statistics, Statistics_xarray
 
 
-# test_xa1 = xr.load_dataset(data_path + "testset1.nc")
-# test_xa2 = xr.load_dataset(data_path + "testset2.nc")
-# test_xa3 = xr.load_dataset(data_path + "testset3.nc")
-# test_xa4 = test_xa3.drop_vars("ramp_marker")
-# expect_xa1 = xr.load_dataset(data_path + "testres1.nc")
-# expect_xa2 = xr.load_dataset(data_path + "testres2.nc")
-# expect_xa3 = xr.load_dataset(data_path + "testres3.nc")
-# expect_xa4 = xr.load_dataset(data_path + "testres4.nc")
+def test_stats1(statistics_pd):
+    test_pd, expect_pd = statistics_pd
 
-
-@pytest.mark.wip
-def test_stats1():
     infos = dict()
     infos['proj_name'] = 'test'
     infos['loc'] = 'loc'
     infos['var'] = 'WSP'
     infos['lev'] = '5'
     infos['anemometer'] = 'USA'
-    infos['Expvec'] = ['model']
-    infos['Obsvec'] = ['obs']
+    infos['expvec'] = ['model']
+    infos['obsvec'] = ['obs']
 
-    res = Statistics(test_pd, **infos)
+    res = statistics(test_pd, **infos)
 
     if max(abs(res.values[0, 5::] - expect_pd.values[0, 5::])) > 1e-10:
         raise ValueError
 
 
-@pytest.mark.wip
-def test_stats2():
+def test_stats2(statistics_pd):
+    test_pd, expect_pd = statistics_pd
+
     infos = dict()
     infos['proj_name'] = 'test'
     infos['loc'] = 'loc'
     infos['var'] = 'DIR'
     infos['lev'] = '5'
     infos['anemometer'] = 'USA'
-    infos['Expvec'] = ['model']
-    infos['Obsvec'] = ['obs']
+    infos['expvec'] = ['model']
+    infos['obsvec'] = ['obs']
 
-    res = Statistics(test_pd, **infos)
+    res = statistics(test_pd, **infos)
 
     if max(abs(res.values[0, 5:8] - expect_pd.values[0, 5:8])) > 1e-10:
         raise ValueError
 
 
-@pytest.mark.wip
-def test_xa_stats1():
+def test_xa_stats1(statistics_xa):
+    test_xa1, expect_xa1 = statistics_xa
+
     # Test for WSP data (testset1)
     res1 = Statistics_xarray(test_xa1)
     diff = expect_xa1 - res1
@@ -66,8 +49,10 @@ def test_xa_stats1():
             raise ValueError
 
 
-@pytest.mark.wip
-def test_xa_stats2():
+def test_xa_stats2(statistics_xa):
+    test_xa2, expect_xa2 = statistics_xa
+    test_xa2.attrs['var'] = 'dir'
+
     # Test for DIR data (testset2)
     res2 = Statistics_xarray(test_xa2)
     diff = expect_xa2 - res2
@@ -76,8 +61,14 @@ def test_xa_stats2():
             raise ValueError
 
 
-@pytest.mark.wip
-def test_xa_stats3():
+def test_xa_stats3(statistics_xa):
+    test_xa3, expect_xa3 = statistics_xa
+
+    ramp_marker = np.ones(test_xa3.Obs.shape)
+    ramp_marker[0, 0] = 0
+    ramp_marker = ramp_marker.astype(bool)
+    test_xa3 = test_xa3.assign(ramp_marker=(['station_name', 'time'], ramp_marker))
+
     # Test for WRF data (testset3)
     res3 = Statistics_xarray(test_xa3)
     diff = expect_xa3 - res3
@@ -86,21 +77,28 @@ def test_xa_stats3():
             raise ValueError
 
 
-@pytest.mark.wip
-def test_xa_stats4():
-    # Test for WRF data (ramp-marker code)
-    res4 = Statistics_xarray(test_xa3, calc_for_ramp=1)
-    diff = expect_xa4 - res4
+def test_xa_stats4(statistics_xa):
+    test_xa3, expect_xa3 = statistics_xa
+
+    ramp_marker = np.ones(test_xa3.Obs.shape)
+    #ramp_marker[0, 0] = 0 # otherwise, I need different results...
+    ramp_marker = ramp_marker.astype(bool)
+    test_xa3 = test_xa3.assign(ramp_marker=(['station_name', 'time'], ramp_marker))
+
+    # Test for WRF data (testset3)
+    res3 = Statistics_xarray(test_xa3, calc_for_ramp=1)
+    diff = expect_xa3 - res3
     for item in diff:
         if np.max(abs(diff[item])) > 1e-10:
             raise ValueError
 
 
-@pytest.mark.wip
-def test_xa_stats5():
+def test_xa_stats5(statistics_xa):
+    test_xa3, expect_xa3 = statistics_xa
+
     # Test for WRF data (ramp-marker removed)
-    res4 = Statistics_xarray(test_xa4, calc_for_ramp=1)
-    diff = expect_xa3 - res4
+    res3 = Statistics_xarray(test_xa3, calc_for_ramp=1)
+    diff = expect_xa3 - res3
     for item in diff:
         if np.max(abs(diff[item])) > 1e-10:
             raise ValueError

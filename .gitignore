@@ -15,6 +15,12 @@ coverage.xml
 
 /jupyter/*
 
+
+#/tests/resources/dummy_data/wrfaux1_d01_2020-05-17_00:00:00
+#/tests/resources/dummy_data/wrfinput_d01
+/tests/resources/dummy_data/wrfout_d01_2020-05-17_00:00:00
+/tests/resources/dummy_data/wrfrst_d01_2020-05-17_03:00:00
+
 /tests/resources/model_data/Ave10Min_tslist_d01.nc
 /tests/resources/model_data/raw_tslist_d01.nc
 /tests/resources/observations_data/Nonconform/Nonconform_20200101_20210101.nc
@@ -28,3 +34,4 @@ coverage.xml
 /tests/resources/testset2.nc
 /tests/resources/testset3.nc
 
+/jupyterlab/

@@ -12,7 +12,7 @@ exp_path = test_res_path / "test_run"
 
 templatefile = Path(
     os.path.split(os.path.realpath(__file__))[0]
-    + "/../wrftamer/resources/namelist.template"
+    + "/../resources/namelist.template"
 )
 
 namelistfile = exp_path / "wrf/namelist.test"

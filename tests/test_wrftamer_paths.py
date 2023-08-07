@@ -1,8 +1,10 @@
 import os
-from wrftamer.wrftamer_paths import wrftamer_paths, get_make_submit
 import shutil
+from wrftamer.wrftamer_paths import wrftamer_paths
 
 wtres_path = os.path.split(os.path.realpath(__file__))[0] + "/resources/"
+
+
 # works
 
 def test_environment_paths():
@@ -35,14 +37,3 @@ def test_default_paths():
     shutil.rmtree(run_path)
     shutil.rmtree(db_path)
     shutil.rmtree(home_path)
-
-
-def test_get_make_submit():
-
-    os.environ["WRFTAMER_make_submit"] = 'True'
-
-    get_make_submit()
-
-    del os.environ["WRFTAMER_make_submit"]
-
-    get_make_submit()

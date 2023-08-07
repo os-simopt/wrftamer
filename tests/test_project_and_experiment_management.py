@@ -3,8 +3,8 @@ import os
 from pathlib import Path
 import shutil
 import pandas as pd
-from wrftamer.main import project, list_projects, list_unassociated_exp, reassociate
-
+from wrftamer.main import Project, list_projects, reassociate
+from wrftamer import test_res_path
 
 # works
 
@@ -14,7 +14,7 @@ from wrftamer.main import project, list_projects, list_unassociated_exp, reassoc
 
 
 def test_nonexisting_project(base_test_env):
-    test = project("some_random_name")  # initialize class, no creation here
+    test = Project("some_random_name")  # initialize class, no creation here
 
     # removal of project that does not exists should fail
     with pytest.raises(FileNotFoundError):
@@ -41,7 +41,7 @@ def test_nonexisting_project(base_test_env):
         test.list_exp()
 
     # adding an experiment to a project that does not exist should work (since the project is created on the fly!)
-    configfile = os.path.split(os.path.realpath(__file__))[0] + "/resources/configure_test.yaml"
+    configfile = test_res_path / "configure_test.yaml"
     test.exp_create("Some_Random_Exp_Name", "Some_Random_Comment", configfile)
     test.remove(force=True, verbose=False)
 
@@ -54,12 +54,6 @@ def test_nonexisting_project(base_test_env):
 def test_list_projects(testprojects):
     # listing all projects should work (even if no projects exist)
     list_projects(verbose=True)
-
-
-def test_list_unassociated_exp(testprojects):
-    # listing unassociated exps (if none exist) will just return an empty list
-    res = list_unassociated_exp(verbose=True)
-    assert len(res) == 0
 
 
 # -----------------------------------------------------------------------
@@ -114,9 +108,6 @@ def test_project(testprojects):
     # listing all experiments inside a project should work
     testproject1.list_exp()
 
-    # Rewriting xls sheet should work (but won't do anything, since no experiments have been created)
-    testproject1.rewrite_xls()
-
     # Case damaged project. proj_path missing, but tamer_path intact
     shutil.rmtree(testproject1.proj_path)
     with pytest.raises(FileNotFoundError):
@@ -149,9 +140,7 @@ def test_reassociate(testprojects):
     exp_name1 = "TEST1"
     exp_name2 = "TEST2"
     exp_name3 = "TEST3"
-    configfile = (
-            os.path.split(os.path.realpath(__file__))[0] + "/resources/configure_test.yaml"
-    )
+    configfile = test_res_path / 'configure_test.yaml'
 
     # ------------------------------------------------------
     # adding an exp to a project should work fine.
@@ -162,9 +151,8 @@ def test_reassociate(testprojects):
     testproject2.exp_create(exp_name2, "Second Experiment", configfile)
 
     with pytest.raises(FileExistsError):
-        reassociate(
-            testproject1, testproject2, exp_name1
-        )  # exp_name1 is already part of testproject2
+        # exp_name1 is already part of testproject2
+        reassociate(testproject1, testproject2, exp_name1)
 
     reassociate(testproject1, testproject2, exp_name3)
 
@@ -195,9 +183,9 @@ def test_experiment_creation_thoroughly(testprojects):
     proj_name1 = testproject1.name
     exp_name1 = "TEST1"
 
-    configfile = os.path.split(os.path.realpath(__file__))[0] + "/resources/my_configure_test.yaml"
+    configfile = test_res_path / "my_configure_test.yaml"
 
-    proj = project(proj_name1)
+    proj = Project(proj_name1)
     proj.exp_create(exp_name1, "some comment", configfile)
 
     # Test here that the whole experiment directory tree exists and that
@@ -285,9 +273,9 @@ def test_experiment_creation_thoroughly(testprojects):
 def experiment_checks(proj_name1, exp_name1):
     exp_name2 = "TEST2"
     exp_name3 = "TEST3"
-    configfile = os.path.split(os.path.realpath(__file__))[0] + '/resources/configure_test.yaml'
+    configfile = test_res_path / 'configure_test.yaml'
 
-    proj = project(proj_name1)
+    proj = Project(proj_name1)
     proj.exp_create(exp_name1, "some comment", configfile)
 
     # ------------------------------------------------------
@@ -336,10 +324,7 @@ def experiment_checks(proj_name1, exp_name1):
     proj.exp_get_maxdom_from_config(exp_name1)
 
     # Updating the database should work
-    proj.update_xlsx()
-
-    # Should check the other branch.
-    proj.rewrite_xls()
+    proj.update_csv()
 
     # Removing an experiment should work
     proj.exp_remove(exp_name1, force=True)
@@ -347,13 +332,9 @@ def experiment_checks(proj_name1, exp_name1):
     proj._determine_status(exp_name2)
 
 
-def test_experiment_without_project(unassociated_exps):
+def test_experiment_without_project():
     proj_name1 = None
     exp_name1 = "TEST1"
-
-    # This should find no unassociate experiments.
-    res = list_unassociated_exp(verbose=True)
-    assert len(res) == 0
 
     experiment_checks(proj_name1, exp_name1)
 
@@ -485,14 +466,12 @@ def test_remove_with_correct_input1(base_test_env, monkeypatch):
     # This simulates the user entering "Yes" in the terminal:
     monkeypatch.setattr("builtins.input", lambda _: "Yes")
 
-    testproject = project("WRFTAMER_TEST1")
+    testproject = Project("WRFTAMER_TEST1")
     exp_name1 = "TEST1"
 
     # ------------------------------------------------------
     # adding an exp to a project should work fine.
-    configfile = (
-            os.path.split(os.path.realpath(__file__))[0] + "/resources/configure_test.yaml"
-    )
+    configfile = test_res_path / 'configure_test.yaml'
     testproject.exp_create(exp_name1, "First Experiment", configfile, verbose=True)
 
     testproject.exp_remove(exp_name1)  # Expects Input
@@ -504,14 +483,12 @@ def test_remove_with_correct_input2(base_test_env, monkeypatch):
     # This simulates the user entering "Yes" in the terminal:
     monkeypatch.setattr("builtins.input", lambda _: "yes")
 
-    testproject = project("WRFTAMER_TEST1")
+    testproject = Project("WRFTAMER_TEST1")
     exp_name1 = "TEST1"
 
     # ------------------------------------------------------
     # adding an exp to a project should work fine.
-    configfile = (
-            os.path.split(os.path.realpath(__file__))[0] + "/resources/configure_test.yaml"
-    )
+    configfile = test_res_path / 'configure_test.yaml'
     testproject.exp_create(exp_name1, "First Experiment", configfile, verbose=True)
 
     # These will just return (Yes must be capitalized)
@@ -542,18 +519,13 @@ def test_broken_db(test_env2):
     workdir = test_proj.get_workdir(exp_name1)
     shutil.rmtree(workdir)
 
+    configfile = test_res_path / 'configure_test.yaml'
+
     # Creating a new exp should raise an error.
     with pytest.raises(FileExistsError):
-        configfile = (
-                os.path.split(os.path.realpath(__file__))[0]
-                + "/resources/configure_test.yaml"
-        )
         test_proj.exp_create(exp_name1, "First Experiment", configfile, verbose=True)
 
     # Create an experiment that can be copied.
-    configfile = (
-            os.path.split(os.path.realpath(__file__))[0] + "/resources/configure_test.yaml"
-    )
     test_proj.exp_create("Another_Exp", "Second Experiment", configfile, verbose=True)
 
     # Copying this exp to exp_name1 should fail
@@ -574,7 +546,7 @@ def test_broken_db(test_env2):
     test_proj.cleanup_db(verbose=True)
 
     # Simulate a manualy manipulated db and check failures.
-    df = pd.read_excel(
+    df = pd.read_csv(
         test_proj.filename,
         index_col="index",
         usecols=[
@@ -591,7 +563,7 @@ def test_broken_db(test_env2):
     )
     new_line = ["Manual_Test", 0, "manual edit", 0, 0, 0, 0, "created"]
     df.loc[len(df)] = new_line
-    df.to_excel(test_proj.filename)
+    df.to_csv(test_proj.filename)
 
     with pytest.raises(FileExistsError):
         test_proj.exp_create(

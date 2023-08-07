@@ -1,6 +1,4 @@
 import pytest
-import os
-from pathlib import Path
 from wrftamer.wrftamer_functions import (
     writeLogFile,
     make_executable_dir,
@@ -9,6 +7,7 @@ from wrftamer.wrftamer_functions import (
     make_submitfiles,
     make_call_wd_file_from_template,
 )
+from wrftamer import res_path, test_res_path
 
 
 # rename_dirs: test with ignore_submit = False
@@ -61,8 +60,8 @@ def test_make_non_essential_data_dir(functions_environment):
 
 def test_make_submitfiles(base_test_env):
     exp_path = base_test_env
-    configfile = base_test_env.parent / "configure_test.yaml"
-    templatefile = base_test_env.parents[2] / "wrftamer/resources/submit.template"
+    configfile = test_res_path / "configure_test.yaml"
+    templatefile = res_path / "submit.template"
 
     make_submitfiles(exp_path, configfile, templatefile=None)
     make_submitfiles(exp_path, configfile, templatefile=templatefile)
@@ -71,12 +70,9 @@ def test_make_submitfiles(base_test_env):
 def test_make_call_wd_file_from_template(base_test_env):
     miniconda_path = "dummy_path"
     condaenv_name = "dummy_name"
-    templatefile = (
-        base_test_env.parents[2] / "wrftamer/resources/call_watchdog.template"
-    )
+    templatefile = res_path / "call_watchdog.template"
 
-    home_path = os.environ["WRFTAMER_HOME_PATH"]
-    expected_file = Path(home_path) / "call_watchdog.bash"
+    expected_file = base_test_env / "call_watchdog.bash"
 
     make_call_wd_file_from_template(miniconda_path, condaenv_name, templatefile=None)
     make_call_wd_file_from_template(miniconda_path, condaenv_name, templatefile)

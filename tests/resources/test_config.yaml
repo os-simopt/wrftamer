@@ -1,0 +1,7 @@
+wrftamer_paths:
+    relative_to_home: True
+    wrftamer_path: "wrftamer_test_tmpdir"
+    run_path: "wrftamer_test_tmpdir/run"
+    archive_path: "wrftamer_test_tmpdir/archive"
+    plot_path: "wrftamer_test_tmpdir/plots"
+wrftamer_make_submit: True
