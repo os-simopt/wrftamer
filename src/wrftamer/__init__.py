@@ -12,6 +12,7 @@ script_path = this_path / '../../scripts'
 
 assert test_res_path.is_dir()
 assert res_path.is_dir()
+assert script_path.is_dir()
 
 # get package configuration
 

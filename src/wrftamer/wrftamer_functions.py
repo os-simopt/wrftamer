@@ -49,7 +49,7 @@ def make_executable_dir(exe_dir: Path, wrf_and_wsp_parent_dir: Path):
     Creates a directory for the copies of the executables of WRF and WPS and copies these files" \
     """
 
-    os.makedirs(exe_dir, exist_ok=True)
+    exe_dir.mkdir(parents=True, exist_ok=True)
 
     # copy executables
     list1 = list(wrf_and_wsp_parent_dir.glob("WPS/*.exe"))
@@ -65,7 +65,7 @@ def make_essential_data_dir(wrf_and_wsp_parent_dir: Path, essentials_dir: Path, 
     Creates a directory for the copies of the essential data of WRF and WPS; copies the data.
     """
 
-    os.makedirs(essentials_dir, exist_ok=True)
+    essentials_dir.mkdir(parents=True, exist_ok=True)
 
     # copy essentials
     shutil.copy(f"{wrf_and_wsp_parent_dir}/WPS/geogrid/GEOGRID.TBL", essentials_dir)
@@ -87,13 +87,12 @@ def make_essential_data_dir(wrf_and_wsp_parent_dir: Path, essentials_dir: Path, 
 
 
 def make_non_essential_data_dir(non_essentials_dir: Path):
-    os.makedirs(non_essentials_dir, exist_ok=True)
-
+    non_essentials_dir.mkdir(exist_ok=True, parents=True)
     # noting to copy for non-essentials (for now)
 
 
 def make_unassociated_experiments_dir(unassociated_dir: Path):
-    os.makedirs(unassociated_dir)
+    unassociated_dir.mkdir(exist_ok=True, parents=True)
 
     df = pd.DataFrame(
         columns=["index", "Name", "time", "comment", "start", "end", "disk use", "runtime", "status", ]
@@ -112,14 +111,14 @@ def create_rundir(exp_path: Path, configure_file: str, namelist_template: str, v
     """
 
     with open(configure_file) as f:
-        cfg = yaml.safe_load(f)
+        config = yaml.safe_load(f)
 
-    exe_dir = Path(cfg["paths"]["wrf_executables"])
-    essentials_dir = Path(cfg["paths"]["wrf_essentials"])
-    non_essentials_dir = Path(cfg["paths"]["wrf_nonessentials"])
-    namelist_vars = cfg["namelist_vars"]
-    driving_data = Path(cfg["paths"]["driving_data"])
-    suffix_len = cfg["link_grib"]["suffix_len"]
+    exe_dir = Path(config["paths"]["wrf_executables"])
+    essentials_dir = Path(config["paths"]["wrf_essentials"])
+    non_essentials_dir = Path(config["paths"]["wrf_nonessentials"])
+    namelist_vars = config["namelist_vars"]
+    driving_data = Path(config["paths"]["driving_data"])
+    suffix_len = config["link_grib"]["suffix_len"]
 
     if verbose:  # pragma: no cover
         print(f"Building the exp_path directory {exp_path}")
@@ -300,7 +299,7 @@ def make_call_wd_file_from_template(miniconda_path, condaenv_name, templatefile=
     wd_vars["condaenv_name"] = condaenv_name
     wd_vars["HOME"] = os.environ["HOME"]
 
-    home_path, db_path, run_path, archive_path, plot_path = wrftamer_paths()
+    home_path, _, _, _, _ = wrftamer_paths()
 
     if templatefile is None:
         myfile = res_path / 'call_watchdog.template'
