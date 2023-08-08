@@ -9,6 +9,8 @@ from crontab import CronTab
 from wrftamer.main import Project, list_projects
 from wrftamer.wrftamer_paths import wrftamer_paths
 import wrftamer.wrftamer_functions as wtfun
+from wrftamer import cfg
+
 
 home_path, db_path, run_path, archive_path, disc = wrftamer_paths()
 
@@ -41,25 +43,10 @@ def cli():
 )
 @click.argument("wrf_and_wps_parent_dir", type=click.Path(exists=True))
 @click.option(
-    "--exe_dir",
-    help="the name of the executables directory [default: $HOME/wrftamer/bin/wrf_executables]",
-)
-@click.option(
-    "--essentials_dir",
-    help="the name of the essentials directory [default: $HOME/wrftamer/src/wrf_nonessentials]",
-)
-@click.option(
-    "--non_essentials_dir",
-    help="the name of the non_essentials directory [default: $HOME/wrftamer/src/wrf_nonessentials]",
-)
-@click.option(
     "--vtable", help="The name of the Vtable to be copied [default: Vtable.ECMWF]"
 )
 def cli_first_steps(
         wrf_and_wps_parent_dir,
-        exe_dir=None,
-        essentials_dir=None,
-        non_essentials_dir=None,
         vtable=None,
 ):
     """
@@ -69,32 +56,24 @@ def cli_first_steps(
 
     Args:
         wrf_and_wps_parent_dir: WRF and WPS parent folder.
-        exe_dir: directiory of executables (will be created)
-        essentials_dir: directiory of wrf_essentials (will be created)
-        non_essentials_dir: directiory of wrf_nonessentials (will be created)
         vtable: the name of the Vtable to be copied.
 
     Returns: None
 
     """
 
-    wrf_and_wsp_parent_dir = Path(wrf_and_wps_parent_dir)
+    try:
+        wrf_and_wsp_parent_dir = Path(cfg['wrf_and_wsp_parent_dir'])
+        vtable = cfg['vtable']
+        use_wrf_related_features = cfg['use_wrf_related_features']
+    except KeyError:
+        wrf_and_wsp_parent_dir = None
+        vtable = None
+        use_wrf_related_features = None
 
-    if exe_dir is None:
-        exe_dir = home_path / "bin/wrf_executables"
-    else:
-        exe_dir = Path(exe_dir)
-
-    if essentials_dir is None:
-        essentials_dir = home_path / "src/wrf_essentials"
-    else:
-        essentials_dir = Path(essentials_dir)
-
-    if non_essentials_dir is None:
-        non_essentials_dir = home_path / "src/wrf_nonessentials"
-    else:
-        non_essentials_dir = Path(non_essentials_dir)
-
+    exe_dir = home_path / "bin/wrf_executables"
+    essentials_dir = home_path / "src/wrf_essentials"
+    non_essentials_dir = home_path / "src/wrf_nonessentials"
     unassociated_dir = home_path / "db/Unassociated_Experiments"
 
     if vtable is None:
@@ -114,61 +93,27 @@ def cli_first_steps(
 
     wrf_and_wps_parent_dir = Path(wrf_and_wps_parent_dir)
 
-    try:
-        wtfun.make_executable_dir(exe_dir, wrf_and_wps_parent_dir)
-    except:
-        print('Error encountered in make_executable_dir')
+    if use_wrf_related_features:
 
-    try:
-        wtfun.make_essential_data_dir(wrf_and_wps_parent_dir, essentials_dir, vtable)
-    except:
-        print('Error encountered in make_essential_data_dir')
+        try:
+            wtfun.make_executable_dir(exe_dir, wrf_and_wps_parent_dir)
+        except:
+            print('Error encountered in make_executable_dir')
 
-    try:
-        wtfun.make_non_essential_data_dir(non_essentials_dir)
-    except:
-        print('Error encountered in make_non_essential_data_dir')
+        try:
+            wtfun.make_essential_data_dir(wrf_and_wps_parent_dir, essentials_dir, vtable)
+        except:
+            print('Error encountered in make_essential_data_dir')
+
+        try:
+            wtfun.make_non_essential_data_dir(non_essentials_dir)
+        except:
+            print('Error encountered in make_non_essential_data_dir')
 
     try:
         wtfun.make_unassociated_experiments_dir(unassociated_dir)
     except:
         print('Error encountered in make_unassociated_experiments_dir')
-
-
-@cli.command(
-    name="make_executable_dir",
-    short_help="copy executables",
-    help="Copy wrf and wsp executables from" " <WRF_and_WPS_parent_dir> to a targetdir",
-)
-@click.argument("wrf_and_wps_parent_dir", type=click.Path(exists=True))
-@click.argument("exe_dir", type=click.Path())
-def cli_make_executable_dir(wrf_and_wsp_parent_dir, exe_dir):
-    click.echo("Creating directory %s" % exe_dir)
-    click.echo("Copying relevant .exe files to %s" % exe_dir)
-    click.echo(
-        "The executables were copied from subdirectories of %s" % wrf_and_wsp_parent_dir
-    )
-
-    wtfun.make_executable_dir(exe_dir, wrf_and_wsp_parent_dir)
-
-
-@cli.command(
-    name="make_essential_data_dir",
-    short_help="copy constant data",
-    help="Copy constant WRF-data and tables after compilation to a targetdir. Provide Vtable name.",
-)
-@click.argument("wrf_and_wps_parent_dir", type=click.Path(exists=True))
-@click.argument("essentials_dir", type=click.Path())
-@click.argument("vtable", nargs=1)
-def cli_make_essential_data_dir(wrf_and_wsp_parent_dir, essentials_dir, vtable):
-    click.echo("Creating directory %s" % essentials_dir)
-    click.echo("Copying relevant files to %s" % essentials_dir)
-    click.echo(
-        "The files were copied from subdirectories of %s" % wrf_and_wsp_parent_dir
-    )
-    click.echo("Vtable: %s", vtable)
-
-    wtfun.make_essential_data_dir(wrf_and_wsp_parent_dir, essentials_dir, vtable)
 
 
 @cli.command(
